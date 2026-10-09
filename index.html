@@ -694,7 +694,7 @@ function readParams() {
 }
 function writeParams(p) {
   p = migrate(p);
-  if (MODES.includes(p.mode)) document.querySelector(`input[name=mode][value=${p.mode}]`).checked = true;
+  if (MODES.includes(p.mode)) document.querySelector(`input[name=mode][value="${p.mode}"]`).checked = true;
   for (const k of NUM) if (p[k] != null) $(k).value = p[k];
   for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
   for (const k of CHK) if (p[k] != null) $(k).checked = !!p[k];
@@ -1382,7 +1382,7 @@ let zoom = 1, panX = 0, panY = 0, last = null;
 let viewMode = 'cut';
 try { viewMode = localStorage.getItem('kerf-view') || 'cut'; } catch (e) {}
 if (!['cut', 'light', 'flex', '3d'].includes(viewMode)) viewMode = 'cut';
-document.querySelector(`input[name=view][value=${viewMode}]`).checked = true;
+document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
   const boards = doc.boards.map(b => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
@@ -1443,6 +1443,8 @@ function render() {
 // alpha mask, so slots are real holes and an optional lamp shines through.
 const THREE_BASE = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
 const MAT_COLORS = { pmma: 0xf3efe6, petg: 0xe6ecef, plywood: 0xd8b98a, mdf: 0xa98563 };
+// plastics are shown semi-transparent (the far side shows through), wood is opaque
+const MAT_OPACITY = { pmma: 0.45, petg: 0.6 };
 let three = null, threeLoading = null, maskToken = 0, maskTimer = null;
 let view3d = { bend: 100, lamp: true };
 try { Object.assign(view3d, JSON.parse(localStorage.getItem('kerf-3d')) || {}); } catch (e) {}
@@ -1534,6 +1536,13 @@ function apply3dScene(p, doc, refit) {
   three.bulb.position.set(0, 0, axisZ);
   three.bulb.scale.setScalar(Math.max(2, Math.min(W / Math.PI, H) * 0.06));
   three.mat.color.setHex(MAT_COLORS[p.material] || 0xeeeeee);
+  const op = MAT_OPACITY[p.material] ?? 1;
+  if (three.mat.transparent !== op < 1) three.mat.needsUpdate = true;
+  three.mat.transparent = op < 1;
+  three.mat.opacity = op;
+  three.mat.alphaTest = op / 2;   // the mask is multiplied by opacity before the test
+  three.mat.depthWrite = op >= 1;
+  three.mat.roughness = op < 1 ? 0.25 : 0.55;
   three.mat.emissive.setHex(lampOn && p.material === 'pmma' ? 0x3a2410 : 0x000000);
   const size = `${W}x${H}`;
   if (refit || three.size !== size) {
