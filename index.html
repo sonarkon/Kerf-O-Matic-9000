@@ -397,7 +397,7 @@ const STR = {
     'mod.imgHint': 'Bright = 1, dark = 0. Stretched to the board.',
     'btn.up': 'Move up', 'btn.down': 'Move down', 'btn.del': 'Remove',
 
-    'shape.Stadium': 'Pill', 'desc.Stadium': 'Pill shape: one closed path, a rectangle with semicircular ends. First choice for acrylic – round ends prevent cracks.',
+    'shape.Pill': 'Pill', 'desc.Pill': 'Pill shape: one closed path, a rectangle with semicircular ends. First choice for acrylic – round ends prevent cracks.',
     'shape.Line': 'Line', 'desc.Line': 'Single cut (width = laser kerf), maximum bend per cut. Slot width is ignored.',
     'shape.Meander': 'Meander', 'desc.Meander': 'Cut alternately from top and bottom – very soft but not very stable. “Vertical gap” = remaining strip at the edge.',
     'shape.Ellipse': 'Ellipse', 'desc.Ellipse': 'Rounded, reduces stress concentrations',
@@ -499,7 +499,7 @@ const STR = {
     'mod.imgHint': 'Hell = 1, dunkel = 0. Auf die Platte gestreckt.',
     'btn.up': 'Nach oben', 'btn.down': 'Nach unten', 'btn.del': 'Entfernen',
 
-    'shape.Stadium': 'Pille', 'desc.Stadium': 'Pillenform: ein geschlossener Pfad, Rechteck mit halbrunden Enden. Für Acryl erste Wahl – runde Enden vermeiden Risse.',
+    'shape.Pill': 'Pille', 'desc.Pill': 'Pillenform: ein geschlossener Pfad, Rechteck mit halbrunden Enden. Für Acryl erste Wahl – runde Enden vermeiden Risse.',
     'shape.Line': 'Linie', 'desc.Line': 'Einfacher Schnitt (Breite = Laserfuge), maximale Biegung pro Schnitt. Schlitzbreite wird ignoriert.',
     'shape.Meander': 'Mäander', 'desc.Meander': 'Abwechselnd von oben und unten eingeschnitten – sehr weich, aber wenig formstabil. „Steg vertikal“ = Reststeg an der Kante.',
     'shape.Ellipse': 'Ellipse', 'desc.Ellipse': 'Abgerundet, reduziert Spannungsspitzen',
@@ -582,7 +582,7 @@ function applyLang() {
 // with half-width hw and half-height hh (all in mm).
 const NECK_RATIO = 0.4;  // dogbone neck / S-slot width as a fraction of the slot width
 const SHAPES = {
-  Stadium: {
+  Pill: {
     draw(cx, cy, hw, hh) {
       if (hw <= 0) return [`<line x1="${f(cx)}" y1="${f(cy - hh)}" x2="${f(cx)}" y2="${f(cy + hh)}"/>`];
       if (hh >= hw) {
@@ -617,7 +617,7 @@ const SHAPES = {
     draw(cx, cy, hw, hh) {
       const R = hw, n = hw * NECK_RATIO, s = Math.sqrt(R * R - n * n);
       const yt = cy - hh + R, yb = cy + hh - R;
-      if (hw <= 0 || yb - s < yt + s) return SHAPES.Stadium.draw(cx, cy, hw, hh);
+      if (hw <= 0 || yb - s < yt + s) return SHAPES.Pill.draw(cx, cy, hw, hh);
       const A = `A${f(R)},${f(R)} 0 1 1`;
       return [`<path d="M${f(cx + n)},${f(yt + s)} V${f(yb - s)} ${A} ${f(cx - n)},${f(yb - s)} V${f(yt + s)} ${A} ${f(cx + n)},${f(yt + s)} Z"/>`];
     }
@@ -634,9 +634,9 @@ const SHAPES = {
     // outline sides are concentric arcs, so the path stays exact.
     draw(cx, cy, hw, hh) {
       const w = 2 * hw * NECK_RATIO, a = hw - w / 2, h = hh - w / 2;
-      if (a <= 1e-6 || h <= 1e-6) return SHAPES.Stadium.draw(cx, cy, hw, hh);
+      if (a <= 1e-6 || h <= 1e-6) return SHAPES.Pill.draw(cx, cy, hw, hh);
       const R = (a * a + h * h) / (2 * a), q = w / 2;
-      if (R - q <= 1e-6) return SHAPES.Stadium.draw(cx, cy, hw, hh);
+      if (R - q <= 1e-6) return SHAPES.Pill.draw(cx, cy, hw, hh);
       const C1 = [cx - a + R, cy - h], C2 = [cx + a - R, cy + h];   // arc centres
       const nx = (R - a) / R, ny = -h / R;                             // unit normal at the middle, towards C1
       const pE1 = [cx - a + q, cy - h], mE1 = [cx - a - q, cy - h];   // ends, + / − side
@@ -687,7 +687,7 @@ const MOD_TARGETS = ['slotW', 'slotH', 'skip', 'shape'];
 const MOD_SOURCES = ['linear', 'radial', 'wave', 'noise', 'image'];
 
 function newBand(p) {
-  return { shape: SHAPES[p.shape].meander ? 'Stadium' : p.shape, height: Math.round(p.boardH / 3), slotW: null, slotH: null };
+  return { shape: SHAPES[p.shape].meander ? 'Pill' : p.shape, height: Math.round(p.boardH / 3), slotW: null, slotH: null };
 }
 function newMod(p) {
   return {
@@ -767,7 +767,7 @@ function diameterChanged() {
 // ---------------------------------------------------------------- geometry
 // Vertical pill running out through exactly one edge (y=0 or y=h): an open path
 // with true arcs, ending on the edge. Returns null for cases it doesn't cover.
-function stadiumOpen(cx, cy, hw, hh, h) {
+function pillOpen(cx, cy, hw, hh, h) {
   if (hw <= 0 || hh < hw) return null;
   const top = cy - hh < 0, bot = cy + hh > h;
   if (top === bot) return null;
@@ -904,7 +904,7 @@ function generate(p, w, h, x0, x1, slotFn) {
       } else if (y - hh >= -eps && y + hh <= h + eps) {
         rec.els = S.draw(c.x, y, hw, hh);
       } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2) {
-        const open = sp.shape === 'Stadium' && stadiumOpen(c.x, y, hw, hh, h);
+        const open = sp.shape === 'Pill' && pillOpen(c.x, y, hw, hh, h);
         rec.els = open ? [open] : clipToBand(S.draw(c.x, y, hw, hh), h);
       }
       if (rec.status === 'cut' && !(rec.els && rec.els.length)) rec.status = 'edge';
@@ -1009,7 +1009,7 @@ function modSource(m, W, H) {
 
 const MIN_BAR = 0.4, MIN_GAP = 0.4;   // smallest material left between slots (mm)
 function creativeSlotFn(p, W, H) {
-  const baseShape = SHAPES[p.shape].meander ? 'Stadium' : p.shape;
+  const baseShape = SHAPES[p.shape].meander ? 'Pill' : p.shape;
   const stepX = (SHAPES[p.shape].line ? 0 : p.slotW) + p.gapX, stepY = p.slotH + p.gapY;
   const maxHw = Math.max(0, (stepX - MIN_BAR) / 2), maxHh = Math.max(0.25, (stepY - MIN_GAP) / 2);
   const bands = creative.bands, ends = [];
@@ -1234,8 +1234,7 @@ function slug(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 function fileName(p, doc) {
-  const shapeTag = p.shape === 'Stadium' ? 'pill' : p.shape.toLowerCase();   // internal key stays 'Stadium' for old files
-  const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', shapeTag, p.material];
+  const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', p.shape.toLowerCase(), p.material];
   const proj = slug(p.project || '');
   if (proj) parts.unshift(proj);
   if (p.mode === 'test') {
