@@ -129,6 +129,15 @@
   }
   .pill input[type=range] { width: 140px; accent-color: var(--accent); }
   .pill output { min-width: 38px; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .lampbtn {
+    position: absolute; right: 12px; top: 12px; z-index: 2; width: 34px; height: 34px; padding: 0;
+    display: grid; place-items: center; cursor: pointer; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .lampbtn input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .lampbtn:has(input:checked) { color: #2b1a00; background: #ffc35a; border-color: #ffc35a; box-shadow: 0 0 14px #ffb04a99; }
+  .lampbtn:has(input:checked) svg { fill: #fff3d0; }
+  .lampbtn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   #three { position: absolute; inset: 0; }
   #three canvas { display: block; width: 100%; height: 100%; cursor: grab; }
   .threemsg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; pointer-events: none; }
@@ -272,9 +281,14 @@
       <label><input type="radio" name="view" value="flex"> <span data-i18n="view.flex"></span></label>
       <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
     </div>
-    <label class="check pill" id="lampCtl"><input type="checkbox" id="lampOn"> <span data-i18n="lamp"></span></label>
     <label class="pill" id="bendCtl"><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
   </div>
+  <label class="lampbtn" id="lampCtl" data-i18n-title="lamp">
+    <input type="checkbox" id="lampOn" data-i18n-aria="lamp">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/>
+    </svg>
+  </label>
   <div id="three" hidden><div class="threemsg" id="threeMsg"></div></div>
   <div class="hint" id="hint"></div>
   <div class="zoom">
@@ -547,6 +561,7 @@ function applyLang() {
   document.title = t('title');
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
   for (const o of $('shape').options) o.textContent = t('shape.' + o.value);
   for (const o of $('material').options) o.textContent = t('mat.' + o.value);
@@ -1428,7 +1443,7 @@ function render() {
   view.classList.toggle('dark', vm === 'light');
   view.classList.toggle('is3d', is3d);
   $('three').hidden = $('bendCtl').hidden = !is3d;
-  $('lampCtl').hidden = vm === 'flex';
+  $('lampCtl').hidden = vm === 'flex' || p.mode === 'test';
   stage.hidden = is3d;
   $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
   $('hint').textContent = t(is3d ? 'hint3d' : 'hint');
@@ -1794,7 +1809,7 @@ view.addEventListener('wheel', e => {
 
 let drag = null;
 view.addEventListener('pointerdown', e => {
-  if (e.target.closest('.zoom, .viewbar') || view.classList.contains('is3d')) return;
+  if (e.target.closest('.zoom, .viewbar, .lampbtn') || view.classList.contains('is3d')) return;
   drag = { x: e.clientX - panX, y: e.clientY - panY };
   view.setPointerCapture(e.pointerId);
   view.classList.add('dragging');

@@ -20,7 +20,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
   - **Bands**: horizontal zones, each with its own shape and optional slot size (mix pill, dogbone, S-slot …).
   - **Modulators**: linear gradient (any angle, optionally mirrored), radial, waves, noise or a greyscale **image** drive slot width, slot length, slot removal or a shape swap. They stack from top to bottom with adjustable strength.
   - The image is stored (downscaled) in the SVG metadata, so a design can be reloaded completely.
-- **Preview views**: *Cut*, *Flex* (per-slot strain heatmap: good / borderline / too high / rigid) and *3D*. The **Lamp on** toggle works in Cut and 3D: glowing slots on a dark board – how a lampshade will look.
+- **Preview views**: *Cut*, *Flex* (per-slot strain heatmap: good / borderline / too high / rigid) and *3D*. The **lamp** button (top right of the preview) works in Cut and 3D: glowing slots on a dark board – how a lampshade will look.
 - **3D preview** with the real material thickness: outer and inner surface, walls along every slot, rims and edges. A *Bend* slider goes from flat to a closed cylinder; acrylic and PETG are semi-transparent, wood is opaque; orbit and zoom with the mouse. three.js is loaded only when the 3D view is opened.
 - **Bendability estimate**: strain in the twisting bridges for the target diameter, computed for every slot-to-slot link, plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 - **Test strips**: a set of coupons that vary one parameter, each with an engraved label (value and min. diameter).
