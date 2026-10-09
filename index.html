@@ -120,18 +120,18 @@
   #stage { position: absolute; left: 0; top: 0; }
   #stage svg { display: block; overflow: visible; }
   #stage svg .cuts *, #stage svg .boards * { vector-effect: non-scaling-stroke; }
-  .viewseg { position: absolute; left: 12px; top: 12px; width: 300px; z-index: 2; }
+  .viewbar { position: absolute; left: 12px; top: 12px; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .viewseg { width: 210px; }
+  .viewseg label { padding: 5px; font-size: 12px; }
+  .pill {
+    flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 12px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px;
+  }
+  .pill input[type=range] { width: 140px; accent-color: var(--accent); }
+  .pill output { min-width: 38px; font-variant-numeric: tabular-nums; color: var(--muted); }
   #three { position: absolute; inset: 0; }
   #three canvas { display: block; width: 100%; height: 100%; cursor: grab; }
   .threemsg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; pointer-events: none; }
-  .bendctl {
-    position: absolute; left: 12px; top: 56px; z-index: 2; display: flex; gap: 14px; align-items: center;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
-  }
-  .bendctl > label:first-child { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 12px; }
-  .bendctl input[type=range] { width: 150px; accent-color: var(--accent); }
-  .bendctl output { min-width: 38px; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); }
-  .viewseg label { padding: 5px; font-size: 12px; }
   .zoom {
     position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; align-items: center;
     background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px;
@@ -266,17 +266,16 @@
 
 <main id="view">
   <div id="stage"></div>
-  <div class="seg viewseg" role="radiogroup" data-modes="pattern creative" data-i18n-aria="view.aria">
-    <label><input type="radio" name="view" value="cut" checked> <span data-i18n="view.cut"></span></label>
-    <label><input type="radio" name="view" value="light"> <span data-i18n="view.light"></span></label>
-    <label><input type="radio" name="view" value="flex"> <span data-i18n="view.flex"></span></label>
-    <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
+  <div class="viewbar" data-modes="pattern creative">
+    <div class="seg viewseg" role="radiogroup" data-i18n-aria="view.aria">
+      <label><input type="radio" name="view" value="cut" checked> <span data-i18n="view.cut"></span></label>
+      <label><input type="radio" name="view" value="flex"> <span data-i18n="view.flex"></span></label>
+      <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
+    </div>
+    <label class="check pill" id="lampCtl"><input type="checkbox" id="lampOn"> <span data-i18n="lamp"></span></label>
+    <label class="pill" id="bendCtl"><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
   </div>
   <div id="three" hidden><div class="threemsg" id="threeMsg"></div></div>
-  <div class="bendctl" id="bendCtl" hidden>
-    <label><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
-    <label class="check"><input type="checkbox" id="lampOn" checked> <span data-i18n="lamp"></span></label>
-  </div>
   <div class="hint" id="hint"></div>
   <div class="zoom">
     <button id="zOut" data-i18n-aria="zoomOut">−</button>
@@ -348,7 +347,7 @@ const STR = {
     'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
     'hint': 'Drag = pan · Wheel = zoom', 'hint3d': 'Drag = rotate · Right-drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
-    'view.aria': 'Preview', 'view.cut': 'Cut', 'view.light': 'Light', 'view.flex': 'Flex', 'view.3d': '3D',
+    'view.aria': 'Preview', 'view.cut': 'Cut', 'view.flex': 'Flex', 'view.3d': '3D',
     'bend': 'Bend', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
@@ -450,7 +449,7 @@ const STR = {
     'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
-    'view.aria': 'Vorschau', 'view.cut': 'Schnitt', 'view.light': 'Licht', 'view.flex': 'Flex', 'view.3d': '3D',
+    'view.aria': 'Vorschau', 'view.cut': 'Schnitt', 'view.flex': 'Flex', 'view.3d': '3D',
     'bend': 'Biegung', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
@@ -1381,7 +1380,8 @@ const view = $('view'), stage = $('stage');
 let zoom = 1, panX = 0, panY = 0, last = null;
 let viewMode = 'cut';
 try { viewMode = localStorage.getItem('kerf-view') || 'cut'; } catch (e) {}
-if (!['cut', 'light', 'flex', '3d'].includes(viewMode)) viewMode = 'cut';
+if (viewMode === 'light') viewMode = 'cut';   // the old light view is now cut + lamp
+if (!['cut', 'flex', '3d'].includes(viewMode)) viewMode = 'cut';
 document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
@@ -1422,11 +1422,13 @@ function render() {
     $('flexInfo').innerHTML = '';
     return;
   }
-  const vm = p.mode === 'test' ? 'cut' : viewMode;
+  let vm = p.mode === 'test' ? 'cut' : viewMode;
+  if (vm === 'cut' && view3d.lamp && p.mode !== 'test') vm = 'light';
   const is3d = vm === '3d';
   view.classList.toggle('dark', vm === 'light');
   view.classList.toggle('is3d', is3d);
   $('three').hidden = $('bendCtl').hidden = !is3d;
+  $('lampCtl').hidden = vm === 'flex';
   stage.hidden = is3d;
   $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
   $('hint').textContent = t(is3d ? 'hint3d' : 'hint');
@@ -1438,15 +1440,18 @@ function render() {
 }
 
 // ---------------------------------------------------------------- 3D preview
-// three.js is loaded on first use. The board is a plane bent around the
-// vertical axis (bend 100 % = closed cylinder); the cut pattern becomes an
-// alpha mask, so slots are real holes and an optional lamp shines through.
+// three.js is loaded on first use. The board is built with its real
+// thickness – outer and inner surface (cut pattern as alpha mask), a wall
+// along every slot outline, top/bottom rims and side edges – and bent around
+// the vertical axis (bend 100 % = closed cylinder). Bending is radial, so
+// both surfaces and the slot walls stay aligned like in the real part.
 const THREE_BASE = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
 const MAT_COLORS = { pmma: 0xf3efe6, petg: 0xe6ecef, plywood: 0xd8b98a, mdf: 0xa98563 };
 // plastics are shown semi-transparent (the far side shows through), wood is opaque
-const MAT_OPACITY = { pmma: 0.45, petg: 0.6 };
-let three = null, threeLoading = null, maskToken = 0, maskTimer = null;
-let view3d = { bend: 100, lamp: true };
+const MAT_OPACITY = { pmma: 0.4, petg: 0.55 };
+const SEG_X = 360;   // segments around the circumference
+let three = null, threeLoading = null, buildToken = 0, buildTimer = null;
+let view3d = { bend: 100, lamp: false };
 try { Object.assign(view3d, JSON.parse(localStorage.getItem('kerf-3d')) || {}); } catch (e) {}
 $('bend').value = view3d.bend; $('lampOn').checked = view3d.lamp;
 
@@ -1479,14 +1484,14 @@ function initThree() {
   dir.position.set(0.6, 1, 1.4);
   const lamp = new THREE.PointLight(0xffb45e, 2.4, 0, 1);
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe6b0 }));
-  const mat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, alphaTest: 0.5, roughness: 0.55, metalness: 0 });
-  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), mat);
-  // lamp glow: slots light up (additive), drawn over the shell
+  const shellMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, alphaTest: 0.5, roughness: 0.55, metalness: 0 });
+  const wallMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.55, metalness: 0 });
+  // lamp glow: slots light up (additive), drawn just outside the outer surface
   const glowMat = new THREE.MeshBasicMaterial({ color: 0xd98a32, transparent: true, blending: THREE.AdditiveBlending,
     depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
-  const glow = new THREE.Mesh(mesh.geometry, glowMat);
-  scene.add(hemi, dir, lamp, bulb, mesh, glow);
-  three = { renderer, scene, camera, controls, hemi, dir, lamp, bulb, mat, mesh, glow, glowMat, size: '' };
+  const group = new THREE.Group();
+  scene.add(hemi, dir, lamp, bulb, group);
+  three = { renderer, scene, camera, controls, hemi, dir, lamp, bulb, shellMat, wallMat, glowMat, group, parts: [], size: '', outer: null, glow: null };
   new ResizeObserver(resize3d).observe(el);
   resize3d();
   (function loop() {
@@ -1502,53 +1507,123 @@ function resize3d() {
   three.camera.aspect = r.width / r.height;
   three.camera.updateProjectionMatrix();
 }
-// Plane W × H bent so its width wraps bend·360° around a vertical axis.
-// Returns the cylinder axis position (z) for the lamp.
-function bendGeometry(W, H, bend) {
-  const g = new THREE.PlaneGeometry(W, H, 240, 1), pos = g.attributes.position;
-  const theta = bend * 2 * Math.PI;
-  let axisZ = -H;
-  if (theta > 1e-4) {
-    const R = W / theta;
-    for (let i = 0; i < pos.count; i++) {
-      const phi = pos.getX(i) / R;
-      pos.setXYZ(i, R * Math.sin(phi), pos.getY(i), R * Math.cos(phi) - R);
-    }
-    axisZ = -R;
+
+// A part keeps its unbent coordinates as (x, y, d): x along the width
+// (centred), y up, d across the thickness (+ = outside). bendParts() maps
+// them onto the current bend.
+function makePart(flat, uv, index, material) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(flat.length), 3));
+  if (uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
+  if (index) g.setIndex(index);
+  const mesh = new THREE.Mesh(g, material);
+  three.group.add(mesh);
+  const part = { mesh, flat: new Float32Array(flat) };
+  three.parts.push(part);
+  return part;
+}
+// Strip along the width at height y (or two heights) – used for both surfaces and the rims.
+function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
+  const flat = [], uv = [], index = [];
+  for (let i = 0; i <= SEG_X; i++) {
+    const x = -W / 2 + W * i / SEG_X, u = i / SEG_X;
+    flat.push(x, y0, d0, x, y1, d1);
+    uv.push(u, v0, u, v1);
+    if (i < SEG_X) { const a = i * 2; index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
   }
-  g.computeVertexNormals();
-  three.mesh.geometry.dispose();
-  three.mesh.geometry = three.glow.geometry = g;
-  return Math.max(axisZ, -Math.max(W, H));
+  return makePart(flat, uv, index, material);
+}
+// Walls along every slot outline, sampled from the cut paths.
+function wallFlat(doc, th) {
+  const W = doc.w, H = doc.h, out = [], a = -th / 2, b = th / 2;
+  for (const src of doc.cuts) {
+    sampler.innerHTML = src;
+    for (const el of sampler.children) {
+      const len = el.getTotalLength();
+      if (!(len > 0)) continue;
+      const closed = /^(rect|ellipse|polygon|circle)$/.test(el.tagName) || /z\s*$/i.test(el.getAttribute('d') || '');
+      const n = clamp(Math.ceil(len / 0.5), 6, 200);
+      const pts = [];
+      for (let i = 0; i <= n; i++) {
+        if (closed && i === n) { pts.push(pts[0]); break; }
+        const q = el.getPointAtLength(len * i / n);
+        pts.push([q.x - W / 2, H / 2 - q.y]);
+      }
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+        out.push(x0, y0, a, x0, y0, b, x1, y1, b, x0, y0, a, x1, y1, b, x1, y1, a);
+      }
+    }
+  }
+  return out;
+}
+function buildParts(doc, th) {
+  for (const prt of three.parts) { prt.mesh.geometry.dispose(); three.group.remove(prt.mesh); }
+  three.parts = [];
+  const W = doc.w, H = doc.h, t2 = Math.max(0.01, th / 2);
+  three.outer = stripPart(W, -H / 2, H / 2, t2, t2, 0, 1, three.shellMat);
+  stripPart(W, -H / 2, H / 2, -t2, -t2, 0, 1, three.shellMat);
+  stripPart(W, H / 2, H / 2, -t2, t2, 1, 1, three.shellMat);      // top rim: mask's top row
+  stripPart(W, -H / 2, -H / 2, -t2, t2, 0, 0, three.shellMat);    // bottom rim
+  for (const sx of [-1, 1]) {                                     // side edges
+    const x = sx * W / 2, u = sx < 0 ? 0 : 1;
+    makePart([x, -H / 2, -t2, x, H / 2, -t2, x, -H / 2, t2, x, H / 2, t2], [u, 0, u, 1, u, 0, u, 1], [0, 2, 1, 1, 2, 3], three.shellMat);
+  }
+  const walls = wallFlat(doc, th);
+  if (walls.length) makePart(walls, null, null, three.wallMat);
+  three.glow = stripPart(W, -H / 2, H / 2, t2 + 0.05, t2 + 0.05, 0, 1, three.glowMat);
+}
+// Returns the cylinder axis position (z) for the lamp.
+function bendParts(W, bend) {
+  const theta = bend * 2 * Math.PI, R = theta > 1e-4 ? W / theta : 0;
+  for (const prt of three.parts) {
+    const pos = prt.mesh.geometry.attributes.position, fl = prt.flat;
+    for (let i = 0, j = 0; i < pos.count; i++, j += 3) {
+      const x = fl[j], y = fl[j + 1], d = fl[j + 2];
+      if (R) {
+        const phi = x / R, r = R + d;
+        pos.setXYZ(i, r * Math.sin(phi), y, r * Math.cos(phi) - R);
+      } else pos.setXYZ(i, x, y, d);
+    }
+    pos.needsUpdate = true;
+    prt.mesh.geometry.computeVertexNormals();
+    prt.mesh.geometry.computeBoundingSphere();
+  }
+  return R ? -R : null;
+}
+function styleMaterial(m, p, lampOn, masked) {
+  const op = MAT_OPACITY[p.material] ?? 1;
+  if (m.transparent !== op < 1) m.needsUpdate = true;
+  m.color.setHex(MAT_COLORS[p.material] || 0xeeeeee);
+  m.transparent = op < 1;
+  m.opacity = op;
+  if (masked) m.alphaTest = op / 2;   // the mask is multiplied by opacity before the test
+  m.depthWrite = op >= 1;
+  m.roughness = op < 1 ? 0.25 : 0.55;
+  m.emissive.setHex(lampOn && p.material === 'pmma' ? 0x3a2410 : 0x000000);
 }
 function apply3dScene(p, doc, refit) {
-  const W = doc.w, H = doc.h, bend = view3d.bend / 100;
+  if (!three.parts.length) return;
+  const W = doc.w, H = doc.h, lampOn = view3d.lamp;
   $('bendVal').textContent = view3d.bend + ' %';
-  const axisZ = bendGeometry(W, H, bend);
-  const lampOn = view3d.lamp;
+  const axis = bendParts(W, view3d.bend / 100);
+  const axisZ = axis == null ? -H : Math.max(axis, -Math.max(W, H));
   three.scene.background = new THREE.Color(lampOn ? 0x0f0d0c : 0x1a181b);
   three.hemi.intensity = lampOn ? 0.22 : 0.9;
   three.dir.intensity = lampOn ? 0.08 : 0.6;
   three.lamp.intensity = lampOn ? 2.4 : 0;
   three.lamp.position.set(0, 0, axisZ);
   three.bulb.visible = lampOn;
-  three.glow.visible = lampOn && !!three.glowMat.map;
   three.bulb.position.set(0, 0, axisZ);
   three.bulb.scale.setScalar(Math.max(2, Math.min(W / Math.PI, H) * 0.06));
-  three.mat.color.setHex(MAT_COLORS[p.material] || 0xeeeeee);
-  const op = MAT_OPACITY[p.material] ?? 1;
-  if (three.mat.transparent !== op < 1) three.mat.needsUpdate = true;
-  three.mat.transparent = op < 1;
-  three.mat.opacity = op;
-  three.mat.alphaTest = op / 2;   // the mask is multiplied by opacity before the test
-  three.mat.depthWrite = op >= 1;
-  three.mat.roughness = op < 1 ? 0.25 : 0.55;
-  three.mat.emissive.setHex(lampOn && p.material === 'pmma' ? 0x3a2410 : 0x000000);
+  three.glow.mesh.visible = lampOn && !!three.glowMat.map;
+  styleMaterial(three.shellMat, p, lampOn, true);
+  styleMaterial(three.wallMat, p, lampOn, false);
   const size = `${W}x${H}`;
   if (refit || three.size !== size) {
     // fit to the bent shape's actual extent
     three.size = size;
-    const g = three.mesh.geometry;
+    const g = three.outer.mesh.geometry;
     g.computeBoundingBox();
     const bb = g.boundingBox, cz = (bb.min.z + bb.max.z) / 2;
     const tanV = Math.tan(three.camera.fov * Math.PI / 360);
@@ -1560,52 +1635,59 @@ function apply3dScene(p, doc, refit) {
     three.camera.updateProjectionMatrix();
   }
 }
-// Rasterise the cuts (black on white) into the alpha mask, ≤ 4096 px.
-function updateMask(doc) {
-  const token = ++maskToken;
-  const W = doc.w, H = doc.h, s = Math.min(10, 4096 / W, 4096 / H);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
-    `<rect width="${W}" height="${H}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="0.25">${doc.cuts.join('')}</g></svg>`;
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-  const im = new Image();
-  im.onload = () => {
-    URL.revokeObjectURL(url);
-    if (token !== maskToken) return;
-    const cv = document.createElement('canvas');
-    cv.width = im.width; cv.height = im.height;
-    cv.getContext('2d').drawImage(im, 0, 0);
-    const tex = new THREE.CanvasTexture(cv);
-    tex.anisotropy = three.renderer.capabilities.getMaxAnisotropy();
-    if (three.mat.alphaMap) three.mat.alphaMap.dispose();
-    three.mat.alphaMap = tex;
-    three.mat.needsUpdate = true;
-    // glow map: slots white on black, a blurred halo plus the sharp slot
-    const gc = document.createElement('canvas');
-    gc.width = cv.width; gc.height = cv.height;
-    const g = gc.getContext('2d');
-    const inv = document.createElement('canvas');
-    inv.width = cv.width; inv.height = cv.height;
-    const ig = inv.getContext('2d');
-    ig.drawImage(cv, 0, 0);
-    ig.globalCompositeOperation = 'difference';
-    ig.fillStyle = '#fff';
-    ig.fillRect(0, 0, inv.width, inv.height);
-    g.fillStyle = '#000';
-    g.fillRect(0, 0, gc.width, gc.height);
-    g.globalCompositeOperation = 'lighter';
-    g.filter = `blur(${Math.max(1.5, s * 0.45)}px)`;
-    g.globalAlpha = 0.45;
-    g.drawImage(inv, 0, 0);
-    g.filter = 'none';
-    g.globalAlpha = 0.85;
-    g.drawImage(inv, 0, 0);
-    const gt = new THREE.CanvasTexture(gc);
-    if (three.glowMat.map) three.glowMat.map.dispose();
-    three.glowMat.map = gt;
-    three.glowMat.needsUpdate = true;
-    three.glow.visible = view3d.lamp;
-  };
-  im.src = url;
+// Rasterise the cuts (black on white) into the alpha mask (≤ 4096 px) and
+// derive the glow map (slots white on black, a soft halo plus the sharp slot).
+function buildMasks(doc) {
+  return new Promise(resolve => {
+    const W = doc.w, H = doc.h, s = Math.min(10, 4096 / W, 4096 / H);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
+      `<rect width="${W}" height="${H}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="0.25">${doc.cuts.join('')}</g></svg>`;
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    const im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const cv = document.createElement('canvas');
+      cv.width = im.width; cv.height = im.height;
+      cv.getContext('2d').drawImage(im, 0, 0);
+      const inv = document.createElement('canvas');
+      inv.width = cv.width; inv.height = cv.height;
+      const ig = inv.getContext('2d');
+      ig.drawImage(cv, 0, 0);
+      ig.globalCompositeOperation = 'difference';
+      ig.fillStyle = '#fff';
+      ig.fillRect(0, 0, inv.width, inv.height);
+      const gc = document.createElement('canvas');
+      gc.width = cv.width; gc.height = cv.height;
+      const g = gc.getContext('2d');
+      g.fillStyle = '#000';
+      g.fillRect(0, 0, gc.width, gc.height);
+      g.globalCompositeOperation = 'lighter';
+      g.filter = `blur(${Math.max(1.5, s * 0.45)}px)`;
+      g.globalAlpha = 0.45;
+      g.drawImage(inv, 0, 0);
+      g.filter = 'none';
+      g.globalAlpha = 0.85;
+      g.drawImage(inv, 0, 0);
+      resolve({ mask: cv, glow: gc });
+    };
+    im.src = url;
+  });
+}
+function setTexture(mat, key, canvas) {
+  if (mat[key]) mat[key].dispose();
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = three.renderer.capabilities.getMaxAnisotropy();
+  mat[key] = tex;
+  mat.needsUpdate = true;
+}
+async function rebuild3d(p, doc) {
+  const token = ++buildToken;
+  const masks = await buildMasks(doc);
+  if (token !== buildToken) return;
+  buildParts(doc, p.thick);
+  setTexture(three.shellMat, 'alphaMap', masks.mask);
+  setTexture(three.glowMat, 'map', masks.glow);
+  apply3dScene(p, doc, false);
 }
 function show3d(p, doc) {
   $('threeMsg').textContent = three ? '' : t('three.loading');
@@ -1613,8 +1695,8 @@ function show3d(p, doc) {
     $('threeMsg').textContent = '';
     resize3d();
     apply3dScene(p, doc, false);
-    clearTimeout(maskTimer);
-    maskTimer = setTimeout(() => updateMask(doc), 120);
+    clearTimeout(buildTimer);
+    buildTimer = setTimeout(() => rebuild3d(p, doc), 150);
   }).catch(() => { $('threeMsg').textContent = t('three.fail'); threeLoading = null; });
 }
 function save3d() { try { localStorage.setItem('kerf-3d', JSON.stringify(view3d)); } catch (e) {} }
@@ -1624,7 +1706,8 @@ $('bend').addEventListener('input', () => {
 });
 $('lampOn').addEventListener('change', () => {
   view3d.lamp = $('lampOn').checked; save3d();
-  if (three && last) apply3dScene(last.p, last.doc, false);
+  if (view.classList.contains('is3d') && three && last) apply3dScene(last.p, last.doc, false);
+  else render();
 });
 
 function renderInfo(p, doc) {
@@ -1711,7 +1794,7 @@ view.addEventListener('wheel', e => {
 
 let drag = null;
 view.addEventListener('pointerdown', e => {
-  if (e.target.closest('.zoom, .viewseg, .bendctl') || view.classList.contains('is3d')) return;
+  if (e.target.closest('.zoom, .viewbar') || view.classList.contains('is3d')) return;
   drag = { x: e.clientX - panX, y: e.clientY - panY };
   view.setPointerCapture(e.pointerId);
   view.classList.add('dragging');
