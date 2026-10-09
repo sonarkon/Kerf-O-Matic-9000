@@ -2,7 +2,7 @@
 
 A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus on **cylinders**. It runs as a single HTML file: no install, no build step, and nothing is uploaded.
 
-**Live:** https://sonarkon.github.io/Kerf-Pattern-Generator/
+**Live:** https://sonarkon.github.io/Kerf-O-Matic-9000/
 
 ![Creative mode with bands and a wave modulator](kerf-o-matic-2d.jpg)
 
