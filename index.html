@@ -316,7 +316,8 @@
 
   <footer class="credit">
     © 2026 Jost von Harleßem ·
-    <a href="https://github.com/sonarkon/Kerf-Pattern-Generator" target="_blank" rel="noopener" data-i18n="credit.link"></a>
+    <a href="https://github.com/sonarkon/Kerf-Pattern-Generator" target="_blank" rel="noopener" data-i18n="credit.link"></a> ·
+    <a href="#" id="resetLink" data-i18n="reset"></a>
   </footer>
 </aside>
 
@@ -353,7 +354,7 @@ const STR = {
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
     'rotate': 'Rotate output by 90°', 'paramVisible': 'Parameter layer visible',
-    'sec.flex': 'Bendability', 'sec.file': 'File', 'credit.link': 'Source on GitHub (MIT)',
+    'sec.flex': 'Bendability', 'sec.file': 'File', 'credit.link': 'Source on GitHub (MIT)', 'reset': 'Reset settings', 'reset.confirm': 'Reset all settings to the defaults?',
 
     'cr.baseHint': 'These values set the grid. Bands and modulators change each slot within it.',
     'cr.meanderNote': 'Meander is not available in creative mode; Stadium is used instead.',
@@ -455,7 +456,7 @@ const STR = {
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
     'rotate': 'Um 90° gedreht ausgeben', 'paramVisible': 'Parameter-Layer sichtbar',
-    'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei', 'credit.link': 'Quellcode auf GitHub (MIT)',
+    'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei', 'credit.link': 'Quellcode auf GitHub (MIT)', 'reset': 'Einstellungen zurücksetzen', 'reset.confirm': 'Alle Einstellungen auf Standard zurücksetzen?',
 
     'cr.baseHint': 'Diese Werte legen das Raster fest. Bänder und Modulatoren verändern jeden Schlitz darin.',
     'cr.meanderNote': 'Mäander gibt es im Creative-Modus nicht, stattdessen wird Stadium verwendet.',
@@ -1523,7 +1524,7 @@ function apply3dScene(p, doc, refit) {
   $('bendVal').textContent = view3d.bend + ' %';
   const axisZ = bendGeometry(W, H, bend);
   const lampOn = view3d.lamp;
-  three.scene.background = new THREE.Color(lampOn ? 0x0f0d0c : 0xe8e5de);
+  three.scene.background = new THREE.Color(lampOn ? 0x0f0d0c : 0x1a181b);
   three.hemi.intensity = lampOn ? 0.22 : 0.9;
   three.dir.intensity = lampOn ? 0.08 : 0.6;
   three.lamp.intensity = lampOn ? 2.4 : 0;
@@ -1768,10 +1769,33 @@ $('lang').addEventListener('change', () => {
   render();
 });
 
+const STORE_KEYS = ['kerf-params', 'kerf-view', 'kerf-3d'];
+function clearStore() { for (const k of STORE_KEYS) try { localStorage.removeItem(k); } catch (e) {} }
+$('resetLink').onclick = e => {
+  e.preventDefault();
+  if (!confirm(t('reset.confirm'))) return;
+  clearStore();
+  location.reload();
+};
+
 applyLang();
-try { const saved = JSON.parse(localStorage.getItem('kerf-params')); if (saved) writeParams(saved); } catch (e) {}
-syncDiameter();
-render();
+// Settings saved by an older version must never block the start: if they
+// fail to load or render, drop them and start from the defaults.
+try {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('kerf-params')); } catch (err) {}   // storage may be unavailable
+  if (saved) writeParams(saved);
+  syncDiameter();
+  render();
+  try { sessionStorage.removeItem('kerf-reset'); } catch (err) {}
+} catch (e) {
+  console.warn('Saved settings could not be restored, using defaults.', e);
+  clearStore();
+  // reload once; never loop if the defaults fail as well
+  let retried = false;
+  try { retried = sessionStorage.getItem('kerf-reset') === '1'; sessionStorage.setItem('kerf-reset', '1'); } catch (err) { retried = true; }
+  if (!retried) location.reload(); else throw e;
+}
 </script>
 </body>
 </html>
