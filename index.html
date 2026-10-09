@@ -121,7 +121,7 @@
   #stage svg { display: block; overflow: visible; }
   #stage svg .cuts *, #stage svg .boards * { vector-effect: non-scaling-stroke; }
   .viewbar { position: absolute; left: 12px; top: 12px; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
-  .viewseg { width: 210px; }
+  .viewseg { width: 130px; }
   .viewseg label { padding: 5px; font-size: 12px; }
   .pill {
     flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 12px;
@@ -129,15 +129,17 @@
   }
   .pill input[type=range] { width: 140px; accent-color: var(--accent); }
   .pill output { min-width: 38px; font-variant-numeric: tabular-nums; color: var(--muted); }
-  .lampbtn {
-    position: absolute; right: 12px; top: 12px; z-index: 2; width: 34px; height: 34px; padding: 0;
+  .toggles { position: absolute; right: 12px; top: 12px; z-index: 2; display: flex; gap: 6px; }
+  .iconbtn {
+    position: relative; width: 34px; height: 34px; padding: 0;
     display: grid; place-items: center; cursor: pointer; color: var(--muted);
     background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
   }
-  .lampbtn input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .lampbtn:has(input:checked) { color: #2b1a00; background: #ffc35a; border-color: #ffc35a; box-shadow: 0 0 14px #ffb04a99; }
-  .lampbtn:has(input:checked) svg { fill: #fff3d0; }
-  .lampbtn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .iconbtn input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .iconbtn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .iconbtn.lamp:has(input:checked) { color: #2b1a00; background: #ffc35a; border-color: #ffc35a; box-shadow: 0 0 14px #ffb04a99; }
+  .iconbtn.lamp:has(input:checked) svg { fill: #fff3d0; }
+  .iconbtn.flex:has(input:checked) { color: #fff; background: linear-gradient(135deg, #3e9b4f, #e0a526 55%, #d6332a); border-color: transparent; }
   #three { position: absolute; inset: 0; }
   #three canvas { display: block; width: 100%; height: 100%; cursor: grab; }
   .threemsg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; pointer-events: none; }
@@ -277,18 +279,25 @@
   <div id="stage"></div>
   <div class="viewbar" data-modes="pattern creative">
     <div class="seg viewseg" role="radiogroup" data-i18n-aria="view.aria">
-      <label><input type="radio" name="view" value="cut" checked> <span data-i18n="view.cut"></span></label>
-      <label><input type="radio" name="view" value="flex"> <span data-i18n="view.flex"></span></label>
+      <label><input type="radio" name="view" value="2d" checked> <span data-i18n="view.2d"></span></label>
       <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
     </div>
     <label class="pill" id="bendCtl"><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
   </div>
-  <label class="lampbtn" id="lampCtl" data-i18n-title="lamp">
-    <input type="checkbox" id="lampOn" data-i18n-aria="lamp">
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/>
-    </svg>
-  </label>
+  <div class="toggles" id="overlayCtl">
+    <label class="iconbtn lamp" data-i18n-title="lamp">
+      <input type="checkbox" id="lampOn" data-i18n-aria="lamp">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/>
+      </svg>
+    </label>
+    <label class="iconbtn flex" data-i18n-title="flexOverlay">
+      <input type="checkbox" id="flexOn" data-i18n-aria="flexOverlay">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 14.76V4a2 2 0 1 0-4 0v10.76a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>
+      </svg>
+    </label>
+  </div>
   <div id="three" hidden><div class="threemsg" id="threeMsg"></div></div>
   <div class="hint" id="hint"></div>
   <div class="zoom">
@@ -328,7 +337,7 @@
   </section>
 
   <footer class="credit">
-    © 2026 Jost von Harleßem ·
+    © 2026 sonarkon ·
     <a href="https://github.com/sonarkon/Kerf-Pattern-Generator" target="_blank" rel="noopener" data-i18n="credit.link"></a> ·
     <a href="#" id="resetLink" data-i18n="reset"></a>
   </footer>
@@ -361,7 +370,7 @@ const STR = {
     'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
     'hint': 'Drag = pan · Wheel = zoom', 'hint3d': 'Drag = rotate · Right-drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
-    'view.aria': 'Preview', 'view.cut': 'Cut', 'view.flex': 'Flex', 'view.3d': '3D',
+    'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex heatmap',
     'bend': 'Bend', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
@@ -416,7 +425,7 @@ const STR = {
     'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
     'fi.solid': 'In places the slots don’t overlap or are removed – it will barely bend there.',
     'fi.counts': (over, rigid) => `${over} slots above the limit · ${rigid} rigid`,
-    'fi.useFlex': 'Switch the preview to “Flex” to see where.',
+    'fi.useFlex': 'Turn on the Flex heatmap (thermometer, top right) to see where.',
     'fi.lg.ok': 'good', 'fi.lg.warn': 'borderline', 'fi.lg.bad': 'too high', 'fi.lg.rigid': 'rigid',
     'fi.rough': 'Rough estimate (torsion of the bridges); no substitute for a test strip.',
     'info.cuts': 'Cuts', 'info.cols': 'Columns', 'info.seam': g => `Seamless: horizontal gap ${g} mm`,
@@ -463,7 +472,7 @@ const STR = {
     'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
-    'view.aria': 'Vorschau', 'view.cut': 'Schnitt', 'view.flex': 'Flex', 'view.3d': '3D',
+    'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap',
     'bend': 'Biegung', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
@@ -518,7 +527,7 @@ const STR = {
     'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
     'fi.solid': 'Stellenweise überlappen die Schlitze nicht oder fehlen – dort biegt es sich kaum.',
     'fi.counts': (over, rigid) => `${over} Schlitze über dem Limit · ${rigid} starr`,
-    'fi.useFlex': 'Vorschau auf „Flex“ stellen, um zu sehen wo.',
+    'fi.useFlex': 'Flex-Heatmap einschalten (Thermometer oben rechts), um zu sehen wo.',
     'fi.lg.ok': 'gut', 'fi.lg.warn': 'grenzwertig', 'fi.lg.bad': 'zu hoch', 'fi.lg.rigid': 'starr',
     'fi.rough': 'Grobe Abschätzung (Torsion der Stege), ersetzt keinen Teststreifen.',
     'info.cuts': 'Schnitte', 'info.cols': 'Spalten', 'info.seam': g => `Nahtlos: Steg horizontal ${g} mm`,
@@ -1393,10 +1402,9 @@ function loadImage(file) {
 // ---------------------------------------------------------------- preview
 const view = $('view'), stage = $('stage');
 let zoom = 1, panX = 0, panY = 0, last = null;
-let viewMode = 'cut';
-try { viewMode = localStorage.getItem('kerf-view') || 'cut'; } catch (e) {}
-if (viewMode === 'light') viewMode = 'cut';   // the old light view is now cut + lamp
-if (!['cut', 'flex', '3d'].includes(viewMode)) viewMode = 'cut';
+let viewMode = '2d', legacyView = null;
+try { viewMode = localStorage.getItem('kerf-view') || '2d'; } catch (e) {}
+if (viewMode !== '3d') { legacyView = viewMode; viewMode = '2d'; }   // cut / light / flex from older versions
 document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
@@ -1437,13 +1445,14 @@ function render() {
     $('flexInfo').innerHTML = '';
     return;
   }
-  let vm = p.mode === 'test' ? 'cut' : viewMode;
-  if (vm === 'cut' && view3d.lamp && p.mode !== 'test') vm = 'light';
-  const is3d = vm === '3d';
-  view.classList.toggle('dark', vm === 'light');
+  // 2D/3D plus an overlay: lamp light or flex heatmap
+  const test = p.mode === 'test', ov = test ? null : view3d.overlay;
+  const is3d = !test && viewMode === '3d';
+  const vm = is3d ? '3d' : ov === 'light' ? 'light' : ov === 'flex' ? 'flex' : 'cut';
+  view.classList.toggle('dark', ov === 'light');
   view.classList.toggle('is3d', is3d);
   $('three').hidden = $('bendCtl').hidden = !is3d;
-  $('lampCtl').hidden = vm === 'flex' || p.mode === 'test';
+  $('overlayCtl').hidden = test;
   stage.hidden = is3d;
   $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
   $('hint').textContent = t(is3d ? 'hint3d' : 'hint');
@@ -1466,9 +1475,16 @@ const MAT_COLORS = { pmma: 0xf3efe6, petg: 0xe6ecef, plywood: 0xd8b98a, mdf: 0xa
 const MAT_OPACITY = { pmma: 0.4, petg: 0.55 };
 const SEG_X = 360;   // segments around the circumference
 let three = null, threeLoading = null, buildToken = 0, buildTimer = null;
-let view3d = { bend: 100, lamp: false };
-try { Object.assign(view3d, JSON.parse(localStorage.getItem('kerf-3d')) || {}); } catch (e) {}
-$('bend').value = view3d.bend; $('lampOn').checked = view3d.lamp;
+let view3d = { bend: 100, overlay: null };
+try {
+  const saved = JSON.parse(localStorage.getItem('kerf-3d')) || {};
+  if (!('overlay' in saved)) saved.overlay = legacyView === 'flex' ? 'flex' : saved.lamp || legacyView === 'light' ? 'light' : null;
+  delete saved.lamp;
+  Object.assign(view3d, saved);
+} catch (e) {}
+$('bend').value = view3d.bend;
+$('lampOn').checked = view3d.overlay === 'light';
+$('flexOn').checked = view3d.overlay === 'flex';
 
 function loadScript(src) {
   return new Promise((res, rej) => {
@@ -1526,10 +1542,11 @@ function resize3d() {
 // A part keeps its unbent coordinates as (x, y, d): x along the width
 // (centred), y up, d across the thickness (+ = outside). bendParts() maps
 // them onto the current bend.
-function makePart(flat, uv, index, material) {
+function makePart(flat, uv, index, material, colors) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(flat.length), 3));
   if (uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
+  if (colors) g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
   if (index) g.setIndex(index);
   const mesh = new THREE.Mesh(g, material);
   three.group.add(mesh);
@@ -1548,11 +1565,15 @@ function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
   }
   return makePart(flat, uv, index, material);
 }
-// Walls along every slot outline, sampled from the cut paths.
-function wallFlat(doc, th) {
-  const W = doc.w, H = doc.h, out = [], a = -th / 2, b = th / 2;
-  for (const src of doc.cuts) {
-    sampler.innerHTML = src;
+// Walls along every slot outline, sampled from the cut paths. Each wall also
+// gets its slot's heat colour (used by the flex overlay).
+function wallFlat(p, doc) {
+  const W = doc.w, H = doc.h, a = -p.thick / 2, b = p.thick / 2, out = [], cols = [];
+  const dMid = midDiameter(p), mat = MATERIALS[p.material], c = new THREE.Color();
+  const items = doc.recs.length ? doc.recs : doc.cuts.map(src => ({ els: [src] }));
+  for (const rec of items) {
+    c.set(rec.kf !== undefined || rec.rigid ? heatColor(rec, dMid, mat) : HEAT.none);
+    sampler.innerHTML = rec.els.join('');
     for (const el of sampler.children) {
       const len = el.getTotalLength();
       if (!(len > 0)) continue;
@@ -1567,12 +1588,14 @@ function wallFlat(doc, th) {
       for (let i = 0; i < pts.length - 1; i++) {
         const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
         out.push(x0, y0, a, x0, y0, b, x1, y1, b, x0, y0, a, x1, y1, b, x1, y1, a);
+        for (let k = 0; k < 6; k++) cols.push(c.r, c.g, c.b);
       }
     }
   }
-  return out;
+  return { out, cols };
 }
-function buildParts(doc, th) {
+function buildParts(p, doc) {
+  const th = p.thick;
   for (const prt of three.parts) { prt.mesh.geometry.dispose(); three.group.remove(prt.mesh); }
   three.parts = [];
   const W = doc.w, H = doc.h, t2 = Math.max(0.01, th / 2);
@@ -1584,8 +1607,8 @@ function buildParts(doc, th) {
     const x = sx * W / 2, u = sx < 0 ? 0 : 1;
     makePart([x, -H / 2, -t2, x, H / 2, -t2, x, -H / 2, t2, x, H / 2, t2], [u, 0, u, 1, u, 0, u, 1], [0, 2, 1, 1, 2, 3], three.shellMat);
   }
-  const walls = wallFlat(doc, th);
-  if (walls.length) makePart(walls, null, null, three.wallMat);
+  const walls = wallFlat(p, doc);
+  if (walls.out.length) makePart(walls.out, null, null, three.wallMat, walls.cols);
   three.glow = stripPart(W, -H / 2, H / 2, t2 + 0.05, t2 + 0.05, 0, 1, three.glowMat);
 }
 // Returns the cylinder axis position (z) for the lamp.
@@ -1606,10 +1629,15 @@ function bendParts(W, bend) {
   }
   return R ? -R : null;
 }
-function styleMaterial(m, p, lampOn, masked) {
-  const op = MAT_OPACITY[p.material] ?? 1;
+function styleMaterial(m, p, lampOn, masked, flexOn) {
+  // the heatmap is shown on an opaque, white-lit surface so the colours read true
+  const op = flexOn ? 1 : MAT_OPACITY[p.material] ?? 1;
   if (m.transparent !== op < 1) m.needsUpdate = true;
-  m.color.setHex(MAT_COLORS[p.material] || 0xeeeeee);
+  if (masked) {
+    const map = flexOn ? three.heatTex : null;
+    if (m.map !== map) { m.map = map; m.needsUpdate = true; }
+  } else if (m.vertexColors !== flexOn) { m.vertexColors = flexOn; m.needsUpdate = true; }
+  m.color.setHex(flexOn ? 0xffffff : MAT_COLORS[p.material] || 0xeeeeee);
   m.transparent = op < 1;
   m.opacity = op;
   if (masked) m.alphaTest = op / 2;   // the mask is multiplied by opacity before the test
@@ -1619,7 +1647,7 @@ function styleMaterial(m, p, lampOn, masked) {
 }
 function apply3dScene(p, doc, refit) {
   if (!three.parts.length) return;
-  const W = doc.w, H = doc.h, lampOn = view3d.lamp;
+  const W = doc.w, H = doc.h, lampOn = view3d.overlay === 'light', flexOn = view3d.overlay === 'flex';
   $('bendVal').textContent = view3d.bend + ' %';
   const axis = bendParts(W, view3d.bend / 100);
   const axisZ = axis == null ? -H : Math.max(axis, -Math.max(W, H));
@@ -1632,8 +1660,8 @@ function apply3dScene(p, doc, refit) {
   three.bulb.position.set(0, 0, axisZ);
   three.bulb.scale.setScalar(Math.max(2, Math.min(W / Math.PI, H) * 0.06));
   three.glow.mesh.visible = lampOn && !!three.glowMat.map;
-  styleMaterial(three.shellMat, p, lampOn, true);
-  styleMaterial(three.wallMat, p, lampOn, false);
+  styleMaterial(three.shellMat, p, lampOn, true, flexOn);
+  styleMaterial(three.wallMat, p, lampOn, false, flexOn);
   const size = `${W}x${H}`;
   if (refit || three.size !== size) {
     // fit to the bent shape's actual extent
@@ -1695,13 +1723,36 @@ function setTexture(mat, key, canvas) {
   mat[key] = tex;
   mat.needsUpdate = true;
 }
+function buildHeat(p, doc) {
+  return new Promise(resolve => {
+    const W = doc.w, H = doc.h, s = Math.min(6, 2048 / W, 2048 / H);
+    const dMid = midDiameter(p), mat = MATERIALS[p.material], halo = Math.max(0.6, p.gapX);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
+      `<rect width="${W}" height="${H}" fill="#d9d4ca"/>` +
+      doc.recs.map(r => { const c = heatColor(r, dMid, mat); return `<g fill="${c}" stroke="${c}" stroke-width="${halo}" stroke-linejoin="round">${r.els.join('')}</g>`; }).join('') +
+      `</svg>`;
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    const im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const cv = document.createElement('canvas');
+      cv.width = im.width; cv.height = im.height;
+      cv.getContext('2d').drawImage(im, 0, 0);
+      resolve(cv);
+    };
+    im.src = url;
+  });
+}
 async function rebuild3d(p, doc) {
   const token = ++buildToken;
-  const masks = await buildMasks(doc);
+  const [masks, heat] = await Promise.all([buildMasks(doc), buildHeat(p, doc)]);
   if (token !== buildToken) return;
-  buildParts(doc, p.thick);
+  buildParts(p, doc);
   setTexture(three.shellMat, 'alphaMap', masks.mask);
   setTexture(three.glowMat, 'map', masks.glow);
+  if (three.heatTex) three.heatTex.dispose();
+  three.heatTex = new THREE.CanvasTexture(heat);
+  if (three.shellMat.map) { three.shellMat.map = null; three.shellMat.needsUpdate = true; }
   apply3dScene(p, doc, false);
 }
 function show3d(p, doc) {
@@ -1719,11 +1770,17 @@ $('bend').addEventListener('input', () => {
   view3d.bend = +$('bend').value; save3d();
   if (three && last) apply3dScene(last.p, last.doc, false);
 });
-$('lampOn').addEventListener('change', () => {
-  view3d.lamp = $('lampOn').checked; save3d();
-  if (view.classList.contains('is3d') && three && last) apply3dScene(last.p, last.doc, false);
+// light and flex are exclusive overlays
+function setOverlay(ov) {
+  view3d.overlay = ov;
+  $('lampOn').checked = ov === 'light';
+  $('flexOn').checked = ov === 'flex';
+  save3d();
+  if (view.classList.contains('is3d') && three && last) { apply3dScene(last.p, last.doc, false); renderInfo(last.p, last.doc); }
   else render();
-});
+}
+$('lampOn').addEventListener('change', () => setOverlay($('lampOn').checked ? 'light' : null));
+$('flexOn').addEventListener('change', () => setOverlay($('flexOn').checked ? 'flex' : null));
 
 function renderInfo(p, doc) {
   const mat = MATERIALS[p.material], dm = midDiameter(p), matName = t('mat.' + p.material);
@@ -1749,12 +1806,12 @@ function renderInfo(p, doc) {
         `</div>`;
       if (p.mode === 'creative' && (fs.over || fs.rigid)) {
         html += `<p class="${fs.over ? 'bad' : 'warn'}">${esc(t('fi.counts', fs.over, fs.rigid))}</p>`;
-        if (viewMode !== 'flex') html += `<p>${esc(t('fi.useFlex'))}</p>`;
+        if (view3d.overlay !== 'flex') html += `<p>${esc(t('fi.useFlex'))}</p>`;
       }
       if (fs.status[0] !== 'ok') html += `<p>${esc(t('fi.softer'))}</p>`;
       if (doc.flex.solid && p.mode !== 'creative') html += `<p class="warn">${esc(t('fi.solid'))}</p>`;
     }
-    if (viewMode === 'flex') html += `<div class="legend">${['ok', 'warn', 'bad', 'rigid'].map(k => `<span><i style="background:${HEAT[k]}"></i>${esc(t('fi.lg.' + k))}</span>`).join('')}</div>`;
+    if (view3d.overlay === 'flex') html += `<div class="legend">${['ok', 'warn', 'bad', 'rigid'].map(k => `<span><i style="background:${HEAT[k]}"></i>${esc(t('fi.lg.' + k))}</span>`).join('')}</div>`;
   }
   const note = STR[lang]['note.' + p.material];
   if (note) html += `<p>${esc(note)}</p>`;
@@ -1809,7 +1866,7 @@ view.addEventListener('wheel', e => {
 
 let drag = null;
 view.addEventListener('pointerdown', e => {
-  if (e.target.closest('.zoom, .viewbar, .lampbtn') || view.classList.contains('is3d')) return;
+  if (e.target.closest('.zoom, .viewbar, .toggles') || view.classList.contains('is3d')) return;
   drag = { x: e.clientX - panX, y: e.clientY - panY };
   view.setPointerCapture(e.pointerId);
   view.classList.add('dragging');
