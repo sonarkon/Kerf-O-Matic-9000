@@ -20,6 +20,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
 - Side margins, optional outer border, 90° rotated output.
 - **All parameters saved in the file**: in the file name, as a separate *Parameters* layer, and as metadata. *Load parameters…* restores everything from a saved SVG.
+- Optional **project name**: used as the file-name prefix and as the first line of the parameter layer.
 - Shapes: stadium, **dogbone** (round relief holes at the slot ends), **S-slot** (constant width, exact arcs), line, meander, ellipse, rectangle, diamond, hexagon, chevron, cross.
 - English and German UI.
 

@@ -34,6 +34,10 @@
     padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
   header .seg { width: 240px; }
+  header .project {
+    font: inherit; color: var(--text); background: var(--input);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; width: 260px; min-width: 0;
+  }
   header .actions { margin-left: auto; display: flex; gap: 8px; }
   header #lang { width: auto; }
   .panel {
@@ -116,6 +120,7 @@
     }
     header { flex-wrap: wrap; gap: 10px; }
     header .seg { width: 100%; order: 3; }
+    header .project { width: 100%; order: 2; }
     #design { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
     main { min-height: 0; }
     .hint { display: none; }
@@ -125,6 +130,7 @@
 <body>
 <header>
   <h1 data-i18n="title"></h1>
+  <input type="text" id="project" class="project" maxlength="80" data-i18n-placeholder="project.ph" data-i18n-aria="project">
   <div class="seg" role="radiogroup" data-i18n-aria="mode.aria">
     <label><input type="radio" name="mode" value="pattern" checked> <span data-i18n="mode.pattern"></span></label>
     <label><input type="radio" name="mode" value="test"> <span data-i18n="mode.test"></span></label>
@@ -272,6 +278,7 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 const STR = {
   en: {
     'title': 'Kerf Pattern Generator',
+    'project': 'Project name', 'project.ph': 'Project name (optional)',
     'mode.aria': 'Mode', 'mode.pattern': 'Pattern', 'mode.test': 'Test strips',
     'load': 'Load parameters…', 'save': 'Save SVG',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
@@ -348,10 +355,12 @@ const STR = {
     'pl.edges': (m, open, border) => `Side margin: ${m} mm · Open edges: ${open ? 'yes' : 'no'} · Outer border: ${border ? 'yes' : 'no'}`,
     'pl.order': o => `Cut order: ${o}`,
     'pl.flex': (e, st, d) => `Flex (guide value): ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
+    'pl.project': n => `Project: ${n}`,
     'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d}`
   },
   de: {
     'title': 'Kerf-Muster Generator',
+    'project': 'Projektname', 'project.ph': 'Projektname (optional)',
     'mode.aria': 'Modus', 'mode.pattern': 'Muster', 'mode.test': 'Teststreifen',
     'load': 'Parameter laden…', 'save': 'SVG speichern',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
@@ -428,6 +437,7 @@ const STR = {
     'pl.edges': (m, open, border) => `Rand links/rechts: ${m} mm · Ränder offen: ${open ? 'ja' : 'nein'} · Außenkontur: ${border ? 'ja' : 'nein'}`,
     'pl.order': o => `Schnittreihenfolge: ${o}`,
     'pl.flex': (e, st, d) => `Flex (Richtwert): ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
+    'pl.project': n => `Projekt: ${n}`,
     'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d}`
   }
 };
@@ -442,6 +452,7 @@ function applyLang() {
   $('lang').value = lang;
   document.title = t('title');
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
   for (const o of $('shape').options) o.textContent = t('shape.' + o.value);
   for (const o of $('material').options) o.textContent = t('mat.' + o.value);
@@ -558,6 +569,7 @@ function readParams() {
   for (const k of NUM) p[k] = parseFloat($(k).value) || 0;
   for (const k of SEL) p[k] = $(k).value;
   for (const k of CHK) p[k] = $(k).checked;
+  p.project = $('project').value.trim();
   p.testCount = clamp(Math.round(p.testCount), 2, 30);
   return p;
 }
@@ -566,6 +578,7 @@ function writeParams(p) {
   for (const k of NUM) if (p[k] != null) $(k).value = p[k];
   for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
   for (const k of CHK) if (p[k] != null) $(k).checked = !!p[k];
+  if (p.project != null) $('project').value = p.project;
   syncDiameter();
 }
 
@@ -873,6 +886,7 @@ function flexSummary(p, doc) {
 function paramLines(p, doc) {
   const dm = midDiameter(p), th = p.thick;
   const L = [];
+  if (p.project) L.push(t('pl.project', p.project));
   if (p.mode === 'test') {
     L.push(t('pl.test', t('p.' + p.testParam), fmt(p.testFrom), fmt(p.testTo), p.testCount));
     L.push(t('pl.strip', fmt(p.testW), fmt(p.testH), LABEL_ZONE));
@@ -903,8 +917,17 @@ function paramLines(p, doc) {
   return L;
 }
 
+// File-name safe project slug: transliterate umlauts, keep [a-z0-9-].
+function slug(s) {
+  return s.toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
 function fileName(p, doc) {
   const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', p.shape.toLowerCase(), p.material];
+  const proj = slug(p.project || '');
+  if (proj) parts.unshift(proj);
   if (p.mode === 'test') {
     parts.push(`${TEST_SHORT[p.testParam]}${fmt(p.testFrom)}-${fmt(p.testTo)}x${p.testCount}`, `${fmt(p.testW)}x${fmt(p.testH)}x${fmt(p.thick)}mm`);
   } else {
@@ -941,7 +964,7 @@ function buildSVG(p, doc) {
   const out = [];
   out.push('<?xml version="1.0" encoding="UTF-8"?>');
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${f(W)}mm" height="${f(totalH)}mm" viewBox="0 0 ${f(W)} ${f(totalH)}">`);
-  out.push(`  <title>${esc(fileName(p, doc))}</title>`);
+  out.push(`  <title>${esc(p.project || fileName(p, doc))}</title>`);
   out.push(`  <desc>${esc(lines.join(' | '))}</desc>`);
   out.push(`  <metadata id="kerf-params">${esc(JSON.stringify({ generator: 'kerf-generator', unit: 'mm', ...meta }))}</metadata>`);
   out.push(`  <g id="cuts" inkscape:groupmode="layer" inkscape:label="${t('layer.cuts')}" stroke="#ff0000" stroke-width="0.1" fill="none"${tr}>`);
@@ -1096,7 +1119,7 @@ $('boardW').addEventListener('input', syncDiameter);
 $('thick').addEventListener('input', syncDiameter);
 $('diaRef').addEventListener('input', syncDiameter);
 $('diameter').addEventListener('input', diameterChanged);
-document.querySelectorAll('.panel input, .panel select').forEach(el => el.addEventListener('input', render));
+document.querySelectorAll('.panel input, .panel select, #project').forEach(el => el.addEventListener('input', render));
 document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', () => { zoom = 1; panX = panY = 0; render(); }));
 
 $('saveBtn').onclick = () => {
