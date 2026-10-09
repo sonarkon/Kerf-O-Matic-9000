@@ -120,7 +120,17 @@
   #stage { position: absolute; left: 0; top: 0; }
   #stage svg { display: block; overflow: visible; }
   #stage svg .cuts *, #stage svg .boards * { vector-effect: non-scaling-stroke; }
-  .viewseg { position: absolute; left: 12px; top: 12px; width: 240px; }
+  .viewseg { position: absolute; left: 12px; top: 12px; width: 300px; z-index: 2; }
+  #three { position: absolute; inset: 0; }
+  #three canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  .threemsg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; pointer-events: none; }
+  .bendctl {
+    position: absolute; left: 12px; top: 56px; z-index: 2; display: flex; gap: 14px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
+  }
+  .bendctl > label:first-child { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 12px; }
+  .bendctl input[type=range] { width: 150px; accent-color: var(--accent); }
+  .bendctl output { min-width: 38px; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); }
   .viewseg label { padding: 5px; font-size: 12px; }
   .zoom {
     position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; align-items: center;
@@ -260,8 +270,14 @@
     <label><input type="radio" name="view" value="cut" checked> <span data-i18n="view.cut"></span></label>
     <label><input type="radio" name="view" value="light"> <span data-i18n="view.light"></span></label>
     <label><input type="radio" name="view" value="flex"> <span data-i18n="view.flex"></span></label>
+    <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
   </div>
-  <div class="hint" data-i18n="hint"></div>
+  <div id="three" hidden><div class="threemsg" id="threeMsg"></div></div>
+  <div class="bendctl" id="bendCtl" hidden>
+    <label><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
+    <label class="check"><input type="checkbox" id="lampOn" checked> <span data-i18n="lamp"></span></label>
+  </div>
+  <div class="hint" id="hint"></div>
   <div class="zoom">
     <button id="zOut" data-i18n-aria="zoomOut">−</button>
     <span id="zLabel">100%</span>
@@ -330,8 +346,9 @@ const STR = {
     'sec.test': 'Test strips', 'testParam': 'Varied parameter', 'testFrom': 'From (mm)', 'testTo': 'To (mm)',
     'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
-    'hint': 'Drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
-    'view.aria': 'Preview', 'view.cut': 'Cut', 'view.light': 'Light', 'view.flex': 'Flex',
+    'hint': 'Drag = pan · Wheel = zoom', 'hint3d': 'Drag = rotate · Right-drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
+    'view.aria': 'Preview', 'view.cut': 'Cut', 'view.light': 'Light', 'view.flex': 'Flex', 'view.3d': '3D',
+    'bend': 'Bend', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
@@ -431,8 +448,9 @@ const STR = {
     'sec.test': 'Teststreifen', 'testParam': 'Variierter Parameter', 'testFrom': 'Von (mm)', 'testTo': 'Bis (mm)',
     'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
-    'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
-    'view.aria': 'Vorschau', 'view.cut': 'Schnitt', 'view.light': 'Licht', 'view.flex': 'Flex',
+    'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
+    'view.aria': 'Vorschau', 'view.cut': 'Schnitt', 'view.light': 'Licht', 'view.flex': 'Flex', 'view.3d': '3D',
+    'bend': 'Biegung', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
@@ -1300,6 +1318,7 @@ function renderCreativeUI() {
     } else if (m.source === 'wave') {
       h += numField('mods', i, 'angle', t('mod.angle'), m.angle, 'step="15"') + numField('mods', i, 'period', t('mod.period'), m.period, 'min="1" step="5"');
       h += numField('mods', i, 'phase', t('mod.phase'), m.phase, 'step="15"');
+      h += `<div class="desc span2">${esc(t('mod.angleHint'))}</div>`;
     } else if (m.source === 'noise') {
       h += numField('mods', i, 'scale', t('mod.scale'), m.scale, 'min="1" step="5"') + numField('mods', i, 'seed', t('mod.seed'), m.seed, 'step="1"');
     } else if (m.source === 'image') {
@@ -1318,6 +1337,8 @@ function creativeInput(e) {
   if (el.type === 'checkbox') item[k] = el.checked;
   else if (el.type === 'number') item[k] = el.value === '' ? null : parseFloat(el.value);
   else item[k] = el.value;
+  // waves along the height barely show between the rows; start them across the circumference
+  if (k === 'source' && item.source === 'wave' && item.angle === 90) item.angle = 0;
   if (el.hasAttribute('data-rebuild')) renderCreativeUI();
   render();
 }
@@ -1359,7 +1380,8 @@ const view = $('view'), stage = $('stage');
 let zoom = 1, panX = 0, panY = 0, last = null;
 let viewMode = 'cut';
 try { viewMode = localStorage.getItem('kerf-view') || 'cut'; } catch (e) {}
-document.querySelector(`input[name=view][value=${['cut', 'light', 'flex'].includes(viewMode) ? viewMode : 'cut'}]`).checked = true;
+if (!['cut', 'light', 'flex', '3d'].includes(viewMode)) viewMode = 'cut';
+document.querySelector(`input[name=view][value=${viewMode}]`).checked = true;
 
 function previewInner(p, doc, vm) {
   const boards = doc.boards.map(b => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
@@ -1400,12 +1422,170 @@ function render() {
     return;
   }
   const vm = p.mode === 'test' ? 'cut' : viewMode;
+  const is3d = vm === '3d';
   view.classList.toggle('dark', vm === 'light');
+  view.classList.toggle('is3d', is3d);
+  $('three').hidden = $('bendCtl').hidden = !is3d;
+  stage.hidden = is3d;
+  $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
+  $('hint').textContent = t(is3d ? 'hint3d' : 'hint');
+  renderInfo(p, doc);
+  if (is3d) { show3d(p, doc); return; }
   const [W, H] = outerSize(doc);
   stage.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}"><g${rotTransform(doc)}>${previewInner(p, doc, vm)}</g></svg>`;
-  renderInfo(p, doc);
   layout();
 }
+
+// ---------------------------------------------------------------- 3D preview
+// three.js is loaded on first use. The board is a plane bent around the
+// vertical axis (bend 100 % = closed cylinder); the cut pattern becomes an
+// alpha mask, so slots are real holes and an optional lamp shines through.
+const THREE_BASE = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
+const MAT_COLORS = { pmma: 0xf3efe6, petg: 0xe6ecef, plywood: 0xd8b98a, mdf: 0xa98563 };
+let three = null, threeLoading = null, maskToken = 0, maskTimer = null;
+let view3d = { bend: 100, lamp: true };
+try { Object.assign(view3d, JSON.parse(localStorage.getItem('kerf-3d')) || {}); } catch (e) {}
+$('bend').value = view3d.bend; $('lampOn').checked = view3d.lamp;
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = res; el.onerror = rej;
+    document.head.append(el);
+  });
+}
+function ensureThree() {
+  if (!threeLoading) threeLoading = (async () => {
+    await loadScript(THREE_BASE + 'build/three.min.js');
+    await loadScript(THREE_BASE + 'examples/js/controls/OrbitControls.js');
+    initThree();
+  })();
+  return threeLoading;
+}
+function initThree() {
+  const el = $('three');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  el.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 1, 20000);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x555555, 0.9);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+  dir.position.set(0.6, 1, 1.4);
+  const lamp = new THREE.PointLight(0xffb45e, 2.4, 0, 1);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe6b0 }));
+  const mat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, alphaTest: 0.5, roughness: 0.55, metalness: 0 });
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), mat);
+  scene.add(hemi, dir, lamp, bulb, mesh);
+  three = { renderer, scene, camera, controls, hemi, dir, lamp, bulb, mat, mesh, size: '' };
+  new ResizeObserver(resize3d).observe(el);
+  resize3d();
+  (function loop() {
+    requestAnimationFrame(loop);
+    if (!el.hidden) { controls.update(); renderer.render(scene, camera); }
+  })();
+}
+function resize3d() {
+  if (!three) return;
+  const r = $('three').getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  three.renderer.setSize(r.width, r.height, false);
+  three.camera.aspect = r.width / r.height;
+  three.camera.updateProjectionMatrix();
+}
+// Plane W × H bent so its width wraps bend·360° around a vertical axis.
+// Returns the cylinder axis position (z) for the lamp.
+function bendGeometry(W, H, bend) {
+  const g = new THREE.PlaneGeometry(W, H, 240, 1), pos = g.attributes.position;
+  const theta = bend * 2 * Math.PI;
+  let axisZ = -H;
+  if (theta > 1e-4) {
+    const R = W / theta;
+    for (let i = 0; i < pos.count; i++) {
+      const phi = pos.getX(i) / R;
+      pos.setXYZ(i, R * Math.sin(phi), pos.getY(i), R * Math.cos(phi) - R);
+    }
+    axisZ = -R;
+  }
+  g.computeVertexNormals();
+  three.mesh.geometry.dispose();
+  three.mesh.geometry = g;
+  return Math.max(axisZ, -Math.max(W, H));
+}
+function apply3dScene(p, doc, refit) {
+  const W = doc.w, H = doc.h, bend = view3d.bend / 100;
+  $('bendVal').textContent = view3d.bend + ' %';
+  const axisZ = bendGeometry(W, H, bend);
+  const lampOn = view3d.lamp;
+  three.scene.background = new THREE.Color(lampOn ? 0x0f0d0c : 0xe8e5de);
+  three.hemi.intensity = lampOn ? 0.22 : 0.9;
+  three.dir.intensity = lampOn ? 0.08 : 0.6;
+  three.lamp.intensity = lampOn ? 2.4 : 0;
+  three.lamp.position.set(0, 0, axisZ);
+  three.bulb.visible = lampOn;
+  three.bulb.position.set(0, 0, axisZ);
+  three.bulb.scale.setScalar(Math.max(2, Math.min(W / Math.PI, H) * 0.06));
+  three.mat.color.setHex(MAT_COLORS[p.material] || 0xeeeeee);
+  three.mat.emissive.setHex(lampOn && p.material === 'pmma' ? 0x3a2410 : 0x000000);
+  const size = `${W}x${H}`;
+  if (refit || three.size !== size) {
+    // fit to the bent shape's actual extent
+    three.size = size;
+    const g = three.mesh.geometry;
+    g.computeBoundingBox();
+    const bb = g.boundingBox, cz = (bb.min.z + bb.max.z) / 2;
+    const tanV = Math.tan(three.camera.fov * Math.PI / 360);
+    const fitV = (H / 2) / tanV, fitH = ((bb.max.x - bb.min.x) / 2) / (tanV * three.camera.aspect);
+    const d = Math.max(fitV, fitH) * 1.25 + (bb.max.z - cz);   // measured from the front-most surface
+    three.controls.target.set(0, 0, cz);
+    three.camera.position.set(d * 0.25, H * 0.25, cz + d);
+    three.camera.near = d / 100; three.camera.far = d * 20;
+    three.camera.updateProjectionMatrix();
+  }
+}
+// Rasterise the cuts (black on white) into the alpha mask, ≤ 4096 px.
+function updateMask(doc) {
+  const token = ++maskToken;
+  const W = doc.w, H = doc.h, s = Math.min(10, 4096 / W, 4096 / H);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
+    `<rect width="${W}" height="${H}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="0.25">${doc.cuts.join('')}</g></svg>`;
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  const im = new Image();
+  im.onload = () => {
+    URL.revokeObjectURL(url);
+    if (token !== maskToken) return;
+    const cv = document.createElement('canvas');
+    cv.width = im.width; cv.height = im.height;
+    cv.getContext('2d').drawImage(im, 0, 0);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.anisotropy = three.renderer.capabilities.getMaxAnisotropy();
+    if (three.mat.alphaMap) three.mat.alphaMap.dispose();
+    three.mat.alphaMap = tex;
+    three.mat.needsUpdate = true;
+  };
+  im.src = url;
+}
+function show3d(p, doc) {
+  $('threeMsg').textContent = three ? '' : t('three.loading');
+  ensureThree().then(() => {
+    $('threeMsg').textContent = '';
+    resize3d();
+    apply3dScene(p, doc, false);
+    clearTimeout(maskTimer);
+    maskTimer = setTimeout(() => updateMask(doc), 120);
+  }).catch(() => { $('threeMsg').textContent = t('three.fail'); threeLoading = null; });
+}
+function save3d() { try { localStorage.setItem('kerf-3d', JSON.stringify(view3d)); } catch (e) {} }
+$('bend').addEventListener('input', () => {
+  view3d.bend = +$('bend').value; save3d();
+  if (three && last) apply3dScene(last.p, last.doc, false);
+});
+$('lampOn').addEventListener('change', () => {
+  view3d.lamp = $('lampOn').checked; save3d();
+  if (three && last) apply3dScene(last.p, last.doc, false);
+});
 
 function renderInfo(p, doc) {
   const mat = MATERIALS[p.material], dm = midDiameter(p), matName = t('mat.' + p.material);
@@ -1478,16 +1658,20 @@ function setZoom(z, cx, cy) {
 
 $('zIn').onclick = () => setZoom(zoom * 1.4);
 $('zOut').onclick = () => setZoom(zoom / 1.4);
-$('zFit').onclick = () => { zoom = 1; panX = panY = 0; layout(); };
+$('zFit').onclick = () => {
+  if (view.classList.contains('is3d')) { if (three && last) apply3dScene(last.p, last.doc, true); return; }
+  zoom = 1; panX = panY = 0; layout();
+};
 view.addEventListener('wheel', e => {
   e.preventDefault();
+  if (view.classList.contains('is3d')) return;
   const r = view.getBoundingClientRect();
   setZoom(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
 
 let drag = null;
 view.addEventListener('pointerdown', e => {
-  if (e.target.closest('.zoom, .viewseg')) return;
+  if (e.target.closest('.zoom, .viewseg, .bendctl') || view.classList.contains('is3d')) return;
   drag = { x: e.clientX - panX, y: e.clientY - panY };
   view.setPointerCapture(e.pointerId);
   view.classList.add('dragging');

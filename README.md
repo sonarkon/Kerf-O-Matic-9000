@@ -4,7 +4,9 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 
 **Live:** https://sonarkon.github.io/Kerf-Pattern-Generator/
 
-![Screenshot](screenshot.jpg)
+![Creative mode with bands and a wave modulator](screenshot.jpg)
+
+![3D preview: bent to a closed cylinder with the lamp on](screenshot-3d.jpg)
 
 ## Features
 
@@ -19,6 +21,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
   - **Modulators**: linear gradient (any angle, optionally mirrored), radial, waves, noise or a greyscale **image** drive slot width, slot length, slot removal or a shape swap. They stack from top to bottom with adjustable strength.
   - The image is stored (downscaled) in the SVG metadata, so a design can be reloaded completely.
 - **Preview views**: *Cut*, *Light* (glowing slots on a dark board – how a lampshade will look) and *Flex* (per-slot strain heatmap: good / borderline / too high / rigid).
+- **3D preview**: the board as a 3D surface with the slots as real holes. A *Bend* slider goes from flat to a closed cylinder, an optional lamp inside shines through, and you can orbit and zoom. three.js is loaded only when the 3D view is opened.
 - **Bendability estimate**: strain in the twisting bridges for the target diameter, computed for every slot-to-slot link, plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 - **Test strips**: a set of coupons that vary one parameter, each with an engraved label (value and min. diameter).
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
