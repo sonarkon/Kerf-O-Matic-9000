@@ -1514,15 +1514,14 @@ function initThree() {
   const dir = new THREE.DirectionalLight(0xffffff, 0.6);
   dir.position.set(0.6, 1, 1.4);
   const lamp = new THREE.PointLight(0xffb45e, 2.4, 0, 1);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe6b0 }));
   const shellMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, alphaTest: 0.5, roughness: 0.55, metalness: 0 });
   const wallMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.55, metalness: 0 });
   // lamp glow: slots light up (additive), drawn just outside the outer surface
   const glowMat = new THREE.MeshBasicMaterial({ color: 0xd98a32, transparent: true, blending: THREE.AdditiveBlending,
     depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
   const group = new THREE.Group();
-  scene.add(hemi, dir, lamp, bulb, group);
-  three = { renderer, scene, camera, controls, hemi, dir, lamp, bulb, shellMat, wallMat, glowMat, group, parts: [], size: '', outer: null, glow: null };
+  scene.add(hemi, dir, lamp, group);
+  three = { renderer, scene, camera, controls, hemi, dir, lamp, shellMat, wallMat, glowMat, group, parts: [], size: '', outer: null, glow: null };
   new ResizeObserver(resize3d).observe(el);
   resize3d();
   (function loop() {
@@ -1656,9 +1655,6 @@ function apply3dScene(p, doc, refit) {
   three.dir.intensity = lampOn ? 0.08 : 0.6;
   three.lamp.intensity = lampOn ? 2.4 : 0;
   three.lamp.position.set(0, 0, axisZ);
-  three.bulb.visible = lampOn;
-  three.bulb.position.set(0, 0, axisZ);
-  three.bulb.scale.setScalar(Math.max(2, Math.min(W / Math.PI, H) * 0.06));
   three.glow.mesh.visible = lampOn && !!three.glowMat.map;
   styleMaterial(three.shellMat, p, lampOn, true, flexOn);
   styleMaterial(three.wallMat, p, lampOn, false, flexOn);
