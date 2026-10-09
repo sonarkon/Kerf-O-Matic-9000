@@ -3,29 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kerf Generator</title>
+<title>Kerf Pattern Generator</title>
 <style>
   :root {
     --bg: #f3f1ec; --panel: #ffffff; --text: #1d1b18; --muted: #6b665e;
     --line: #dcd7cd; --accent: #b4441c; --accent-ink: #fff; --board: #efe0c6;
-    --cut: #c40000; --engrave: #1d1b18; --input: #faf9f6;
+    --cut: #c40000; --engrave: #1d1b18; --input: #faf9f6; --card: #f7f5f0;
     --ok: #2f7d32; --warn: #a66a00; --bad: #c0261b;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #17161a; --panel: #211f24; --text: #ece9e3; --muted: #9b968d;
       --line: #36333a; --accent: #e0703f; --accent-ink: #1a1009; --board: #3a3224;
-      --cut: #ff5a4a; --engrave: #ece9e3; --input: #2a282e;
+      --cut: #ff5a4a; --engrave: #ece9e3; --input: #2a282e; --card: #29272d;
       --ok: #6cc070; --warn: #e3a83a; --bad: #ff6b5e;
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; }
   body {
     background: var(--bg); color: var(--text);
     font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
     display: grid; height: 100vh;
-    grid-template-columns: 300px 1fr 280px;
+    grid-template-columns: 310px 1fr 280px;
     grid-template-rows: auto 1fr;
     grid-template-areas: "header header header" "design view output";
   }
@@ -33,35 +34,44 @@
     grid-area: header; display: flex; align-items: center; gap: 16px;
     padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
-  header .seg { width: 240px; }
+  header .seg { width: auto; flex-shrink: 0; }
+  header .seg label { padding: 7px 14px; white-space: nowrap; }
   header .project {
     font: inherit; color: var(--text); background: var(--input);
-    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; width: 260px; min-width: 0;
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; flex: 0 1 240px; min-width: 120px;
   }
-  header .actions { margin-left: auto; display: flex; gap: 8px; }
-  header #lang { width: auto; }
+  header .actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+  header .actions button { white-space: nowrap; }
+  header #lang { width: auto; padding-right: 22px; }
   .panel {
-    background: var(--panel); padding: 16px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 18px;
+    background: var(--panel); padding: 12px 16px 16px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
   }
   .panel > * { flex-shrink: 0; }
   #design { grid-area: design; border-right: 1px solid var(--line); }
-  #output { grid-area: output; border-left: 1px solid var(--line); }
+  #output { grid-area: output; border-left: 1px solid var(--line); gap: 14px; }
   main { grid-area: view; }
   h1 { font-size: 16px; margin: 0; white-space: nowrap; }
-  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
+  h2, summary { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+  details.sec { border-bottom: 1px solid var(--line); padding: 8px 0 12px; }
+  details.sec:last-of-type { border-bottom: 0; }
+  details.sec > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  details.sec > summary::before { content: "▸"; font-size: 10px; transition: transform .15s; }
+  details.sec[open] > summary::before { transform: rotate(90deg); }
+  details.sec > summary::-webkit-details-marker { display: none; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .span2 { grid-column: 1 / -1; }
   label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
   label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
-  input[type=number], select {
+  input[type=number], input[type=text], select {
     font: inherit; color: var(--text); background: var(--input);
-    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%;
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%; min-width: 0;
   }
   input:disabled, select:disabled { opacity: .55; }
   .checks { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
   .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
   .seg label { flex-direction: row; justify-content: center; padding: 7px; cursor: pointer; color: var(--text); font-size: 13px; }
   .seg input { display: none; }
   .seg label:has(input:checked) { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
@@ -70,6 +80,16 @@
     border: 1px solid var(--line); background: var(--input); color: var(--text);
   }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button.add { width: 100%; margin-top: 8px; padding: 6px; border-style: dashed; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-top: 8px; }
+  .card-head { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+  .card-head span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-head button { padding: 1px 7px; font-size: 12px; line-height: 1.4; }
+  .card .grid2, .card .grid3 { gap: 6px; }
+  .card input, .card select { padding: 4px 6px; font-size: 13px; }
+  .card .imgrow { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+  .card .imgrow button { padding: 4px 8px; font-size: 12px; }
+  .card .imgrow img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); }
   .info {
     font-size: 12px; line-height: 1.5; color: var(--muted);
     background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px;
@@ -81,6 +101,8 @@
   .info td { padding: 1px 4px 1px 0; }
   .info p { margin: 6px 0 0; }
   .info .fine { font-size: 11px; opacity: .8; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 11px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .stats div { display: flex; flex-direction: column; }
   .stats span { font-size: 11px; }
@@ -90,12 +112,16 @@
   .stats strong.bad, .stats em.bad { color: var(--bad); }
   .stats em { font-style: normal; font-size: 11px; }
   .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
-  body.test .pattern-only, body:not(.test) .test-only { display: none; }
+  .credit { margin-top: auto; padding-top: 12px; font-size: 11px; color: var(--muted); }
+  .credit a { color: inherit; }
   main { position: relative; overflow: hidden; cursor: grab; touch-action: none; }
   main.dragging { cursor: grabbing; }
+  main.dark { background: #0f0d0c; }
   #stage { position: absolute; left: 0; top: 0; }
   #stage svg { display: block; overflow: visible; }
   #stage svg .cuts *, #stage svg .boards * { vector-effect: non-scaling-stroke; }
+  .viewseg { position: absolute; left: 12px; top: 12px; width: 240px; }
+  .viewseg label { padding: 5px; font-size: 12px; }
   .zoom {
     position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; align-items: center;
     background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px;
@@ -103,12 +129,13 @@
   .zoom button { padding: 4px 10px; }
   .zoom span { min-width: 48px; text-align: center; font-size: 12px; color: var(--muted); }
   .hint { position: absolute; left: 12px; bottom: 12px; font-size: 12px; color: var(--muted); }
-  @media (max-width: 1000px) {
+  @media (max-width: 1100px) {
     body {
-      grid-template-columns: 300px 1fr; grid-template-rows: auto 1fr auto;
+      grid-template-columns: 310px 1fr; grid-template-rows: auto 1fr auto;
       grid-template-areas: "header header" "design view" "output output";
       height: auto; min-height: 100vh;
     }
+    header { flex-wrap: wrap; }
     main { min-height: 70vh; }
     #design { max-height: calc(70vh + 60px); }
     #output { border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
@@ -118,7 +145,7 @@
       grid-template-columns: 1fr; grid-template-rows: auto auto 60vh auto;
       grid-template-areas: "header" "design" "view" "output";
     }
-    header { flex-wrap: wrap; gap: 10px; }
+    header { gap: 10px; }
     header .seg { width: 100%; order: 3; }
     header .project { width: 100%; order: 2; }
     #design { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
@@ -133,6 +160,7 @@
   <input type="text" id="project" class="project" maxlength="80" data-i18n-placeholder="project.ph" data-i18n-aria="project">
   <div class="seg" role="radiogroup" data-i18n-aria="mode.aria">
     <label><input type="radio" name="mode" value="pattern" checked> <span data-i18n="mode.pattern"></span></label>
+    <label><input type="radio" name="mode" value="creative"> <span data-i18n="mode.creative"></span></label>
     <label><input type="radio" name="mode" value="test"> <span data-i18n="mode.test"></span></label>
   </div>
   <div class="actions">
@@ -144,11 +172,12 @@
     <button class="primary" id="saveBtn" data-i18n="save"></button>
   </div>
   <input type="file" id="loadFile" accept=".svg,image/svg+xml" hidden>
+  <input type="file" id="imgFile" accept="image/*" hidden>
 </header>
 
 <aside id="design" class="panel">
-  <section>
-    <h2 data-i18n="sec.board"></h2>
+  <details class="sec" open>
+    <summary data-i18n="sec.board"></summary>
     <div class="grid2">
       <label><span data-i18n="boardW"></span><input type="number" id="boardW" value="150" min="1" step="0.5"></label>
       <label><span data-i18n="boardH"></span><input type="number" id="boardH" value="100" min="1" step="0.5"></label>
@@ -162,19 +191,20 @@
       </select></label>
     </div>
     <div class="desc" id="diaSummary"></div>
-    <div class="checks pattern-only">
+    <div class="checks" data-modes="pattern creative">
       <label class="check"><input type="checkbox" id="seamless"> <span data-i18n="seamless"></span></label>
     </div>
-  </section>
+  </details>
 
-  <section>
-    <h2 data-i18n="sec.shape"></h2>
+  <details class="sec" open>
+    <summary data-i18n="sec.shape"></summary>
     <select id="shape"></select>
     <div class="desc" id="shapeDesc"></div>
-  </section>
+    <div class="desc warn" id="meanderNote" hidden data-i18n="cr.meanderNote"></div>
+  </details>
 
-  <section>
-    <h2 data-i18n="sec.slot"></h2>
+  <details class="sec" open>
+    <summary data-i18n="sec.slot"></summary>
     <div class="grid2">
       <label><span data-i18n="slotH"></span><input type="number" id="slotH" value="20" min="0.1" step="0.5"></label>
       <label><span data-i18n="slotW"></span><input type="number" id="slotW" value="2" min="0" step="0.1"></label>
@@ -187,27 +217,25 @@
       </select></label>
       <label><span data-i18n="offset"></span><input type="number" id="offset" value="0" step="0.5"></label>
     </div>
-  </section>
+    <div class="desc" data-modes="creative" data-i18n="cr.baseHint"></div>
+  </details>
 
-  <section class="pattern-only">
-    <h2 data-i18n="sec.grad"></h2>
-    <div class="grid2">
-      <label class="span2"><span data-i18n="gradParam"></span><select id="gradParam">
-        <option value="off" data-i18n="grad.off"></option>
-        <option value="gapX" data-i18n="p.gapX"></option>
-        <option value="slotH" data-i18n="p.slotH"></option>
-      </select></label>
-      <label><span data-i18n="gradProfile"></span><select id="gradProfile">
-        <option value="lr" data-i18n="prof.lr"></option>
-        <option value="center" data-i18n="prof.center"></option>
-      </select></label>
-      <label><span data-i18n="gradEnd"></span><input type="number" id="gradEnd" value="4" min="0.1" step="0.1"></label>
-    </div>
-    <div class="desc" id="gradDesc"></div>
-  </section>
+  <details class="sec" open data-modes="creative">
+    <summary data-i18n="sec.bands"></summary>
+    <div class="desc" data-i18n="bands.desc"></div>
+    <div id="bandList"></div>
+    <button class="add" id="addBand" data-i18n="bands.add"></button>
+  </details>
 
-  <section class="test-only">
-    <h2 data-i18n="sec.test"></h2>
+  <details class="sec" open data-modes="creative">
+    <summary data-i18n="sec.mods"></summary>
+    <div class="desc" data-i18n="mods.desc"></div>
+    <div id="modList"></div>
+    <button class="add" id="addMod" data-i18n="mods.add"></button>
+  </details>
+
+  <details class="sec" open data-modes="test">
+    <summary data-i18n="sec.test"></summary>
     <div class="grid2">
       <label class="span2"><span data-i18n="testParam"></span><select id="testParam">
         <option value="gapX" data-i18n="p.gapX"></option>
@@ -223,11 +251,16 @@
       </label>
     </div>
     <div class="desc" data-i18n="testDesc"></div>
-  </section>
+  </details>
 </aside>
 
 <main id="view">
   <div id="stage"></div>
+  <div class="seg viewseg" role="radiogroup" data-modes="pattern creative" data-i18n-aria="view.aria">
+    <label><input type="radio" name="view" value="cut" checked> <span data-i18n="view.cut"></span></label>
+    <label><input type="radio" name="view" value="light"> <span data-i18n="view.light"></span></label>
+    <label><input type="radio" name="view" value="flex"> <span data-i18n="view.flex"></span></label>
+  </div>
   <div class="hint" data-i18n="hint"></div>
   <div class="zoom">
     <button id="zOut" data-i18n-aria="zoomOut">−</button>
@@ -264,6 +297,11 @@
     <h2 data-i18n="sec.file"></h2>
     <div class="info" id="info"></div>
   </section>
+
+  <footer class="credit">
+    © 2026 Jost von Harleßem ·
+    <a href="https://github.com/sonarkon/Kerf-Pattern-Generator" target="_blank" rel="noopener" data-i18n="credit.link"></a>
+  </footer>
 </aside>
 
 <script>
@@ -272,14 +310,14 @@ const f = v => +v.toFixed(4);              // compact number for SVG output
 const fmt = v => String(+(+v).toFixed(3)); // for filenames / labels
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const mod = (a, n) => ((a % n) + n) % n;
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // ---------------------------------------------------------------- i18n
 const STR = {
   en: {
     'title': 'Kerf Pattern Generator',
     'project': 'Project name', 'project.ph': 'Project name (optional)',
-    'mode.aria': 'Mode', 'mode.pattern': 'Pattern', 'mode.test': 'Test strips',
+    'mode.aria': 'Mode', 'mode.pattern': 'Pattern', 'mode.creative': 'Creative', 'mode.test': 'Test strips',
     'load': 'Load parameters…', 'save': 'Save SVG',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
     'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
@@ -288,18 +326,36 @@ const STR = {
     'sec.shape': 'Shape', 'sec.slot': 'Slots',
     'slotH': 'Slot length (mm)', 'slotW': 'Slot width (mm)', 'gapY': 'Vertical gap (mm)', 'gapX': 'Horizontal gap (mm)',
     'offsetMode': 'Vertical offset', 'off.top': 'Top aligned', 'off.center': 'Centered', 'off.custom': 'Custom', 'offset': 'Offset (mm)',
-    'sec.grad': 'Gradient', 'gradParam': 'Parameter', 'grad.off': 'Off',
-    'gradProfile': 'Profile', 'prof.lr': 'Left → right', 'prof.center': 'Center → edges', 'gradEnd': 'End value (mm)',
     'p.gapX': 'Horizontal gap', 'p.slotH': 'Slot length', 'p.gapY': 'Vertical gap', 'p.slotW': 'Slot width',
     'sec.test': 'Test strips', 'testParam': 'Varied parameter', 'testFrom': 'From (mm)', 'testTo': 'To (mm)',
     'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
     'hint': 'Drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
+    'view.aria': 'Preview', 'view.cut': 'Cut', 'view.light': 'Light', 'view.flex': 'Flex',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
     'rotate': 'Rotate output by 90°', 'paramVisible': 'Parameter layer visible',
-    'sec.flex': 'Bendability', 'sec.file': 'File',
+    'sec.flex': 'Bendability', 'sec.file': 'File', 'credit.link': 'Source on GitHub (MIT)',
+
+    'cr.baseHint': 'These values set the grid. Bands and modulators change each slot within it.',
+    'cr.meanderNote': 'Meander is not available in creative mode; Stadium is used instead.',
+    'sec.bands': 'Bands',
+    'bands.desc': 'Horizontal zones from top to bottom, each with its own shape and optional size. Empty fields use the base values. The last band fills the rest.',
+    'bands.add': '+ Add band', 'band.n': i => `Band ${i}`, 'band.height': 'Height (mm)', 'band.shape': 'Shape',
+    'band.w': 'Width (mm)', 'band.l': 'Length (mm)', 'band.rest': 'rest',
+    'sec.mods': 'Modulators',
+    'mods.desc': 'Each modulator maps a source (gradient, waves, noise, image) onto a slot property. They are applied from top to bottom.',
+    'mods.add': '+ Add modulator', 'mod.n': i => `Modulator ${i}`,
+    'mod.target': 'Changes', 'tg.slotW': 'Slot width', 'tg.slotH': 'Slot length', 'tg.skip': 'Remove slots', 'tg.shape': 'Swap shape',
+    'mod.source': 'Source', 'src.linear': 'Linear gradient', 'src.radial': 'Radial', 'src.wave': 'Waves', 'src.noise': 'Noise', 'src.image': 'Image',
+    'mod.from': 'From (mm)', 'mod.to': 'To (mm)', 'mod.strength': 'Strength (%)', 'mod.threshold': 'Threshold (%)',
+    'mod.shapeB': 'New shape', 'mod.invert': 'Invert', 'mod.angle': 'Angle (°)', 'mod.mirror': 'Mirror (center ↔ edges)',
+    'mod.cx': 'Center X (%)', 'mod.cy': 'Center Y (%)', 'mod.radius': 'Radius (mm)', 'mod.period': 'Period (mm)',
+    'mod.phase': 'Phase (°)', 'mod.scale': 'Scale (mm)', 'mod.seed': 'Seed',
+    'mod.pick': 'Choose image…', 'mod.noImage': 'No image yet', 'mod.angleHint': '0° = left → right · 90° = top → bottom',
+    'mod.imgHint': 'Bright = 1, dark = 0. Stretched to the board.',
+    'btn.up': 'Move up', 'btn.down': 'Move down', 'btn.del': 'Remove',
 
     'shape.Stadium': 'Stadium (pill)', 'desc.Stadium': 'Pill shape: one closed path, a rectangle with semicircular ends. First choice for acrylic – round ends prevent cracks.',
     'shape.Line': 'Line', 'desc.Line': 'Single cut (width = laser kerf), maximum bend per cut. Slot width is ignored.',
@@ -320,48 +376,49 @@ const STR = {
     'r.meander': 'No estimate for meander (different bending mechanism).',
     'r.thick': 'Thickness missing.', 'r.cols': 'Too few columns.',
     'r.overlap': 'Slots don’t overlap (slot length ≤ vertical gap) – the pattern will barely bend.',
+    'r.noLinks': 'No interlocking slots: every other column has no complete slot, so it will barely bend. Use a taller board/strip, shorter slots or open edges.',
     'st.ok': 'good', 'st.warn': 'borderline', 'st.bad': 'too high',
 
     'diaSummary': (i, m, o) => `Ø inner ${i} · mid ${m} · outer ${o} mm`,
-    'gradDesc': (name, a, from, b, to) => `${name} goes from ${a} mm (${from}) to ${b} mm (${to}).`,
-    'grad.left': 'left', 'grad.right': 'right', 'grad.center': 'center', 'grad.edges': 'edges',
-    'grad.slotNote': ' Row pitch stays fixed; the vertical gap changes accordingly.',
-    'grad.seamNote': ' “Seamless” has no effect here.',
-
-    'fi.perStrip': (d, mat, t) => `<b>Flex per strip</b> at target inner Ø ${d} mm (${mat}, ${t} mm)`,
-    'fi.minD': 'Min inner Ø', 'fi.strainAt': d => `Strain at Ø ${d}`, 'fi.minGood': 'Min inner Ø (good)',
+    'fi.perStrip': (d, mat, th) => `<b>Flex per strip</b> at target inner Ø ${d} mm (${mat}, ${th} mm)`,
+    'fi.minD': 'Min inner Ø', 'fi.strainAt': d => `Max. strain at Ø ${d}`, 'fi.minGood': 'Min inner Ø (good)',
     'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
-    'fi.solid': 'In places the slots don’t overlap – it will barely bend there.',
+    'fi.solid': 'In places the slots don’t overlap or are removed – it will barely bend there.',
+    'fi.counts': (over, rigid) => `${over} slots above the limit · ${rigid} rigid`,
+    'fi.useFlex': 'Switch the preview to “Flex” to see where.',
+    'fi.lg.ok': 'good', 'fi.lg.warn': 'borderline', 'fi.lg.bad': 'too high', 'fi.lg.rigid': 'rigid',
     'fi.rough': 'Rough estimate (torsion of the bridges); no substitute for a test strip.',
     'info.cuts': 'Cuts', 'info.cols': 'Columns', 'info.seam': g => `Seamless: horizontal gap ${g} mm`,
     'info.none': 'No cuts – adjust parameters',
     'alert.none': 'No cuts to save.', 'alert.noParams': 'This SVG contains no kerf parameters.',
 
     'layer.cuts': 'Cuts', 'layer.border': 'Outer border', 'layer.engrave': 'Engrave', 'layer.params': 'Parameters',
+    'pl.project': n => `Project: ${n}`,
+    'pl.mode': m => `Mode: ${m}`,
     'pl.test': (name, a, b, n) => `Test strips: ${name} ${a} … ${b} mm in ${n} steps`,
     'pl.strip': (w, h, z) => `Strip: ${w} × ${h} mm, label zone ${z} mm`,
     'pl.target': (i, m) => `Target Ø for rating: inner ${i} / mid ${m} mm`,
     'pl.board': (w, h) => `Board: ${w} × ${h} mm`,
     'pl.dia': (i, m, o) => `Cylinder Ø: inner ${i} · mid ${m} · outer ${o} mm`,
-    'pl.material': (m, t) => `Material: ${m}, ${t} mm`,
+    'pl.material': (m, th) => `Material: ${m}, ${th} mm`,
     'pl.shape': s => `Shape: ${s}`,
     'pl.slot': (w, h) => `Slot: ${w} × ${h} mm (W × L)`,
     'pl.gaps': (gy, gx) => `Vertical gap: ${gy} mm · Horizontal gap: ${gx}`,
     'pl.seamGap': (g, inp) => `${g} mm (adjusted for seamless, input ${inp})`,
     'pl.offset': (m, v) => `Vertical offset: ${m} (${v} mm)`,
-    'pl.grad': g => `Gradient: ${g}`,
     'pl.seamless': (on, n) => `Seamless: ${on ? `yes (${n} columns)` : 'no'}`,
     'pl.rotated': on => `Rotated: ${on ? '90°' : 'no'}`,
     'pl.edges': (m, open, border) => `Side margin: ${m} mm · Open edges: ${open ? 'yes' : 'no'} · Outer border: ${border ? 'yes' : 'no'}`,
     'pl.order': o => `Cut order: ${o}`,
+    'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, height ${h}, W ${w} / L ${l} mm`,
+    'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
     'pl.flex': (e, st, d) => `Flex (guide value): ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
-    'pl.project': n => `Project: ${n}`,
     'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d}`
   },
   de: {
     'title': 'Kerf-Muster Generator',
     'project': 'Projektname', 'project.ph': 'Projektname (optional)',
-    'mode.aria': 'Modus', 'mode.pattern': 'Muster', 'mode.test': 'Teststreifen',
+    'mode.aria': 'Modus', 'mode.pattern': 'Muster', 'mode.creative': 'Creative', 'mode.test': 'Teststreifen',
     'load': 'Parameter laden…', 'save': 'SVG speichern',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
     'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
@@ -370,18 +427,36 @@ const STR = {
     'sec.shape': 'Form', 'sec.slot': 'Schlitz',
     'slotH': 'Schlitzlänge (mm)', 'slotW': 'Schlitzbreite (mm)', 'gapY': 'Steg vertikal (mm)', 'gapX': 'Steg horizontal (mm)',
     'offsetMode': 'Vertikaler Versatz', 'off.top': 'Oben bündig', 'off.center': 'Zentriert', 'off.custom': 'Eigener Wert', 'offset': 'Versatz (mm)',
-    'sec.grad': 'Verlauf', 'gradParam': 'Parameter', 'grad.off': 'Aus',
-    'gradProfile': 'Profil', 'prof.lr': 'Links → Rechts', 'prof.center': 'Mitte → Rand', 'gradEnd': 'Endwert (mm)',
     'p.gapX': 'Steg horizontal', 'p.slotH': 'Schlitzlänge', 'p.gapY': 'Steg vertikal', 'p.slotW': 'Schlitzbreite',
     'sec.test': 'Teststreifen', 'testParam': 'Variierter Parameter', 'testFrom': 'Von (mm)', 'testTo': 'Bis (mm)',
     'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
+    'view.aria': 'Vorschau', 'view.cut': 'Schnitt', 'view.light': 'Licht', 'view.flex': 'Flex',
     'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
     'rotate': 'Um 90° gedreht ausgeben', 'paramVisible': 'Parameter-Layer sichtbar',
-    'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei',
+    'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei', 'credit.link': 'Quellcode auf GitHub (MIT)',
+
+    'cr.baseHint': 'Diese Werte legen das Raster fest. Bänder und Modulatoren verändern jeden Schlitz darin.',
+    'cr.meanderNote': 'Mäander gibt es im Creative-Modus nicht, stattdessen wird Stadium verwendet.',
+    'sec.bands': 'Bänder',
+    'bands.desc': 'Horizontale Zonen von oben nach unten, jede mit eigener Form und optionaler Größe. Leere Felder nutzen die Grundwerte. Das letzte Band füllt den Rest.',
+    'bands.add': '+ Band hinzufügen', 'band.n': i => `Band ${i}`, 'band.height': 'Höhe (mm)', 'band.shape': 'Form',
+    'band.w': 'Breite (mm)', 'band.l': 'Länge (mm)', 'band.rest': 'Rest',
+    'sec.mods': 'Modulatoren',
+    'mods.desc': 'Jeder Modulator legt eine Quelle (Verlauf, Wellen, Rauschen, Bild) auf eine Schlitz-Eigenschaft. Sie wirken von oben nach unten.',
+    'mods.add': '+ Modulator hinzufügen', 'mod.n': i => `Modulator ${i}`,
+    'mod.target': 'Ändert', 'tg.slotW': 'Schlitzbreite', 'tg.slotH': 'Schlitzlänge', 'tg.skip': 'Schlitze weglassen', 'tg.shape': 'Form tauschen',
+    'mod.source': 'Quelle', 'src.linear': 'Linearer Verlauf', 'src.radial': 'Radial', 'src.wave': 'Wellen', 'src.noise': 'Rauschen', 'src.image': 'Bild',
+    'mod.from': 'Von (mm)', 'mod.to': 'Bis (mm)', 'mod.strength': 'Stärke (%)', 'mod.threshold': 'Schwelle (%)',
+    'mod.shapeB': 'Neue Form', 'mod.invert': 'Umkehren', 'mod.angle': 'Winkel (°)', 'mod.mirror': 'Spiegeln (Mitte ↔ Ränder)',
+    'mod.cx': 'Mitte X (%)', 'mod.cy': 'Mitte Y (%)', 'mod.radius': 'Radius (mm)', 'mod.period': 'Periode (mm)',
+    'mod.phase': 'Phase (°)', 'mod.scale': 'Größe (mm)', 'mod.seed': 'Seed',
+    'mod.pick': 'Bild wählen…', 'mod.noImage': 'Noch kein Bild', 'mod.angleHint': '0° = links → rechts · 90° = oben → unten',
+    'mod.imgHint': 'Hell = 1, dunkel = 0. Auf die Platte gestreckt.',
+    'btn.up': 'Nach oben', 'btn.down': 'Nach unten', 'btn.del': 'Entfernen',
 
     'shape.Stadium': 'Stadium (Pille)', 'desc.Stadium': 'Pillenform: ein geschlossener Pfad, Rechteck mit halbrunden Enden. Für Acryl erste Wahl – runde Enden vermeiden Risse.',
     'shape.Line': 'Linie', 'desc.Line': 'Einfacher Schnitt (Breite = Laserfuge), maximale Biegung pro Schnitt. Schlitzbreite wird ignoriert.',
@@ -402,42 +477,43 @@ const STR = {
     'r.meander': 'Für Mäander gibt es keine Abschätzung (anderes Biegeprinzip).',
     'r.thick': 'Materialstärke fehlt.', 'r.cols': 'Zu wenige Spalten.',
     'r.overlap': 'Schlitze überlappen nicht (Schlitzlänge ≤ Steg vertikal) – das Muster biegt sich kaum.',
+    'r.noLinks': 'Keine ineinandergreifenden Schlitze: jede zweite Spalte hat keinen vollständigen Schlitz, das biegt sich kaum. Höhere Platte/Streifen, kürzere Schlitze oder offene Ränder verwenden.',
     'st.ok': 'gut', 'st.warn': 'grenzwertig', 'st.bad': 'zu hoch',
 
     'diaSummary': (i, m, o) => `Ø innen ${i} · Mitte ${m} · außen ${o} mm`,
-    'gradDesc': (name, a, from, b, to) => `${name} geht von ${a} mm (${from}) auf ${b} mm (${to}).`,
-    'grad.left': 'links', 'grad.right': 'rechts', 'grad.center': 'Mitte', 'grad.edges': 'Ränder',
-    'grad.slotNote': ' Der Zeilenabstand bleibt fest, Steg vertikal ändert sich mit.',
-    'grad.seamNote': ' „Nahtlos“ ist dabei ohne Wirkung.',
-
-    'fi.perStrip': (d, mat, t) => `<b>Flex je Streifen</b> bei Ziel-Ø innen ${d} mm (${mat}, ${t} mm)`,
-    'fi.minD': 'Min-Ø innen', 'fi.strainAt': d => `Dehnung bei Ø ${d}`, 'fi.minGood': 'Min-Ø innen (gut)',
+    'fi.perStrip': (d, mat, th) => `<b>Flex je Streifen</b> bei Ziel-Ø innen ${d} mm (${mat}, ${th} mm)`,
+    'fi.minD': 'Min-Ø innen', 'fi.strainAt': d => `Max. Dehnung bei Ø ${d}`, 'fi.minGood': 'Min-Ø innen (gut)',
     'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
-    'fi.solid': 'Teilweise überlappen die Schlitze nicht – dort biegt es sich kaum.',
+    'fi.solid': 'Stellenweise überlappen die Schlitze nicht oder fehlen – dort biegt es sich kaum.',
+    'fi.counts': (over, rigid) => `${over} Schlitze über dem Limit · ${rigid} starr`,
+    'fi.useFlex': 'Vorschau auf „Flex“ stellen, um zu sehen wo.',
+    'fi.lg.ok': 'gut', 'fi.lg.warn': 'grenzwertig', 'fi.lg.bad': 'zu hoch', 'fi.lg.rigid': 'starr',
     'fi.rough': 'Grobe Abschätzung (Torsion der Stege), ersetzt keinen Teststreifen.',
     'info.cuts': 'Schnitte', 'info.cols': 'Spalten', 'info.seam': g => `Nahtlos: Steg horizontal ${g} mm`,
     'info.none': 'Keine Schnitte – Parameter anpassen',
     'alert.none': 'Keine Schnitte zum Speichern.', 'alert.noParams': 'Diese SVG enthält keine Kerf-Parameter.',
 
     'layer.cuts': 'Schnitte', 'layer.border': 'Außenkontur', 'layer.engrave': 'Gravur', 'layer.params': 'Parameter',
+    'pl.project': n => `Projekt: ${n}`,
+    'pl.mode': m => `Modus: ${m}`,
     'pl.test': (name, a, b, n) => `Teststreifen: ${name} ${a} … ${b} mm in ${n} Stufen`,
     'pl.strip': (w, h, z) => `Streifen: ${w} × ${h} mm, Beschriftungszone ${z} mm`,
     'pl.target': (i, m) => `Ziel-Ø für Bewertung: innen ${i} / Mitte ${m} mm`,
     'pl.board': (w, h) => `Platte: ${w} × ${h} mm`,
     'pl.dia': (i, m, o) => `Zylinder-Ø: innen ${i} · Mitte ${m} · außen ${o} mm`,
-    'pl.material': (m, t) => `Material: ${m}, ${t} mm`,
+    'pl.material': (m, th) => `Material: ${m}, ${th} mm`,
     'pl.shape': s => `Form: ${s}`,
     'pl.slot': (w, h) => `Schlitz: ${w} × ${h} mm (B × L)`,
     'pl.gaps': (gy, gx) => `Steg vertikal: ${gy} mm · Steg horizontal: ${gx}`,
     'pl.seamGap': (g, inp) => `${g} mm (nahtlos angepasst, Eingabe ${inp})`,
     'pl.offset': (m, v) => `Vertikaler Versatz: ${m} (${v} mm)`,
-    'pl.grad': g => `Verlauf: ${g}`,
     'pl.seamless': (on, n) => `Nahtlos: ${on ? `ja (${n} Spalten)` : 'nein'}`,
     'pl.rotated': on => `Gedreht: ${on ? '90°' : 'nein'}`,
     'pl.edges': (m, open, border) => `Rand links/rechts: ${m} mm · Ränder offen: ${open ? 'ja' : 'nein'} · Außenkontur: ${border ? 'ja' : 'nein'}`,
     'pl.order': o => `Schnittreihenfolge: ${o}`,
+    'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, Höhe ${h}, B ${w} / L ${l} mm`,
+    'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
     'pl.flex': (e, st, d) => `Flex (Richtwert): ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
-    'pl.project': n => `Projekt: ${n}`,
     'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d}`
   }
 };
@@ -456,6 +532,7 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
   for (const o of $('shape').options) o.textContent = t('shape.' + o.value);
   for (const o of $('material').options) o.textContent = t('mat.' + o.value);
+  renderCreativeUI();
 }
 
 // ---------------------------------------------------------------- shapes
@@ -542,6 +619,8 @@ const SHAPES = {
     }
   }
 };
+// shapes that can be placed slot by slot (bands, shape swap)
+const SLOT_SHAPES = Object.keys(SHAPES).filter(k => !SHAPES[k].meander);
 
 // Allowed tensile strain ε (%) for the flex estimate: "ok" = permanent bend
 // without stress cracks/creep, "max" = short-term limit. Rough guide values.
@@ -558,11 +637,31 @@ const TEST_SHORT = { gapX: 'gH', slotH: 'L', gapY: 'gV', slotW: 'W' };
 for (const k of Object.keys(SHAPES)) $('shape').add(new Option(k, k));
 for (const k of Object.keys(MATERIALS)) $('material').add(new Option(k, k));
 
+// ---------------------------------------------------------------- creative state
+// Bands and modulators live outside the form fields; they are saved with the
+// other parameters (localStorage + SVG metadata).
+let creative = { bands: [], mods: [] };
+const MOD_TARGETS = ['slotW', 'slotH', 'skip', 'shape'];
+const MOD_SOURCES = ['linear', 'radial', 'wave', 'noise', 'image'];
+
+function newBand(p) {
+  return { shape: SHAPES[p.shape].meander ? 'Stadium' : p.shape, height: Math.round(p.boardH / 3), slotW: null, slotH: null };
+}
+function newMod(p) {
+  return {
+    target: 'slotW', source: 'linear', invert: false, strength: 100,
+    from: +(p.slotW * 0.5).toFixed(2), to: +(p.slotW * 1.5).toFixed(2), threshold: 50, shapeB: 'Bone',
+    angle: 90, mirror: false, cx: 50, cy: 50, radius: Math.round(Math.min(p.boardW, p.boardH) / 2),
+    period: 40, phase: 0, scale: 25, seed: 1, img: null
+  };
+}
+
 // ---------------------------------------------------------------- params
-const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'gradEnd',
+const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset',
              'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
-const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'gradParam', 'gradProfile', 'order', 'testParam'];
+const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam'];
 const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible'];
+const MODES = ['pattern', 'creative', 'test'];
 
 function readParams() {
   const p = { mode: document.querySelector('input[name=mode]:checked').value };
@@ -571,15 +670,29 @@ function readParams() {
   for (const k of CHK) p[k] = $(k).checked;
   p.project = $('project').value.trim();
   p.testCount = clamp(Math.round(p.testCount), 2, 30);
+  p.creative = JSON.parse(JSON.stringify(creative));
   return p;
 }
 function writeParams(p) {
-  if (p.mode) document.querySelector(`input[name=mode][value=${p.mode === 'test' ? 'test' : 'pattern'}]`).checked = true;
+  p = migrate(p);
+  if (MODES.includes(p.mode)) document.querySelector(`input[name=mode][value=${p.mode}]`).checked = true;
   for (const k of NUM) if (p[k] != null) $(k).value = p[k];
   for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
   for (const k of CHK) if (p[k] != null) $(k).checked = !!p[k];
   if (p.project != null) $('project').value = p.project;
+  if (p.creative) creative = { bands: p.creative.bands || [], mods: (p.creative.mods || []).map(m => ({ ...newMod(p), ...m })) };
   syncDiameter();
+  renderCreativeUI();
+}
+// Files from before creative mode had a left→right gradient in pattern mode.
+// It becomes a linear modulator (the column grid stays fixed, so a changing
+// horizontal gap is expressed as a changing slot width).
+function migrate(p) {
+  if (!p.gradParam || p.gradParam === 'off' || p.creative) return p;
+  const m = { ...newMod(p), source: 'linear', angle: 0, mirror: p.gradProfile === 'center' };
+  if (p.gradParam === 'slotH') Object.assign(m, { target: 'slotH', from: p.slotH, to: p.gradEnd });
+  else Object.assign(m, { target: 'slotW', from: p.slotW, to: +(p.slotW + p.gapX - p.gradEnd).toFixed(3) });
+  return { ...p, mode: 'creative', creative: { bands: [], mods: [m] } };
 }
 
 // Vertical shift of the slot grid (mm). "center" makes top and bottom edges
@@ -597,15 +710,15 @@ function effectiveOffset(p, h) {
 // Width is the circumference on the material's mid-plane (neutral axis).
 const midDiameter = p => p.boardW / Math.PI;
 function syncDiameter() {
-  const w = parseFloat($('boardW').value), t = parseFloat($('thick').value) || 0;
+  const w = parseFloat($('boardW').value), th = parseFloat($('thick').value) || 0;
   if (!(w > 0)) return;
   const dm = w / Math.PI, ref = $('diaRef').value;
-  $('diameter').value = +(ref === 'inner' ? dm - t : ref === 'outer' ? dm + t : dm).toFixed(2);
+  $('diameter').value = +(ref === 'inner' ? dm - th : ref === 'outer' ? dm + th : dm).toFixed(2);
 }
 function diameterChanged() {
-  const d = parseFloat($('diameter').value), t = parseFloat($('thick').value) || 0, ref = $('diaRef').value;
+  const d = parseFloat($('diameter').value), th = parseFloat($('thick').value) || 0, ref = $('diaRef').value;
   if (!(d > 0)) return;
-  const dm = ref === 'inner' ? d + t : ref === 'outer' ? d - t : d;
+  const dm = ref === 'inner' ? d + th : ref === 'outer' ? d - th : d;
   if (dm > 0) $('boardW').value = +(dm * Math.PI).toFixed(2);
 }
 
@@ -662,8 +775,8 @@ function clipToBand(elements, h) {
     }
     const inside = q => q.y >= 0 && q.y <= h;
     const cross = (a, b) => {
-      const e = (inside(a) ? b : a).y < 0 ? 0 : h, t = (e - a.y) / (b.y - a.y);
-      return { x: a.x + (b.x - a.x) * t, y: e };
+      const e = (inside(a) ? b : a).y < 0 ? 0 : h, u = (e - a.y) / (b.y - a.y);
+      return { x: a.x + (b.x - a.x) * u, y: e };
     };
     // For rings, start at an outside point so no run wraps around.
     let start = 0;
@@ -695,75 +808,70 @@ function polyPath(pts) {
   return `<path d="M${keep.map(q => `${f(q.x)},${f(q.y)}`).join(' L')}"/>`;
 }
 
-// Column positions between x0 and x1. Handles the horizontal gradient, the
-// seamless (cylinder) mode and centres the block so both side margins match.
+// Column positions between x0 and x1 at a fixed pitch. Seamless mode picks an
+// even column count that fills the width exactly; otherwise the block is
+// centred so both side margins match.
 function layoutColumns(p, x0, x1) {
-  const S = SHAPES[p.shape], A = x1 - x0, eps = 1e-9;
-  const slotPart = S.line ? 0 : p.slotW;
+  const A = x1 - x0, eps = 1e-9;
+  const slotPart = SHAPES[p.shape].line ? 0 : p.slotW;
   const stepY = p.slotH + p.gapY;
-  const grad = p.gradParam !== 'off';
-  const val = (base, x) => {
-    const u = p.gradProfile === 'center' ? Math.abs(x - (x0 + x1) / 2) / (A / 2) : (x - x0) / A;
-    return base + (p.gradEnd - base) * clamp(u, 0, 1);
-  };
-  const gxAt = x => grad && p.gradParam === 'gapX' ? Math.max(0.05, val(p.gapX, x)) : p.gapX;
-  const shAt = x => clamp(grad && p.gradParam === 'slotH' ? val(p.slotH, x) : p.slotH, 0.1, stepY - 0.1);
-  let xs = [], seamGap = null;
-
-  if (p.seamless && !(grad && p.gradParam === 'gapX')) {
+  let stepX = slotPart + p.gapX, xs = [], seamGap = null;
+  if (p.seamless) {
     // even column count so the stagger continues across the seam
-    const step0 = slotPart + p.gapX;
-    let n = Math.max(2, 2 * Math.round(A / step0 / 2));
-    const s = A / n;
-    seamGap = s - slotPart;
-    if (seamGap <= 0) return { cols: [], stepY, seamGap };
-    for (let k = 0; k < n; k++) xs.push(x0 + s / 2 + k * s);
+    const n = Math.max(2, 2 * Math.round(A / stepX / 2));
+    stepX = A / n;
+    seamGap = stepX - slotPart;
+    if (seamGap <= 0) return { cols: [], stepX, stepY, seamGap };
+    for (let k = 0; k < n; k++) xs.push(x0 + stepX / 2 + k * stepX);
   } else {
-    const stepAt = x => slotPart + gxAt(x);
-    let x = x0 + stepAt(x0) / 2;
-    while (x + stepAt(x) / 2 <= x1 + eps && xs.length < 5000) {
-      xs.push(x);
-      x += stepAt(x + stepAt(x) / 2);
-    }
-    if (xs.length) {
-      const lead = xs[0] - x0, trail = x1 - xs[xs.length - 1];
-      const shift = (trail - lead) / 2;
-      xs = xs.map(v => v + shift);
-    }
+    const n = Math.floor((A + eps) / stepX);
+    const lead = (A - n * stepX) / 2;
+    for (let k = 0; k < n; k++) xs.push(x0 + lead + stepX / 2 + k * stepX);
   }
-  return { cols: xs.map(x => ({ x, gx: seamGap ?? gxAt(x), sh: shAt(x) })), stepY, seamGap };
+  return { cols: xs.map(x => ({ x })), stepX, stepY, seamGap };
 }
 
-// Pattern on one board (w × h), slots between x0 and x1.
-// Returns cuts grouped per column (for ordering) and the column layout.
-function generate(p, w, h, x0, x1) {
-  const S = SHAPES[p.shape];
+// Pattern on one board (w × h), slots between x0 and x1. `slotFn(x, y)` may
+// override shape and size per slot (creative mode). Every grid position that
+// reaches into the board is recorded with a status – cut, edge (dropped at
+// the board edge) or skip (removed by a modulator) – for the flex analysis.
+function generate(p, w, h, x0, x1, slotFn) {
+  const S0 = SHAPES[p.shape];
   if (w <= 0 || h <= 0 || p.slotH <= 0 || p.gapY <= 0 || p.gapX <= 0 || x1 <= x0) return null;
   const layout = layoutColumns(p, x0, x1);
   const { cols, stepY } = layout;
-  const hw = p.slotW / 2, offset = effectiveOffset(p, h);
+  const offset = effectiveOffset(p, h), eps = 1e-9;
+  const slots = [];
+  const fixed = { shape: p.shape, hw: p.slotW / 2, hh: p.slotH / 2, skip: false };
   const columns = cols.map((c, k) => {
     const out = [];
-    if (S.meander) {
-      if (p.gapY < h) out.push({ y: 0, els: [meanderSlot(c.x, hw, h, p.gapY, k % 2 === 0)] });
+    if (S0.meander && !slotFn) {
+      if (p.gapY < h) out.push({ k, x: c.x, y: 0, els: [meanderSlot(c.x, p.slotW / 2, h, p.gapY, k % 2 === 0)], status: 'cut' });
       return out;
     }
-    const hh = c.sh / 2, eps = 1e-9;
     const base = mod((k % 2 ? 0 : stepY / 2) + offset, stepY);
-    for (let y = base - stepY; y < h + hh; y += stepY) {
-      if (S.line) {
+    for (let y = base - stepY; y < h + stepY; y += stepY) {
+      const sp = slotFn ? slotFn(c.x, y) : fixed;
+      const S = SHAPES[sp.shape], hh = sp.hh, hw = S.line ? 0 : sp.hw;
+      if (y - hh >= h || y + hh <= 0) continue;
+      const rec = { k, x: c.x, y, hw, hh, shape: sp.shape, status: 'cut', els: null };
+      if (sp.skip) rec.status = 'skip';
+      else if (S.line) {
         const top = Math.max(0, y - hh), bot = Math.min(h, y + hh);
-        if (bot - top > eps) out.push({ y, els: S.draw(c.x, top, bot) });
+        if (bot - top > eps) rec.els = S.draw(c.x, top, bot);
       } else if (y - hh >= -eps && y + hh <= h + eps) {
-        out.push({ y, els: S.draw(c.x, y, hw, hh) });
+        rec.els = S.draw(c.x, y, hw, hh);
       } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2) {
-        const open = p.shape === 'Stadium' && stadiumOpen(c.x, y, hw, hh, h);
-        out.push({ y, els: open ? [open] : clipToBand(S.draw(c.x, y, hw, hh), h) });
+        const open = sp.shape === 'Stadium' && stadiumOpen(c.x, y, hw, hh, h);
+        rec.els = open ? [open] : clipToBand(S.draw(c.x, y, hw, hh), h);
       }
+      if (rec.status === 'cut' && !(rec.els && rec.els.length)) rec.status = 'edge';
+      slots.push(rec);
+      if (rec.status === 'cut') out.push(rec);
     }
     return out;
   });
-  return { columns, ...layout };
+  return { columns, slots, h, ...layout };
 }
 
 // Zigzag through the columns (alternating direction) to keep travel short.
@@ -780,13 +888,125 @@ function orderCuts(columns, mode) {
   return out;
 }
 
+// ---------------------------------------------------------------- creative
+// Value noise with smooth interpolation, two octaves. Returns 0…1.
+function hash2(ix, iy, seed) {
+  let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed + 1, 2246822519);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function valueNoise(x, y, seed) {
+  const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = hash2(ix, iy, seed), b = hash2(ix + 1, iy, seed), c = hash2(ix, iy + 1, seed), d = hash2(ix + 1, iy + 1, seed);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+
+// Images are kept as small greyscale data URLs inside the modulator (so they
+// travel with the saved parameters) and decoded once into a brightness grid.
+const imgCache = new Map();
+function imageGrid(url) {
+  const c = imgCache.get(url);
+  if (c) return c === 'loading' ? null : c;
+  imgCache.set(url, 'loading');
+  const im = new Image();
+  im.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = im.width; cv.height = im.height;
+    const g = cv.getContext('2d');
+    g.drawImage(im, 0, 0);
+    const d = g.getImageData(0, 0, im.width, im.height).data, a = new Float32Array(im.width * im.height);
+    for (let i = 0; i < a.length; i++) a[i] = (0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) / 255;
+    imgCache.set(url, { w: im.width, h: im.height, a });
+    render();
+  };
+  im.src = url;
+  return null;
+}
+function sampleGrid(g, u, v) {
+  const x = clamp(u, 0, 1) * (g.w - 1), y = clamp(v, 0, 1) * (g.h - 1);
+  const ix = Math.min(g.w - 2, Math.floor(x)), iy = Math.min(g.h - 2, Math.floor(y)), fx = x - ix, fy = y - iy;
+  const at = (i, j) => g.a[(iy + j) * g.w + ix + i];
+  if (g.w < 2 || g.h < 2) return g.a[0] ?? 0;
+  return at(0, 0) * (1 - fx) * (1 - fy) + at(1, 0) * fx * (1 - fy) + at(0, 1) * (1 - fx) * fy + at(1, 1) * fx * fy;
+}
+
+// Source function v(x, y) → 0…1 for one modulator on a W × H board.
+function modSource(m, W, H) {
+  const rad = (m.angle || 0) * Math.PI / 180, cs = Math.cos(rad), sn = Math.sin(rad);
+  switch (m.source) {
+    case 'linear': {
+      const norm = 0.5 * (Math.abs(cs) + Math.abs(sn)) || 1;
+      return (x, y) => {
+        const u = ((x / W - 0.5) * cs + (y / H - 0.5) * sn) / norm;   // −1 … 1 across the board
+        return m.mirror ? Math.abs(u) : (u + 1) / 2;
+      };
+    }
+    case 'radial': {
+      const cx = W * m.cx / 100, cy = H * m.cy / 100, r = Math.max(0.1, m.radius);
+      return (x, y) => Math.hypot(x - cx, y - cy) / r;
+    }
+    case 'wave': {
+      const per = Math.max(0.5, m.period), ph = (m.phase || 0) * Math.PI / 180;
+      return (x, y) => 0.5 + 0.5 * Math.sin(2 * Math.PI * (x * cs + y * sn) / per + ph);
+    }
+    case 'noise': {
+      const s = Math.max(0.5, m.scale), seed = Math.round(m.seed) || 0;
+      return (x, y) => {
+        const v = 0.67 * valueNoise(x / s, y / s, seed) + 0.33 * valueNoise(2 * x / s, 2 * y / s, seed + 17);
+        return (v - 0.5) * 1.8 + 0.5;   // stretch: octave mixing compresses the range
+      };
+    }
+    case 'image': {
+      const g = m.img && imageGrid(m.img.url);
+      return g ? (x, y) => sampleGrid(g, x / W, y / H) : null;
+    }
+  }
+  return null;
+}
+
+const MIN_BAR = 0.4, MIN_GAP = 0.4;   // smallest material left between slots (mm)
+function creativeSlotFn(p, W, H) {
+  const baseShape = SHAPES[p.shape].meander ? 'Stadium' : p.shape;
+  const stepX = (SHAPES[p.shape].line ? 0 : p.slotW) + p.gapX, stepY = p.slotH + p.gapY;
+  const maxHw = Math.max(0, (stepX - MIN_BAR) / 2), maxHh = Math.max(0.25, (stepY - MIN_GAP) / 2);
+  const bands = creative.bands, ends = [];
+  let acc = 0;
+  for (const b of bands) ends.push(acc += Math.max(0, +b.height || 0));
+  const mods = creative.mods.map(m => ({ m, fn: modSource(m, W, H) })).filter(o => o.fn);
+  const num = v => v === null || v === '' || v === undefined || isNaN(+v) ? null : +v;
+  return (x, y) => {
+    let shape = baseShape, sw = p.slotW, sh = p.slotH, skip = false;
+    if (bands.length) {
+      let i = ends.findIndex(e => y < e);
+      if (i < 0) i = bands.length - 1;
+      const b = bands[i];
+      if (SHAPES[b.shape] && !SHAPES[b.shape].meander) shape = b.shape;
+      if (num(b.slotW) != null) sw = num(b.slotW);
+      if (num(b.slotH) != null) sh = num(b.slotH);
+    }
+    for (const { m, fn } of mods) {
+      let v = clamp(fn(x, y), 0, 1);
+      if (m.invert) v = 1 - v;
+      if (m.target === 'skip') { if (v > m.threshold / 100) skip = true; }
+      else if (m.target === 'shape') { if (v > m.threshold / 100 && SHAPES[m.shapeB]) shape = m.shapeB; }
+      else {
+        const mapped = m.from + (m.to - m.from) * v, s = clamp(m.strength / 100, 0, 1);
+        if (m.target === 'slotW') sw += (mapped - sw) * s; else sh += (mapped - sh) * s;
+      }
+    }
+    return { shape, hw: clamp(sw / 2, 0, maxHw), hh: clamp(sh / 2, 0.25, maxHh), skip };
+  };
+}
+
 // ---------------------------------------------------------------- flex estimate
 // Lattice hinge: bending is taken up by twisting the vertical bars between
-// slot columns. Each bar segment between a bridge in column k and the next
-// bridge in column k+1 (free length Lt = slotLength − pitch/2) twists by
-// the rotation between those columns, θ = Δx / R. For a rectangular bar
-// (a × b, b ≤ a) the max shear strain is γ = θ·b·β / (α·Lt) (Saint-Venant
-// coefficients). Max tensile strain under pure shear is ε = γ / 2.
+// slot columns. A bar segment links slot A (column k) with its staggered
+// neighbour B (column k+1, ±pitch/2). Its free length is Lt = (hA + hB)/2 −
+// pitch/2 and it twists by the rotation between the columns, θ = Δx / R.
+// For a rectangular bar (a × b, b ≤ a) the max shear strain is
+// γ = θ·b·β / (α·Lt) (Saint-Venant coefficients); tensile ε = γ / 2.
+// With R = D/2 this gives ε = k / D, k = Δx·b·β / (α·Lt).
 const TORSION = { r: [1, 1.5, 2, 2.5, 3, 4, 6, 10, 1e9],
   alpha: [.208, .231, .246, .258, .267, .282, .299, .312, .333],
   beta:  [.141, .196, .229, .249, .263, .281, .299, .312, .333] };
@@ -798,30 +1018,51 @@ function torsionCoeffs(ratio) {
   }
   return { a: .333, b: .333 };
 }
-// Returns k (mm) with ε = k / D_mid, or a reason why no estimate is possible.
-function flexFactor(p, gen) {
-  const S = SHAPES[p.shape];
-  if (S.meander) return { reason: 'r.meander' };
+// Sets rec.kf (worst k of its links) and rec.rigid on every slot; returns the
+// overall worst k or a reason why no estimate is possible.
+function flexAnalysis(p, gen) {
+  if (SHAPES[p.shape].meander && p.mode !== 'creative') return { reason: 'r.meander' };
   if (!(p.thick > 0)) return { reason: 'r.thick' };
-  const { cols, stepY } = gen;
+  const { cols, slots, stepY, h } = gen;
   if (cols.length < 2) return { reason: 'r.cols' };
-  let worst = 0, solid = false;
-  for (let k = 0; k < cols.length - 1; k++) {
-    const dx = cols[k + 1].x - cols[k].x;
-    const bar = S.line ? dx : dx - p.slotW;
-    const Lt = (cols[k].sh + cols[k + 1].sh) / 2 - stepY / 2;
-    if (Lt <= 0 || bar <= 0) { solid = true; continue; }
-    const a = Math.max(bar, p.thick), b = Math.min(bar, p.thick);
-    const c = torsionCoeffs(a / b);
-    worst = Math.max(worst, dx * b * c.b / (c.a * Lt));
+  const key = (k, y) => k + ':' + Math.round(y * 1000);
+  const byKey = new Map(slots.map(s => [key(s.k, s.y), s]));
+  for (const s of slots) { s.kf = 0; s.rigid = false; }
+  let worst = 0, solid = false, links = 0;
+  for (const A of slots) {
+    if (A.k >= cols.length - 1 || A.status === 'edge') continue;
+    const dx = cols[A.k + 1].x - A.x;
+    for (const dy of [-stepY / 2, stepY / 2]) {
+      const yb = A.y + dy;
+      if (yb < 0 || yb > h) continue;
+      const B = byKey.get(key(A.k + 1, yb));
+      if (!B || B.status === 'edge') continue;
+      links++;
+      const bar = dx - (A.hw + B.hw);
+      const Lt = A.hh + B.hh - stepY / 2;
+      if (A.status === 'skip' || B.status === 'skip' || Lt <= 0 || bar <= 0) {
+        A.rigid = B.rigid = solid = true;
+        continue;
+      }
+      const a = Math.max(bar, p.thick), b = Math.min(bar, p.thick), c = torsionCoeffs(a / b);
+      const kl = dx * b * c.b / (c.a * Lt);
+      A.kf = Math.max(A.kf, kl); B.kf = Math.max(B.kf, kl);
+      worst = Math.max(worst, kl);
+    }
   }
-  if (!worst) return { reason: 'r.overlap' };
-  // γ = worst / R = 2·worst / D  →  ε = γ/2 = worst / D
+  if (!worst) return { reason: links ? 'r.overlap' : 'r.noLinks' };
   return { k: worst, solid };
 }
 function flexStatus(eps, m) {
   const cls = eps <= m.ok ? 'ok' : eps <= m.max ? 'warn' : 'bad';
   return [cls, t('st.' + cls)];
+}
+const HEAT = { ok: '#3e9b4f', warn: '#e0a526', bad: '#d6332a', rigid: '#5c0d18', none: '#9a948a' };
+function heatColor(rec, dMid, mat) {
+  if (rec.rigid) return HEAT.rigid;
+  if (!rec.kf) return HEAT.none;
+  const e = rec.kf / dMid * 100;
+  return e <= mat.ok ? HEAT.ok : e <= mat.max ? HEAT.warn : HEAT.bad;
 }
 
 // ---------------------------------------------------------------- document
@@ -829,7 +1070,7 @@ const LABEL_ZONE = 10;  // solid strip on test coupons for the engraved label
 const TEST_SPACING = 3;
 
 function buildDoc(p) {
-  const doc = { boards: [], cuts: [], borders: [], labels: [], count: 0, rows: [] };
+  const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
   const mat = MATERIALS[p.material], dMid = midDiameter(p);
 
   if (p.mode === 'test') {
@@ -837,20 +1078,19 @@ function buildDoc(p) {
     const w = p.testW, h = p.testH, n = p.testCount;
     for (let i = 0; i < n; i++) {
       const v = +(p.testFrom + (p.testTo - p.testFrom) * i / (n - 1)).toFixed(3);
-      const q = { ...p, [p.testParam]: v, gradParam: 'off', seamless: false };
+      const q = { ...p, [p.testParam]: v, seamless: false };
       // rotated output turns top→right, so stack in reverse to keep ascending values left → right
       const y0 = (p.rotate ? n - 1 - i : i) * (h + TEST_SPACING);
       const gen = generate(q, w, h, LABEL_ZONE, w - p.marginX);
-      const fl = gen ? flexFactor(q, gen) : { reason: 'r.cols' };
+      const fl = gen ? flexAnalysis(q, gen) : { reason: 'r.cols' };
       const eps = fl.k ? fl.k / dMid * 100 : null;
       const dMin = fl.k ? fl.k / (mat.ok / 100) : null;
       doc.rows.push({ v, eps, dMin, reason: fl.reason });
       doc.boards.push({ x: 0, y: y0, w, h });
-      const tr = `translate(0,${f(y0)})`;
       if (gen) {
         const cuts = orderCuts(gen.columns, p.order);
         doc.count += cuts.length;
-        doc.cuts.push(`<g transform="${tr}">${cuts.join('')}</g>`);
+        doc.cuts.push(`<g transform="translate(0,${f(y0)})">${cuts.join('')}</g>`);
       }
       doc.borders.push(`<rect x="0" y="${f(y0)}" width="${f(w)}" height="${f(h)}"/>`);
       const lines = [`${short} ${fmt(v)}`, dMin ? `Ø≥${Math.round(dMin - p.thick)}` : ''];
@@ -864,13 +1104,17 @@ function buildDoc(p) {
   }
 
   const w = p.boardW, h = p.boardH;
-  const gen = generate(p, w, h, p.marginX, w - p.marginX);
+  const slotFn = p.mode === 'creative' ? creativeSlotFn(p, w, h) : null;
+  const gen = generate(p, w, h, p.marginX, w - p.marginX, slotFn);
   doc.gen = gen;
   doc.boards.push({ x: 0, y: 0, w, h });
-  if (gen) doc.cuts = orderCuts(gen.columns, p.order);
+  if (gen) {
+    doc.cuts = orderCuts(gen.columns, p.order);
+    doc.recs = gen.columns.flat();
+    doc.flex = flexAnalysis(p, gen);
+  }
   doc.count = doc.cuts.length;
   if (p.border) doc.borders.push(`<rect x="0" y="0" width="${f(w)}" height="${f(h)}"/>`);
-  doc.flex = gen ? flexFactor(p, gen) : null;
   doc.w = w; doc.h = h; doc.rotate = p.rotate;
   return doc;
 }
@@ -880,13 +1124,31 @@ function flexSummary(p, doc) {
   if (!doc.flex || doc.flex.reason) return { text: doc.flex ? t(doc.flex.reason) : '' };
   const eps = doc.flex.k / dMid * 100;
   const dMin = doc.flex.k / (mat.ok / 100);  // mid-plane diameter at the "ok" limit
-  return { eps, dMin, dMinInner: dMin - th, status: flexStatus(eps, mat) };
+  const over = doc.recs.filter(r => r.kf / dMid * 100 > mat.max).length;
+  const rigid = doc.recs.filter(r => r.rigid).length;
+  return { eps, dMin, dMinInner: dMin - th, status: flexStatus(eps, mat), over, rigid };
+}
+
+const shapeName = k => t('shape.' + k);
+function modText(m) {
+  const src = {
+    linear: () => `${fmt(m.angle)}°${m.mirror ? ' ↔' : ''}`,
+    radial: () => `${fmt(m.cx)}/${fmt(m.cy)} %, r ${fmt(m.radius)} mm`,
+    wave: () => `${fmt(m.angle)}°, ${fmt(m.period)} mm, ${fmt(m.phase)}°`,
+    noise: () => `${fmt(m.scale)} mm, seed ${m.seed}`,
+    image: () => m.img ? m.img.name : '–'
+  }[m.source]();
+  const tgt = m.target === 'skip' ? `> ${fmt(m.threshold)} %`
+    : m.target === 'shape' ? `→ ${shapeName(m.shapeB)} > ${fmt(m.threshold)} %`
+    : `${fmt(m.from)} → ${fmt(m.to)} mm, ${fmt(m.strength)} %`;
+  return `${t('tg.' + m.target)} ← ${t('src.' + m.source)} (${src})${m.invert ? ' inv' : ''}: ${tgt}`;
 }
 
 function paramLines(p, doc) {
   const dm = midDiameter(p), th = p.thick;
   const L = [];
   if (p.project) L.push(t('pl.project', p.project));
+  L.push(t('pl.mode', t('mode.' + p.mode)));
   if (p.mode === 'test') {
     L.push(t('pl.test', t('p.' + p.testParam), fmt(p.testFrom), fmt(p.testTo), p.testCount));
     L.push(t('pl.strip', fmt(p.testW), fmt(p.testH), LABEL_ZONE));
@@ -896,15 +1158,20 @@ function paramLines(p, doc) {
     L.push(t('pl.dia', (dm - th).toFixed(2), dm.toFixed(2), (dm + th).toFixed(2)));
   }
   L.push(t('pl.material', t('mat.' + p.material), fmt(th)));
-  L.push(t('pl.shape', t('shape.' + p.shape)));
+  L.push(t('pl.shape', shapeName(p.shape)));
   L.push(t('pl.slot', fmt(p.slotW), fmt(p.slotH)));
   const seam = p.mode !== 'test' && doc.gen?.seamGap != null;
   L.push(t('pl.gaps', fmt(p.gapY), seam ? t('pl.seamGap', fmt(+doc.gen.seamGap.toFixed(3)), fmt(p.gapX)) : `${fmt(p.gapX)} mm`));
   const offH = p.mode === 'test' ? p.testH : p.boardH;
   L.push(t('pl.offset', t('off.' + p.offsetMode), fmt(effectiveOffset(p, offH))));
-  if (p.mode !== 'test') {
-    L.push(t('pl.grad', p.gradParam === 'off' ? t('grad.off') : `${t('p.' + p.gradParam)} → ${fmt(p.gradEnd)} mm, ${t('prof.' + p.gradProfile)}`));
-    L.push(t('pl.seamless', p.seamless, doc.gen?.cols.length ?? 0));
+  if (p.mode !== 'test') L.push(t('pl.seamless', p.seamless, doc.gen?.cols.length ?? 0));
+  if (p.mode === 'creative') {
+    const c = p.creative;
+    c.bands.forEach((b, i) => L.push(t('pl.band', i + 1, shapeName(b.shape),
+      i === c.bands.length - 1 ? t('band.rest') : `${fmt(+b.height || 0)} mm`,
+      b.slotW == null || b.slotW === '' ? fmt(p.slotW) : fmt(+b.slotW),
+      b.slotH == null || b.slotH === '' ? fmt(p.slotH) : fmt(+b.slotH))));
+    c.mods.forEach((m, i) => L.push(t('pl.mod', i + 1, modText(m))));
   }
   L.push(t('pl.rotated', p.rotate));
   L.push(t('pl.edges', fmt(p.marginX), p.openEdges, p.mode === 'test' || p.border));
@@ -921,7 +1188,7 @@ function paramLines(p, doc) {
 function slug(s) {
   return s.toLowerCase()
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 function fileName(p, doc) {
@@ -938,10 +1205,8 @@ function fileName(p, doc) {
   const off = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
   if (off) parts.push(`ofs${fmt(off)}`);
   if (p.marginX) parts.push(`m${fmt(p.marginX)}`);
-  if (p.mode !== 'test') {
-    if (p.gradParam !== 'off') parts.push(`grad${p.gradParam === 'gapX' ? 'H' : 'L'}${fmt(p.gradEnd)}${p.gradProfile === 'center' ? 'c' : 'lr'}`);
-    if (p.seamless) parts.push('seamless');
-  }
+  if (p.mode === 'creative') parts.push(`creative-b${p.creative.bands.length}m${p.creative.mods.length}`);
+  if (p.mode !== 'test' && p.seamless) parts.push('seamless');
   if (p.openEdges) parts.push('open');
   if (p.mode !== 'test' && p.border) parts.push('border');
   if (p.rotate) parts.push('rot90');
@@ -960,6 +1225,7 @@ function buildSVG(p, doc) {
   const fs = 3.5, lh = fs * 1.4, pad = 5;
   const totalH = H + pad + lines.length * lh + 2;
   const { paramVisible, ...meta } = p;
+  if (meta.mode !== 'creative') delete meta.creative;
   const tr = rotTransform(doc);
   const out = [];
   out.push('<?xml version="1.0" encoding="UTF-8"?>');
@@ -987,24 +1253,140 @@ function buildSVG(p, doc) {
   return out.join('\n');
 }
 
+// ---------------------------------------------------------------- creative UI
+const opt = (v, label, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(label)}</option>`;
+const numField = (list, i, key, label, val, extra = '') =>
+  `<label>${esc(label)}<input type="number" data-list="${list}" data-i="${i}" data-k="${key}" value="${val ?? ''}" ${extra}></label>`;
+const cardHead = (list, i, n, title) =>
+  `<div class="card-head"><span>${esc(title)}</span>` +
+  `<button data-act="up" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.up'))}"${i === 0 ? ' disabled' : ''}>↑</button>` +
+  `<button data-act="down" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.down'))}"${i === n - 1 ? ' disabled' : ''}>↓</button>` +
+  `<button data-act="del" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.del'))}">✕</button></div>`;
+
+function renderCreativeUI() {
+  const p = { slotW: parseFloat($('slotW').value) || 0, slotH: parseFloat($('slotH').value) || 0 };
+  const shapeOpts = cur => SLOT_SHAPES.map(k => opt(k, shapeName(k), cur)).join('');
+  $('bandList').innerHTML = creative.bands.map((b, i, all) => {
+    const last = i === all.length - 1;
+    return `<div class="card">${cardHead('bands', i, all.length, t('band.n', i + 1))}<div class="grid2">` +
+      `<label>${esc(t('band.shape'))}<select data-list="bands" data-i="${i}" data-k="shape">${shapeOpts(b.shape)}</select></label>` +
+      (last ? `<label>${esc(t('band.height'))}<input type="text" value="${esc(t('band.rest'))}" disabled></label>`
+            : numField('bands', i, 'height', t('band.height'), b.height, 'min="0" step="1"')) +
+      numField('bands', i, 'slotW', t('band.w'), b.slotW, `min="0" step="0.1" placeholder="${fmt(p.slotW)}"`) +
+      numField('bands', i, 'slotH', t('band.l'), b.slotH, `min="0.5" step="0.5" placeholder="${fmt(p.slotH)}"`) +
+      `</div></div>`;
+  }).join('');
+
+  $('modList').innerHTML = creative.mods.map((m, i, all) => {
+    let h = `<div class="card">${cardHead('mods', i, all.length, `${t('mod.n', i + 1)} · ${t('tg.' + m.target)}`)}<div class="grid2">`;
+    h += `<label>${esc(t('mod.target'))}<select data-list="mods" data-i="${i}" data-k="target" data-rebuild>${MOD_TARGETS.map(k => opt(k, t('tg.' + k), m.target)).join('')}</select></label>`;
+    h += `<label>${esc(t('mod.source'))}<select data-list="mods" data-i="${i}" data-k="source" data-rebuild>${MOD_SOURCES.map(k => opt(k, t('src.' + k), m.source)).join('')}</select></label>`;
+    if (m.target === 'slotW' || m.target === 'slotH') {
+      h += numField('mods', i, 'from', t('mod.from'), m.from, 'step="0.1"') + numField('mods', i, 'to', t('mod.to'), m.to, 'step="0.1"');
+      h += numField('mods', i, 'strength', t('mod.strength'), m.strength, 'min="0" max="100" step="5"');
+    } else {
+      if (m.target === 'shape') h += `<label>${esc(t('mod.shapeB'))}<select data-list="mods" data-i="${i}" data-k="shapeB">${shapeOpts(m.shapeB)}</select></label>`;
+      h += numField('mods', i, 'threshold', t('mod.threshold'), m.threshold, 'min="0" max="100" step="5"');
+    }
+    h += `<label class="check" style="align-self:end"><input type="checkbox" data-list="mods" data-i="${i}" data-k="invert"${m.invert ? ' checked' : ''}> ${esc(t('mod.invert'))}</label>`;
+    h += '</div><div class="grid2" style="margin-top:6px">';
+    if (m.source === 'linear') {
+      h += numField('mods', i, 'angle', t('mod.angle'), m.angle, 'step="15"');
+      h += `<label class="check" style="align-self:end"><input type="checkbox" data-list="mods" data-i="${i}" data-k="mirror"${m.mirror ? ' checked' : ''}> ${esc(t('mod.mirror'))}</label>`;
+      h += `<div class="desc span2">${esc(t('mod.angleHint'))}</div>`;
+    } else if (m.source === 'radial') {
+      h += numField('mods', i, 'cx', t('mod.cx'), m.cx, 'step="5"') + numField('mods', i, 'cy', t('mod.cy'), m.cy, 'step="5"');
+      h += numField('mods', i, 'radius', t('mod.radius'), m.radius, 'min="1" step="5"');
+    } else if (m.source === 'wave') {
+      h += numField('mods', i, 'angle', t('mod.angle'), m.angle, 'step="15"') + numField('mods', i, 'period', t('mod.period'), m.period, 'min="1" step="5"');
+      h += numField('mods', i, 'phase', t('mod.phase'), m.phase, 'step="15"');
+    } else if (m.source === 'noise') {
+      h += numField('mods', i, 'scale', t('mod.scale'), m.scale, 'min="1" step="5"') + numField('mods', i, 'seed', t('mod.seed'), m.seed, 'step="1"');
+    } else if (m.source === 'image') {
+      h += `<div class="imgrow span2">${m.img ? `<img src="${m.img.url}" alt="">` : ''}<span>${esc(m.img ? m.img.name : t('mod.noImage'))}</span>` +
+           `<button data-act="img" data-list="mods" data-i="${i}">${esc(t('mod.pick'))}</button></div>`;
+      h += `<div class="desc span2">${esc(t('mod.imgHint'))}</div>`;
+    }
+    return h + '</div></div>';
+  }).join('');
+}
+
+function creativeInput(e) {
+  const el = e.target, list = el.dataset.list;
+  if (!list || !el.dataset.k) return;
+  const item = creative[list][+el.dataset.i], k = el.dataset.k;
+  if (el.type === 'checkbox') item[k] = el.checked;
+  else if (el.type === 'number') item[k] = el.value === '' ? null : parseFloat(el.value);
+  else item[k] = el.value;
+  if (el.hasAttribute('data-rebuild')) renderCreativeUI();
+  render();
+}
+let imgTarget = null;
+function creativeClick(e) {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const list = creative[b.dataset.list], i = +b.dataset.i;
+  if (b.dataset.act === 'img') { imgTarget = list[i]; $('imgFile').click(); return; }
+  if (b.dataset.act === 'del') list.splice(i, 1);
+  if (b.dataset.act === 'up' && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
+  if (b.dataset.act === 'down' && i < list.length - 1) [list[i + 1], list[i]] = [list[i], list[i + 1]];
+  renderCreativeUI();
+  render();
+}
+// Downscale to ≤ 200 px greyscale JPEG so it can be stored with the parameters.
+function loadImage(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, 200 / Math.max(im.width, im.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(2, Math.round(im.width * s)); cv.height = Math.max(2, Math.round(im.height * s));
+      const g = cv.getContext('2d');
+      g.filter = 'grayscale(1)';
+      g.drawImage(im, 0, 0, cv.width, cv.height);
+      if (imgTarget) imgTarget.img = { name: file.name, url: cv.toDataURL('image/jpeg', 0.85) };
+      renderCreativeUI();
+      render();
+    };
+    im.src = r.result;
+  };
+  r.readAsDataURL(file);
+}
+
 // ---------------------------------------------------------------- preview
 const view = $('view'), stage = $('stage');
 let zoom = 1, panX = 0, panY = 0, last = null;
+let viewMode = 'cut';
+try { viewMode = localStorage.getItem('kerf-view') || 'cut'; } catch (e) {}
+document.querySelector(`input[name=view][value=${['cut', 'light', 'flex'].includes(viewMode) ? viewMode : 'cut'}]`).checked = true;
+
+function previewInner(p, doc, vm) {
+  const boards = doc.boards.map(b => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
+  if (vm === 'light') {
+    const all = doc.cuts.join('');
+    return `<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.4"/></filter></defs>` +
+      `<g fill="#231d19">${boards}</g>` +
+      `<g fill="#ff9d2e" stroke="#ff9d2e" stroke-width="0.6" filter="url(#glow)">${all}</g>` +
+      `<g fill="#ffe7b0" stroke="#ffe7b0" stroke-width="0.2">${all}</g>`;
+  }
+  if (vm === 'flex') {
+    const dMid = midDiameter(p), mat = MATERIALS[p.material];
+    return `<g class="boards" fill="var(--board)" stroke="var(--muted)" stroke-width="1">${boards}</g>` +
+      `<g stroke="#00000066" stroke-width="0.15">${doc.recs.map(r => `<g fill="${heatColor(r, dMid, mat)}">${r.els.join('')}</g>`).join('')}</g>`;
+  }
+  return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
+    `<g class="cuts" fill="none" stroke="var(--cut)" stroke-width="1.2">${doc.cuts.join('')}</g>` +
+    `<g fill="var(--engrave)" font-family="Arial, Helvetica, sans-serif" font-size="3">${doc.labels.join('')}</g>`;
+}
 
 function render() {
   const p = readParams();
-  document.body.classList.toggle('test', p.mode === 'test');
-  const S = SHAPES[p.shape];
+  document.querySelectorAll('[data-modes]').forEach(el => { el.hidden = !el.dataset.modes.split(' ').includes(p.mode); });
   $('shapeDesc').textContent = t('desc.' + p.shape);
+  $('meanderNote').hidden = !(p.mode === 'creative' && SHAPES[p.shape].meander);
   $('offset').disabled = p.offsetMode !== 'custom';
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
-  $('gradProfile').disabled = $('gradEnd').disabled = p.gradParam === 'off';
-  const center = p.gradProfile === 'center';
-  $('gradDesc').textContent = p.gradParam === 'off' ? '' :
-    t('gradDesc', t('p.' + p.gradParam), fmt(p.gradParam === 'gapX' ? p.gapX : p.slotH), t(center ? 'grad.center' : 'grad.left'),
-      fmt(p.gradEnd), t(center ? 'grad.edges' : 'grad.right')) +
-    (p.gradParam === 'slotH' ? t('grad.slotNote') : '') +
-    (p.seamless && p.gradParam === 'gapX' ? t('grad.seamNote') : '');
   const dm = midDiameter(p);
   $('diaSummary').textContent = p.boardW > 0 ? t('diaSummary', (dm - p.thick).toFixed(2), dm.toFixed(2), (dm + p.thick).toFixed(2)) : '';
   try { localStorage.setItem('kerf-params', JSON.stringify(p)); } catch (e) {}
@@ -1017,14 +1399,10 @@ function render() {
     $('flexInfo').innerHTML = '';
     return;
   }
+  const vm = p.mode === 'test' ? 'cut' : viewMode;
+  view.classList.toggle('dark', vm === 'light');
   const [W, H] = outerSize(doc);
-  stage.innerHTML =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}">` +
-    `<g${rotTransform(doc)}>` +
-    `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${doc.boards.map(b => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('')}</g>` +
-    `<g class="cuts" fill="none" stroke="var(--cut)" stroke-width="1.2">${doc.cuts.join('')}</g>` +
-    `<g fill="var(--engrave)" font-family="Arial, Helvetica, sans-serif" font-size="3">${doc.labels.join('')}</g>` +
-    `</g></svg>`;
+  stage.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}"><g${rotTransform(doc)}>${previewInner(p, doc, vm)}</g></svg>`;
   renderInfo(p, doc);
   layout();
 }
@@ -1041,6 +1419,8 @@ function renderInfo(p, doc) {
       html += `<tr><td>${fmt(r.v)} mm</td><td class="${cls}">${r.eps.toFixed(2)} %</td><td>${Math.round(r.dMin - p.thick)} mm</td></tr>`;
     }
     html += '</table>';
+    const reason = doc.rows.find(r => r.reason)?.reason;
+    if (reason && doc.rows.every(r => r.eps == null)) html += `<p class="warn">${esc(t(reason))}</p>`;
   } else {
     const fs = flexSummary(p, doc);
     if (fs.eps == null) html += `<p>${esc(fs.text || '')}</p>`;
@@ -1049,9 +1429,14 @@ function renderInfo(p, doc) {
         `<div><span>${esc(t('fi.strainAt', (dm - p.thick).toFixed(1)))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
         `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(matName)} ≤ ${mat.ok} %</em></div>` +
         `</div>`;
+      if (p.mode === 'creative' && (fs.over || fs.rigid)) {
+        html += `<p class="${fs.over ? 'bad' : 'warn'}">${esc(t('fi.counts', fs.over, fs.rigid))}</p>`;
+        if (viewMode !== 'flex') html += `<p>${esc(t('fi.useFlex'))}</p>`;
+      }
       if (fs.status[0] !== 'ok') html += `<p>${esc(t('fi.softer'))}</p>`;
-      if (doc.flex.solid) html += `<p class="warn">${esc(t('fi.solid'))}</p>`;
+      if (doc.flex.solid && p.mode !== 'creative') html += `<p class="warn">${esc(t('fi.solid'))}</p>`;
     }
+    if (viewMode === 'flex') html += `<div class="legend">${['ok', 'warn', 'bad', 'rigid'].map(k => `<span><i style="background:${HEAT[k]}"></i>${esc(t('fi.lg.' + k))}</span>`).join('')}</div>`;
   }
   const note = STR[lang]['note.' + p.material];
   if (note) html += `<p>${esc(note)}</p>`;
@@ -1069,12 +1454,12 @@ function layout() {
   if (!last || !stage.firstChild) return;
   const [W, H] = outerSize(last.doc);
   const r = view.getBoundingClientRect(), m = 30;
-  const base = Math.max(0.01, Math.min((r.width - 2 * m) / W, (r.height - 2 * m) / H));
+  const base = Math.max(0.01, Math.min((r.width - 2 * m) / W, (r.height - 2 * m - 30) / H));
   const s = base * zoom;
   const svg = stage.firstChild;
   svg.setAttribute('width', W * s);
   svg.setAttribute('height', H * s);
-  const x = (r.width - W * s) / 2 + panX, y = (r.height - H * s) / 2 + panY;
+  const x = (r.width - W * s) / 2 + panX, y = (r.height - H * s) / 2 + 12 + panY;
   stage.style.transform = `translate(${x}px, ${y}px)`;
   $('zLabel').textContent = Math.round(zoom * 100) + '%';
 }
@@ -1102,7 +1487,7 @@ view.addEventListener('wheel', e => {
 
 let drag = null;
 view.addEventListener('pointerdown', e => {
-  if (e.target.closest('.zoom')) return;
+  if (e.target.closest('.zoom, .viewseg')) return;
   drag = { x: e.clientX - panX, y: e.clientY - panY };
   view.setPointerCapture(e.pointerId);
   view.classList.add('dragging');
@@ -1119,8 +1504,23 @@ $('boardW').addEventListener('input', syncDiameter);
 $('thick').addEventListener('input', syncDiameter);
 $('diaRef').addEventListener('input', syncDiameter);
 $('diameter').addEventListener('input', diameterChanged);
+// band/modulator cards are rebuilt dynamically and handled by creativeInput()
 document.querySelectorAll('.panel input, .panel select, #project').forEach(el => el.addEventListener('input', render));
+$('slotW').addEventListener('input', renderCreativeUI);
+$('slotH').addEventListener('input', renderCreativeUI);
 document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', () => { zoom = 1; panX = panY = 0; render(); }));
+document.querySelectorAll('input[name=view]').forEach(el => el.addEventListener('change', () => {
+  viewMode = el.value;
+  try { localStorage.setItem('kerf-view', viewMode); } catch (e) {}
+  render();
+}));
+for (const id of ['bandList', 'modList']) {
+  $(id).addEventListener('input', creativeInput);
+  $(id).addEventListener('click', creativeClick);
+}
+$('addBand').onclick = () => { creative.bands.push(newBand(readParams())); renderCreativeUI(); render(); };
+$('addMod').onclick = () => { creative.mods.push(newMod(readParams())); renderCreativeUI(); render(); };
+$('imgFile').onchange = e => { const file = e.target.files[0]; e.target.value = ''; if (file) loadImage(file); };
 
 $('saveBtn').onclick = () => {
   if (!last || !last.doc.count) { alert(t('alert.none')); return; }

@@ -14,8 +14,12 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 - **Seamless mode**: adjusts the horizontal pitch to an even number of columns, so the pattern continues across the glue seam without a break.
 - **Open edges**: slots run out through the top and bottom edges, so no continuous solid strip is left.
 - **Vertical offset**: top-aligned, centered (top and bottom mirror each other) or a custom value.
-- **Gradient**: horizontal gap or slot length varies left → right or center → edges.
-- **Bendability estimate**: strain in the twisting bridges for the target diameter, plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
+- **Creative mode** for lampshades and other designs, on top of the same slot grid:
+  - **Bands**: horizontal zones, each with its own shape and optional slot size (mix pill, dogbone, S-slot …).
+  - **Modulators**: linear gradient (any angle, optionally mirrored), radial, waves, noise or a greyscale **image** drive slot width, slot length, slot removal or a shape swap. They stack from top to bottom with adjustable strength.
+  - The image is stored (downscaled) in the SVG metadata, so a design can be reloaded completely.
+- **Preview views**: *Cut*, *Light* (glowing slots on a dark board – how a lampshade will look) and *Flex* (per-slot strain heatmap: good / borderline / too high / rigid).
+- **Bendability estimate**: strain in the twisting bridges for the target diameter, computed for every slot-to-slot link, plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 - **Test strips**: a set of coupons that vary one parameter, each with an engraved label (value and min. diameter).
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
 - Side margins, optional outer border, 90° rotated output.
