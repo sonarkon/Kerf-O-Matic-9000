@@ -11,7 +11,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 ## Features
 
 - **Metric** throughout; SVG export in mm, at true size.
-- **Stadium / pill slots** as one closed path with true arcs, not a rectangle plus two overlapping circles.
+- **Pill slots** as one closed path with true arcs, not a rectangle plus two overlapping circles.
 - **Cylinder sizing**: enter the inner, mid-plane or outer diameter and the board width (circumference) is calculated on the material's mid-plane.
 - **Seamless mode**: adjusts the horizontal pitch to an even number of columns, so the pattern continues across the glue seam without a break.
 - **Open edges**: slots run out through the top and bottom edges, so no continuous solid strip is left.
@@ -28,7 +28,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 - Side margins, optional outer border, 90° rotated output.
 - **All parameters saved in the file**: in the file name, as a separate *Parameters* layer, and as metadata. *Load parameters…* restores everything from a saved SVG.
 - Optional **project name**: used as the file-name prefix and as the first line of the parameter layer.
-- Shapes: stadium, **dogbone** (round relief holes at the slot ends), **S-slot** (constant width, exact arcs), line, meander, ellipse, rectangle, diamond, hexagon, chevron, cross.
+- Shapes: pill, **dogbone** (round relief holes at the slot ends), **S-slot** (constant width, exact arcs), line, meander, ellipse, rectangle, diamond, hexagon, chevron, cross.
 - English and German UI.
 
 ## SVG layers
