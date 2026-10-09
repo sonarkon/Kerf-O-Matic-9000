@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kerf Generator</title>
+<style>
+  :root {
+    --bg: #f3f1ec; --panel: #ffffff; --text: #1d1b18; --muted: #6b665e;
+    --line: #dcd7cd; --accent: #b4441c; --accent-ink: #fff; --board: #efe0c6;
+    --cut: #c40000; --engrave: #1d1b18; --input: #faf9f6;
+    --ok: #2f7d32; --warn: #a66a00; --bad: #c0261b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17161a; --panel: #211f24; --text: #ece9e3; --muted: #9b968d;
+      --line: #36333a; --accent: #e0703f; --accent-ink: #1a1009; --board: #3a3224;
+      --cut: #ff5a4a; --engrave: #ece9e3; --input: #2a282e;
+      --ok: #6cc070; --warn: #e3a83a; --bad: #ff6b5e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: grid; height: 100vh;
+    grid-template-columns: 300px 1fr 280px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "header header header" "design view output";
+  }
+  header {
+    grid-area: header; display: flex; align-items: center; gap: 16px;
+    padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  header .seg { width: 240px; }
+  header .actions { margin-left: auto; display: flex; gap: 8px; }
+  header #lang { width: auto; }
+  .panel {
+    background: var(--panel); padding: 16px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .panel > * { flex-shrink: 0; }
+  #design { grid-area: design; border-right: 1px solid var(--line); }
+  #output { grid-area: output; border-left: 1px solid var(--line); }
+  main { grid-area: view; }
+  h1 { font-size: 16px; margin: 0; white-space: nowrap; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .span2 { grid-column: 1 / -1; }
+  label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+  label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
+  input[type=number], select {
+    font: inherit; color: var(--text); background: var(--input);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%;
+  }
+  input:disabled, select:disabled { opacity: .55; }
+  .checks { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg label { flex-direction: row; justify-content: center; padding: 7px; cursor: pointer; color: var(--text); font-size: 13px; }
+  .seg input { display: none; }
+  .seg label:has(input:checked) { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button {
+    font: inherit; border-radius: 6px; padding: 8px 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--input); color: var(--text);
+  }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .info {
+    font-size: 12px; line-height: 1.5; color: var(--muted);
+    background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px;
+    word-break: break-word;
+  }
+  .info b { color: var(--text); font-weight: 600; }
+  .info code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+  .info table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .info td { padding: 1px 4px 1px 0; }
+  .info p { margin: 6px 0 0; }
+  .info .fine { font-size: 11px; opacity: .8; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stats div { display: flex; flex-direction: column; }
+  .stats span { font-size: 11px; }
+  .stats strong { font-size: 20px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stats strong.ok, .stats em.ok { color: var(--ok); }
+  .stats strong.warn, .stats em.warn { color: var(--warn); }
+  .stats strong.bad, .stats em.bad { color: var(--bad); }
+  .stats em { font-style: normal; font-size: 11px; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  body.test .pattern-only, body:not(.test) .test-only { display: none; }
+  main { position: relative; overflow: hidden; cursor: grab; touch-action: none; }
+  main.dragging { cursor: grabbing; }
+  #stage { position: absolute; left: 0; top: 0; }
+  #stage svg { display: block; overflow: visible; }
+  #stage svg .cuts *, #stage svg .boards * { vector-effect: non-scaling-stroke; }
+  .zoom {
+    position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px;
+  }
+  .zoom button { padding: 4px 10px; }
+  .zoom span { min-width: 48px; text-align: center; font-size: 12px; color: var(--muted); }
+  .hint { position: absolute; left: 12px; bottom: 12px; font-size: 12px; color: var(--muted); }
+  @media (max-width: 1000px) {
+    body {
+      grid-template-columns: 300px 1fr; grid-template-rows: auto 1fr auto;
+      grid-template-areas: "header header" "design view" "output output";
+      height: auto; min-height: 100vh;
+    }
+    main { min-height: 70vh; }
+    #design { max-height: calc(70vh + 60px); }
+    #output { border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  }
+  @media (max-width: 720px) {
+    body {
+      grid-template-columns: 1fr; grid-template-rows: auto auto 60vh auto;
+      grid-template-areas: "header" "design" "view" "output";
+    }
+    header { flex-wrap: wrap; gap: 10px; }
+    header .seg { width: 100%; order: 3; }
+    #design { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
+    main { min-height: 0; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 data-i18n="title"></h1>
+  <div class="seg" role="radiogroup" data-i18n-aria="mode.aria">
+    <label><input type="radio" name="mode" value="pattern" checked> <span data-i18n="mode.pattern"></span></label>
+    <label><input type="radio" name="mode" value="test"> <span data-i18n="mode.test"></span></label>
+  </div>
+  <div class="actions">
+    <select id="lang" aria-label="Language / Sprache">
+      <option value="en">EN</option>
+      <option value="de">DE</option>
+    </select>
+    <button id="loadBtn" data-i18n="load"></button>
+    <button class="primary" id="saveBtn" data-i18n="save"></button>
+  </div>
+  <input type="file" id="loadFile" accept=".svg,image/svg+xml" hidden>
+</header>
+
+<aside id="design" class="panel">
+  <section>
+    <h2 data-i18n="sec.board"></h2>
+    <div class="grid2">
+      <label><span data-i18n="boardW"></span><input type="number" id="boardW" value="150" min="1" step="0.5"></label>
+      <label><span data-i18n="boardH"></span><input type="number" id="boardH" value="100" min="1" step="0.5"></label>
+      <label><span data-i18n="thick"></span><input type="number" id="thick" value="3" min="0.1" step="0.1"></label>
+      <label><span data-i18n="material"></span><select id="material"></select></label>
+      <label><span data-i18n="diameter"></span><input type="number" id="diameter" min="0.1" step="0.5"></label>
+      <label><span data-i18n="diaRef"></span><select id="diaRef">
+        <option value="inner" data-i18n="ref.inner"></option>
+        <option value="mid" data-i18n="ref.mid"></option>
+        <option value="outer" data-i18n="ref.outer"></option>
+      </select></label>
+    </div>
+    <div class="desc" id="diaSummary"></div>
+    <div class="checks pattern-only">
+      <label class="check"><input type="checkbox" id="seamless"> <span data-i18n="seamless"></span></label>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.shape"></h2>
+    <select id="shape"></select>
+    <div class="desc" id="shapeDesc"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.slot"></h2>
+    <div class="grid2">
+      <label><span data-i18n="slotH"></span><input type="number" id="slotH" value="20" min="0.1" step="0.5"></label>
+      <label><span data-i18n="slotW"></span><input type="number" id="slotW" value="2" min="0" step="0.1"></label>
+      <label><span data-i18n="gapY"></span><input type="number" id="gapY" value="4" min="0.1" step="0.1"></label>
+      <label><span data-i18n="gapX"></span><input type="number" id="gapX" value="2" min="0.1" step="0.1"></label>
+      <label><span data-i18n="offsetMode"></span><select id="offsetMode">
+        <option value="top" data-i18n="off.top"></option>
+        <option value="center" selected data-i18n="off.center"></option>
+        <option value="custom" data-i18n="off.custom"></option>
+      </select></label>
+      <label><span data-i18n="offset"></span><input type="number" id="offset" value="0" step="0.5"></label>
+    </div>
+  </section>
+
+  <section class="pattern-only">
+    <h2 data-i18n="sec.grad"></h2>
+    <div class="grid2">
+      <label class="span2"><span data-i18n="gradParam"></span><select id="gradParam">
+        <option value="off" data-i18n="grad.off"></option>
+        <option value="gapX" data-i18n="p.gapX"></option>
+        <option value="slotH" data-i18n="p.slotH"></option>
+      </select></label>
+      <label><span data-i18n="gradProfile"></span><select id="gradProfile">
+        <option value="lr" data-i18n="prof.lr"></option>
+        <option value="center" data-i18n="prof.center"></option>
+      </select></label>
+      <label><span data-i18n="gradEnd"></span><input type="number" id="gradEnd" value="4" min="0.1" step="0.1"></label>
+    </div>
+    <div class="desc" id="gradDesc"></div>
+  </section>
+
+  <section class="test-only">
+    <h2 data-i18n="sec.test"></h2>
+    <div class="grid2">
+      <label class="span2"><span data-i18n="testParam"></span><select id="testParam">
+        <option value="gapX" data-i18n="p.gapX"></option>
+        <option value="slotH" data-i18n="p.slotH"></option>
+        <option value="gapY" data-i18n="p.gapY"></option>
+        <option value="slotW" data-i18n="p.slotW"></option>
+      </select></label>
+      <label><span data-i18n="testFrom"></span><input type="number" id="testFrom" value="1" min="0" step="0.1"></label>
+      <label><span data-i18n="testTo"></span><input type="number" id="testTo" value="3" min="0" step="0.1"></label>
+      <label><span data-i18n="testCount"></span><input type="number" id="testCount" value="5" min="2" max="30" step="1"></label>
+      <label><span data-i18n="testSize"></span>
+        <span style="display:flex;gap:4px"><input type="number" id="testW" value="80" min="10" step="1"><input type="number" id="testH" value="40" min="5" step="1"></span>
+      </label>
+    </div>
+    <div class="desc" data-i18n="testDesc"></div>
+  </section>
+</aside>
+
+<main id="view">
+  <div id="stage"></div>
+  <div class="hint" data-i18n="hint"></div>
+  <div class="zoom">
+    <button id="zOut" data-i18n-aria="zoomOut">−</button>
+    <span id="zLabel">100%</span>
+    <button id="zIn" data-i18n-aria="zoomIn">+</button>
+    <button id="zFit" data-i18n="fit"></button>
+  </div>
+</main>
+
+<aside id="output" class="panel">
+  <section>
+    <h2 data-i18n="sec.output"></h2>
+    <div class="grid2">
+      <label><span data-i18n="marginX"></span><input type="number" id="marginX" value="0" min="0" step="0.5"></label>
+      <label><span data-i18n="order"></span><select id="order">
+        <option value="zigzag" data-i18n="ord.zigzag"></option>
+        <option value="skip" data-i18n="ord.skip"></option>
+      </select></label>
+    </div>
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="openEdges"> <span data-i18n="openEdges"></span></label>
+      <label class="check"><input type="checkbox" id="border" checked> <span data-i18n="border"></span></label>
+      <label class="check"><input type="checkbox" id="rotate"> <span data-i18n="rotate"></span></label>
+      <label class="check"><input type="checkbox" id="paramVisible" checked> <span data-i18n="paramVisible"></span></label>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.flex"></h2>
+    <div class="info" id="flexInfo"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="sec.file"></h2>
+    <div class="info" id="info"></div>
+  </section>
+</aside>
+
+<script>
+const $ = id => document.getElementById(id);
+const f = v => +v.toFixed(4);              // compact number for SVG output
+const fmt = v => String(+(+v).toFixed(3)); // for filenames / labels
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const mod = (a, n) => ((a % n) + n) % n;
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// ---------------------------------------------------------------- i18n
+const STR = {
+  en: {
+    'title': 'Kerf Pattern Generator',
+    'mode.aria': 'Mode', 'mode.pattern': 'Pattern', 'mode.test': 'Test strips',
+    'load': 'Load parameters…', 'save': 'Save SVG',
+    'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
+    'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
+    'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
+    'seamless': 'Seamless: fit column count to circumference',
+    'sec.shape': 'Shape', 'sec.slot': 'Slots',
+    'slotH': 'Slot length (mm)', 'slotW': 'Slot width (mm)', 'gapY': 'Vertical gap (mm)', 'gapX': 'Horizontal gap (mm)',
+    'offsetMode': 'Vertical offset', 'off.top': 'Top aligned', 'off.center': 'Centered', 'off.custom': 'Custom', 'offset': 'Offset (mm)',
+    'sec.grad': 'Gradient', 'gradParam': 'Parameter', 'grad.off': 'Off',
+    'gradProfile': 'Profile', 'prof.lr': 'Left → right', 'prof.center': 'Center → edges', 'gradEnd': 'End value (mm)',
+    'p.gapX': 'Horizontal gap', 'p.slotH': 'Slot length', 'p.gapY': 'Vertical gap', 'p.slotW': 'Slot width',
+    'sec.test': 'Test strips', 'testParam': 'Varied parameter', 'testFrom': 'From (mm)', 'testTo': 'To (mm)',
+    'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
+    'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
+    'hint': 'Drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
+    'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
+    'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
+    'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
+    'rotate': 'Rotate output by 90°', 'paramVisible': 'Parameter layer visible',
+    'sec.flex': 'Bendability', 'sec.file': 'File',
+
+    'shape.Stadium': 'Stadium (pill)', 'desc.Stadium': 'Pill shape: one closed path, a rectangle with semicircular ends. First choice for acrylic – round ends prevent cracks.',
+    'shape.Line': 'Line', 'desc.Line': 'Single cut (width = laser kerf), maximum bend per cut. Slot width is ignored.',
+    'shape.Meander': 'Meander', 'desc.Meander': 'Cut alternately from top and bottom – very soft but not very stable. “Vertical gap” = remaining strip at the edge.',
+    'shape.Ellipse': 'Ellipse', 'desc.Ellipse': 'Rounded, reduces stress concentrations',
+    'shape.Rectangle': 'Rectangle', 'desc.Rectangle': 'Rectangle with slightly rounded corners',
+    'shape.Diamond': 'Diamond', 'desc.Diamond': 'Pointed ends, bends very well (prone to cracking in acrylic)',
+    'shape.Bone': 'Bone', 'desc.Bone': 'Hourglass, strong at the ends',
+    'shape.Hexagon': 'Hexagon', 'desc.Hexagon': 'Six-sided, strong & flexible',
+    'shape.Chevron': 'Chevron', 'desc.Chevron': 'V-shape, interlocks when bent',
+    'shape.Wave': 'Wave', 'desc.Wave': 'S-curve, decorative + functional',
+    'shape.Cross': 'Cross', 'desc.Cross': '+ shape, bends in two directions',
+
+    'mat.pmma': 'Acrylic (PMMA)', 'mat.petg': 'PETG', 'mat.plywood': 'Plywood', 'mat.mdf': 'MDF',
+    'note.pmma': 'Cast acrylic (GS) tolerates more than extruded (XT). Bending with a heat gun/oven (~90 °C) greatly reduces the residual stress.',
+    'note.petg': 'Much tougher than acrylic, ideal for living hinges.',
+
+    'r.meander': 'No estimate for meander (different bending mechanism).',
+    'r.thick': 'Thickness missing.', 'r.cols': 'Too few columns.',
+    'r.overlap': 'Slots don’t overlap (slot length ≤ vertical gap) – the pattern will barely bend.',
+    'st.ok': 'good', 'st.warn': 'borderline', 'st.bad': 'too high',
+
+    'diaSummary': (i, m, o) => `Ø inner ${i} · mid ${m} · outer ${o} mm`,
+    'gradDesc': (name, a, from, b, to) => `${name} goes from ${a} mm (${from}) to ${b} mm (${to}).`,
+    'grad.left': 'left', 'grad.right': 'right', 'grad.center': 'center', 'grad.edges': 'edges',
+    'grad.slotNote': ' Row pitch stays fixed; the vertical gap changes accordingly.',
+    'grad.seamNote': ' “Seamless” has no effect here.',
+
+    'fi.perStrip': (d, mat, t) => `<b>Flex per strip</b> at target inner Ø ${d} mm (${mat}, ${t} mm)`,
+    'fi.minD': 'Min inner Ø', 'fi.strainAt': d => `Strain at Ø ${d}`, 'fi.minGood': 'Min inner Ø (good)',
+    'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
+    'fi.solid': 'In places the slots don’t overlap – it will barely bend there.',
+    'fi.rough': 'Rough estimate (torsion of the bridges); no substitute for a test strip.',
+    'info.cuts': 'Cuts', 'info.cols': 'Columns', 'info.seam': g => `Seamless: horizontal gap ${g} mm`,
+    'info.none': 'No cuts – adjust parameters',
+    'alert.none': 'No cuts to save.', 'alert.noParams': 'This SVG contains no kerf parameters.',
+
+    'layer.cuts': 'Cuts', 'layer.border': 'Outer border', 'layer.engrave': 'Engrave', 'layer.params': 'Parameters',
+    'pl.test': (name, a, b, n) => `Test strips: ${name} ${a} … ${b} mm in ${n} steps`,
+    'pl.strip': (w, h, z) => `Strip: ${w} × ${h} mm, label zone ${z} mm`,
+    'pl.target': (i, m) => `Target Ø for rating: inner ${i} / mid ${m} mm`,
+    'pl.board': (w, h) => `Board: ${w} × ${h} mm`,
+    'pl.dia': (i, m, o) => `Cylinder Ø: inner ${i} · mid ${m} · outer ${o} mm`,
+    'pl.material': (m, t) => `Material: ${m}, ${t} mm`,
+    'pl.shape': s => `Shape: ${s}`,
+    'pl.slot': (w, h) => `Slot: ${w} × ${h} mm (W × L)`,
+    'pl.gaps': (gy, gx) => `Vertical gap: ${gy} mm · Horizontal gap: ${gx}`,
+    'pl.seamGap': (g, inp) => `${g} mm (adjusted for seamless, input ${inp})`,
+    'pl.offset': (m, v) => `Vertical offset: ${m} (${v} mm)`,
+    'pl.grad': g => `Gradient: ${g}`,
+    'pl.seamless': (on, n) => `Seamless: ${on ? `yes (${n} columns)` : 'no'}`,
+    'pl.rotated': on => `Rotated: ${on ? '90°' : 'no'}`,
+    'pl.edges': (m, open, border) => `Side margin: ${m} mm · Open edges: ${open ? 'yes' : 'no'} · Outer border: ${border ? 'yes' : 'no'}`,
+    'pl.order': o => `Cut order: ${o}`,
+    'pl.flex': (e, st, d) => `Flex (guide value): ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
+    'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d}`
+  },
+  de: {
+    'title': 'Kerf-Muster Generator',
+    'mode.aria': 'Modus', 'mode.pattern': 'Muster', 'mode.test': 'Teststreifen',
+    'load': 'Parameter laden…', 'save': 'SVG speichern',
+    'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
+    'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
+    'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
+    'seamless': 'Nahtlos: Spaltenzahl an Umfang anpassen',
+    'sec.shape': 'Form', 'sec.slot': 'Schlitz',
+    'slotH': 'Schlitzlänge (mm)', 'slotW': 'Schlitzbreite (mm)', 'gapY': 'Steg vertikal (mm)', 'gapX': 'Steg horizontal (mm)',
+    'offsetMode': 'Vertikaler Versatz', 'off.top': 'Oben bündig', 'off.center': 'Zentriert', 'off.custom': 'Eigener Wert', 'offset': 'Versatz (mm)',
+    'sec.grad': 'Verlauf', 'gradParam': 'Parameter', 'grad.off': 'Aus',
+    'gradProfile': 'Profil', 'prof.lr': 'Links → Rechts', 'prof.center': 'Mitte → Rand', 'gradEnd': 'Endwert (mm)',
+    'p.gapX': 'Steg horizontal', 'p.slotH': 'Schlitzlänge', 'p.gapY': 'Steg vertikal', 'p.slotW': 'Schlitzbreite',
+    'sec.test': 'Teststreifen', 'testParam': 'Variierter Parameter', 'testFrom': 'Von (mm)', 'testTo': 'Bis (mm)',
+    'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
+    'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
+    'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
+    'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
+    'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
+    'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
+    'rotate': 'Um 90° gedreht ausgeben', 'paramVisible': 'Parameter-Layer sichtbar',
+    'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei',
+
+    'shape.Stadium': 'Stadium (Pille)', 'desc.Stadium': 'Pillenform: ein geschlossener Pfad, Rechteck mit halbrunden Enden. Für Acryl erste Wahl – runde Enden vermeiden Risse.',
+    'shape.Line': 'Linie', 'desc.Line': 'Einfacher Schnitt (Breite = Laserfuge), maximale Biegung pro Schnitt. Schlitzbreite wird ignoriert.',
+    'shape.Meander': 'Mäander', 'desc.Meander': 'Abwechselnd von oben und unten eingeschnitten – sehr weich, aber wenig formstabil. „Steg vertikal“ = Reststeg an der Kante.',
+    'shape.Ellipse': 'Ellipse', 'desc.Ellipse': 'Abgerundet, reduziert Spannungsspitzen',
+    'shape.Rectangle': 'Rechteck', 'desc.Rectangle': 'Rechteck mit leicht abgerundeten Ecken',
+    'shape.Diamond': 'Raute', 'desc.Diamond': 'Spitze Enden, sehr gute Biegung (bei Acryl rissanfällig)',
+    'shape.Bone': 'Knochen', 'desc.Bone': 'Sanduhr, stabil an den Enden',
+    'shape.Hexagon': 'Sechseck', 'desc.Hexagon': 'Sechseckig, stabil & flexibel',
+    'shape.Chevron': 'Chevron', 'desc.Chevron': 'V-Form, verzahnt beim Biegen',
+    'shape.Wave': 'Welle', 'desc.Wave': 'S-Kurve, dekorativ + funktional',
+    'shape.Cross': 'Kreuz', 'desc.Cross': '+-Form, biegt in zwei Richtungen',
+
+    'mat.pmma': 'Acryl (PMMA)', 'mat.petg': 'PETG', 'mat.plywood': 'Sperrholz', 'mat.mdf': 'MDF',
+    'note.pmma': 'Gegossenes Acryl (GS) verträgt mehr als extrudiertes (XT). Mit Heißluft/Ofen (~90 °C) gebogen sinkt die Dauerspannung stark.',
+    'note.petg': 'Deutlich zäher als Acryl, ideal für Living Hinges.',
+
+    'r.meander': 'Für Mäander gibt es keine Abschätzung (anderes Biegeprinzip).',
+    'r.thick': 'Materialstärke fehlt.', 'r.cols': 'Zu wenige Spalten.',
+    'r.overlap': 'Schlitze überlappen nicht (Schlitzlänge ≤ Steg vertikal) – das Muster biegt sich kaum.',
+    'st.ok': 'gut', 'st.warn': 'grenzwertig', 'st.bad': 'zu hoch',
+
+    'diaSummary': (i, m, o) => `Ø innen ${i} · Mitte ${m} · außen ${o} mm`,
+    'gradDesc': (name, a, from, b, to) => `${name} geht von ${a} mm (${from}) auf ${b} mm (${to}).`,
+    'grad.left': 'links', 'grad.right': 'rechts', 'grad.center': 'Mitte', 'grad.edges': 'Ränder',
+    'grad.slotNote': ' Der Zeilenabstand bleibt fest, Steg vertikal ändert sich mit.',
+    'grad.seamNote': ' „Nahtlos“ ist dabei ohne Wirkung.',
+
+    'fi.perStrip': (d, mat, t) => `<b>Flex je Streifen</b> bei Ziel-Ø innen ${d} mm (${mat}, ${t} mm)`,
+    'fi.minD': 'Min-Ø innen', 'fi.strainAt': d => `Dehnung bei Ø ${d}`, 'fi.minGood': 'Min-Ø innen (gut)',
+    'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
+    'fi.solid': 'Teilweise überlappen die Schlitze nicht – dort biegt es sich kaum.',
+    'fi.rough': 'Grobe Abschätzung (Torsion der Stege), ersetzt keinen Teststreifen.',
+    'info.cuts': 'Schnitte', 'info.cols': 'Spalten', 'info.seam': g => `Nahtlos: Steg horizontal ${g} mm`,
+    'info.none': 'Keine Schnitte – Parameter anpassen',
+    'alert.none': 'Keine Schnitte zum Speichern.', 'alert.noParams': 'Diese SVG enthält keine Kerf-Parameter.',
+
+    'layer.cuts': 'Schnitte', 'layer.border': 'Außenkontur', 'layer.engrave': 'Gravur', 'layer.params': 'Parameter',
+    'pl.test': (name, a, b, n) => `Teststreifen: ${name} ${a} … ${b} mm in ${n} Stufen`,
+    'pl.strip': (w, h, z) => `Streifen: ${w} × ${h} mm, Beschriftungszone ${z} mm`,
+    'pl.target': (i, m) => `Ziel-Ø für Bewertung: innen ${i} / Mitte ${m} mm`,
+    'pl.board': (w, h) => `Platte: ${w} × ${h} mm`,
+    'pl.dia': (i, m, o) => `Zylinder-Ø: innen ${i} · Mitte ${m} · außen ${o} mm`,
+    'pl.material': (m, t) => `Material: ${m}, ${t} mm`,
+    'pl.shape': s => `Form: ${s}`,
+    'pl.slot': (w, h) => `Schlitz: ${w} × ${h} mm (B × L)`,
+    'pl.gaps': (gy, gx) => `Steg vertikal: ${gy} mm · Steg horizontal: ${gx}`,
+    'pl.seamGap': (g, inp) => `${g} mm (nahtlos angepasst, Eingabe ${inp})`,
+    'pl.offset': (m, v) => `Vertikaler Versatz: ${m} (${v} mm)`,
+    'pl.grad': g => `Verlauf: ${g}`,
+    'pl.seamless': (on, n) => `Nahtlos: ${on ? `ja (${n} Spalten)` : 'nein'}`,
+    'pl.rotated': on => `Gedreht: ${on ? '90°' : 'nein'}`,
+    'pl.edges': (m, open, border) => `Rand links/rechts: ${m} mm · Ränder offen: ${open ? 'ja' : 'nein'} · Außenkontur: ${border ? 'ja' : 'nein'}`,
+    'pl.order': o => `Schnittreihenfolge: ${o}`,
+    'pl.flex': (e, st, d) => `Flex (Richtwert): ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
+    'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d}`
+  }
+};
+let lang = 'en';
+try { if (localStorage.getItem('kerf-lang') === 'de') lang = 'de'; } catch (e) {}
+const t = (key, ...args) => {
+  const v = STR[lang][key] ?? STR.en[key] ?? key;
+  return typeof v === 'function' ? v(...args) : v;
+};
+function applyLang() {
+  document.documentElement.lang = lang;
+  $('lang').value = lang;
+  document.title = t('title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+  for (const o of $('shape').options) o.textContent = t('shape.' + o.value);
+  for (const o of $('material').options) o.textContent = t('mat.' + o.value);
+}
+
+// ---------------------------------------------------------------- shapes
+// Each shape returns SVG element strings for a slot centred at (cx, cy)
+// with half-width hw and half-height hh (all in mm).
+const SHAPES = {
+  Stadium: {
+    draw(cx, cy, hw, hh) {
+      if (hw <= 0) return [`<line x1="${f(cx)}" y1="${f(cy - hh)}" x2="${f(cx)}" y2="${f(cy + hh)}"/>`];
+      if (hh >= hw) {
+        const r = hw, d = hh - hw;
+        return [`<path d="M${f(cx - r)},${f(cy - d)} V${f(cy + d)} A${f(r)},${f(r)} 0 0 0 ${f(cx + r)},${f(cy + d)} V${f(cy - d)} A${f(r)},${f(r)} 0 0 0 ${f(cx - r)},${f(cy - d)} Z"/>`];
+      }
+      const r = hh, d = hw - hh;
+      return [`<path d="M${f(cx - d)},${f(cy - r)} H${f(cx + d)} A${f(r)},${f(r)} 0 0 1 ${f(cx + d)},${f(cy + r)} H${f(cx - d)} A${f(r)},${f(r)} 0 0 1 ${f(cx - d)},${f(cy - r)} Z"/>`];
+    }
+  },
+  Line: {
+    line: true,
+    draw: (cx, y1, y2) => [`<line x1="${f(cx)}" y1="${f(y1)}" x2="${f(cx)}" y2="${f(y2)}"/>`]
+  },
+  Meander: {
+    meander: true
+  },
+  Ellipse: {
+    draw: (cx, cy, hw, hh) => [`<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(hw)}" ry="${f(hh)}"/>`]
+  },
+  Rectangle: {
+    draw(cx, cy, hw, hh) {
+      const r = Math.min(hw, hh) * 0.3;
+      return [`<rect x="${f(cx - hw)}" y="${f(cy - hh)}" width="${f(hw * 2)}" height="${f(hh * 2)}" rx="${f(r)}"/>`];
+    }
+  },
+  Diamond: {
+    draw: (cx, cy, hw, hh) => [`<polygon points="${[[cx, cy - hh], [cx + hw, cy], [cx, cy + hh], [cx - hw, cy]].map(p => p.map(f).join(',')).join(' ')}"/>`]
+  },
+  Bone: {
+    draw(cx, cy, hw, hh) {
+      const mw = hw * 0.4;
+      return [`<path d="M${f(cx - hw)},${f(cy - hh)} C${f(cx - mw)},${f(cy - hh * 0.3)} ${f(cx - mw)},${f(cy + hh * 0.3)} ${f(cx - hw)},${f(cy + hh)} L${f(cx + hw)},${f(cy + hh)} C${f(cx + mw)},${f(cy + hh * 0.3)} ${f(cx + mw)},${f(cy - hh * 0.3)} ${f(cx + hw)},${f(cy - hh)} Z"/>`];
+    }
+  },
+  Hexagon: {
+    draw: (cx, cy, hw, hh) => [`<polygon points="${[[cx, cy - hh], [cx + hw, cy - hh / 2], [cx + hw, cy + hh / 2], [cx, cy + hh], [cx - hw, cy + hh / 2], [cx - hw, cy - hh / 2]].map(p => p.map(f).join(',')).join(' ')}"/>`]
+  },
+  Chevron: {
+    draw: (cx, cy, hw, hh) => [`<polyline points="${f(cx - hw)},${f(cy - hh)} ${f(cx)},${f(cy + hh)} ${f(cx + hw)},${f(cy - hh)}"/>`]
+  },
+  Wave: {
+    draw(cx, cy, hw, hh) {
+      const c1 = cx - hw * 0.3, c2 = cx + hw * 0.3;
+      return [`<path d="M${f(cx - hw)},${f(cy - hh)} C${f(c1)},${f(cy - hh * 0.3)} ${f(c2)},${f(cy - hh * 0.3)} ${f(cx + hw)},${f(cy - hh)} L${f(cx + hw)},${f(cy + hh)} C${f(c2)},${f(cy + hh * 0.3)} ${f(c1)},${f(cy + hh * 0.3)} ${f(cx - hw)},${f(cy + hh)} Z"/>`];
+    }
+  },
+  Cross: {
+    draw(cx, cy, hw, hh) {
+      const aw = hw * 0.3, ah = hh * 0.3;
+      return [
+        `<rect x="${f(cx - aw)}" y="${f(cy - hh)}" width="${f(aw * 2)}" height="${f(hh * 2)}"/>`,
+        `<rect x="${f(cx - hw)}" y="${f(cy - ah)}" width="${f(hw * 2)}" height="${f(ah * 2)}"/>`
+      ];
+    }
+  }
+};
+
+// Allowed tensile strain ε (%) for the flex estimate: "ok" = permanent bend
+// without stress cracks/creep, "max" = short-term limit. Rough guide values.
+const MATERIALS = {
+  pmma:    { ok: 0.8, max: 1.5 },
+  petg:    { ok: 2,   max: 4 },
+  plywood: { ok: 0.8, max: 1.5 },
+  mdf:     { ok: 0.5, max: 1.0 }
+};
+
+// short codes for engraved test-strip labels (language independent)
+const TEST_SHORT = { gapX: 'gH', slotH: 'L', gapY: 'gV', slotW: 'W' };
+
+for (const k of Object.keys(SHAPES)) $('shape').add(new Option(k, k));
+for (const k of Object.keys(MATERIALS)) $('material').add(new Option(k, k));
+
+// ---------------------------------------------------------------- params
+const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'gradEnd',
+             'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
+const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'gradParam', 'gradProfile', 'order', 'testParam'];
+const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible'];
+
+function readParams() {
+  const p = { mode: document.querySelector('input[name=mode]:checked').value };
+  for (const k of NUM) p[k] = parseFloat($(k).value) || 0;
+  for (const k of SEL) p[k] = $(k).value;
+  for (const k of CHK) p[k] = $(k).checked;
+  p.testCount = clamp(Math.round(p.testCount), 2, 30);
+  return p;
+}
+function writeParams(p) {
+  if (p.mode) document.querySelector(`input[name=mode][value=${p.mode === 'test' ? 'test' : 'pattern'}]`).checked = true;
+  for (const k of NUM) if (p[k] != null) $(k).value = p[k];
+  for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
+  for (const k of CHK) if (p[k] != null) $(k).checked = !!p[k];
+  syncDiameter();
+}
+
+// Vertical shift of the slot grid (mm). "center" makes top and bottom edges
+// mirror images: both column types together repeat every stepY/2, so the
+// shift is half of whatever is left over after whole pitches.
+function effectiveOffset(p, h) {
+  if (p.offsetMode === 'custom') return p.offset;
+  if (p.offsetMode === 'center') {
+    const stepY = p.slotH + p.gapY;
+    return stepY > 0 ? +((h % stepY) / 2).toFixed(3) : 0;
+  }
+  return 0;
+}
+
+// Width is the circumference on the material's mid-plane (neutral axis).
+const midDiameter = p => p.boardW / Math.PI;
+function syncDiameter() {
+  const w = parseFloat($('boardW').value), t = parseFloat($('thick').value) || 0;
+  if (!(w > 0)) return;
+  const dm = w / Math.PI, ref = $('diaRef').value;
+  $('diameter').value = +(ref === 'inner' ? dm - t : ref === 'outer' ? dm + t : dm).toFixed(2);
+}
+function diameterChanged() {
+  const d = parseFloat($('diameter').value), t = parseFloat($('thick').value) || 0, ref = $('diaRef').value;
+  if (!(d > 0)) return;
+  const dm = ref === 'inner' ? d + t : ref === 'outer' ? d - t : d;
+  if (dm > 0) $('boardW').value = +(dm * Math.PI).toFixed(2);
+}
+
+// ---------------------------------------------------------------- geometry
+// Vertical pill running out through exactly one edge (y=0 or y=h): an open path
+// with true arcs, ending on the edge. Returns null for cases it doesn't cover.
+function stadiumOpen(cx, cy, hw, hh, h) {
+  if (hw <= 0 || hh < hw) return null;
+  const top = cy - hh < 0, bot = cy + hh > h;
+  if (top === bot) return null;
+  // Work as if clipped at the top edge; mirror for the bottom edge.
+  const c = bot ? h - cy : cy;
+  const Y = v => f(bot ? h - v : v);
+  const s = bot ? 1 : 0;
+  const r = hw, d = hh - hw, R = `A${f(r)},${f(r)} 0 0 ${s}`;
+  if (c + d < 0) { // only the tip of the far arc reaches into the board
+    const dx = Math.sqrt(Math.max(0, r * r - (c + d) ** 2));
+    return `<path d="M${f(cx - dx)},${Y(0)} ${R} ${f(cx + dx)},${Y(0)}"/>`;
+  }
+  const far = `V${Y(c + d)} ${R} ${f(cx + r)},${Y(c + d)}`;
+  if (c - d >= 0) { // edge cuts through the near arc
+    const dx = Math.sqrt(Math.max(0, r * r - (c - d) ** 2));
+    return `<path d="M${f(cx - dx)},${Y(0)} ${R} ${f(cx - r)},${Y(c - d)} ${far} V${Y(c - d)} ${R} ${f(cx + dx)},${Y(0)}"/>`;
+  }
+  return `<path d="M${f(cx - r)},${Y(0)} ${far} V${Y(0)}"/>`;
+}
+
+// Mäander slot: a pill (or line) running in from the top or bottom edge,
+// stopping `rest` mm short of the opposite edge.
+function meanderSlot(x, r, h, rest, fromTop) {
+  const end = h - rest;
+  if (r <= 0) return fromTop ? `<line x1="${f(x)}" y1="0" x2="${f(x)}" y2="${f(end)}"/>`
+                             : `<line x1="${f(x)}" y1="${f(h)}" x2="${f(x)}" y2="${f(rest)}"/>`;
+  if (fromTop) return `<path d="M${f(x - r)},0 V${f(end - r)} A${f(r)},${f(r)} 0 0 0 ${f(x + r)},${f(end - r)} V0"/>`;
+  return `<path d="M${f(x - r)},${f(h)} V${f(rest + r)} A${f(r)},${f(r)} 0 0 1 ${f(x + r)},${f(rest + r)} V${f(h)}"/>`;
+}
+
+// Generic fallback: sample each element as a polyline and keep only the parts
+// inside 0 <= y <= h, as open paths ending on the edge.
+const sampler = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+sampler.style.cssText = 'position:absolute;width:0;height:0;visibility:hidden';
+document.body.append(sampler);
+function clipToBand(elements, h) {
+  const out = [];
+  for (const src of elements) {
+    sampler.innerHTML = src;
+    const el = sampler.firstChild, len = el.getTotalLength();
+    const closed = !/^(line|polyline)$/.test(el.tagName);
+    const n = Math.max(8, Math.ceil(len / 0.1));
+    const pts = [];
+    for (let i = 0; i < n + (closed ? 0 : 1); i++) {
+      const q = el.getPointAtLength(len * i / n);
+      pts.push({ x: q.x, y: q.y });
+    }
+    const inside = q => q.y >= 0 && q.y <= h;
+    const cross = (a, b) => {
+      const e = (inside(a) ? b : a).y < 0 ? 0 : h, t = (e - a.y) / (b.y - a.y);
+      return { x: a.x + (b.x - a.x) * t, y: e };
+    };
+    // For rings, start at an outside point so no run wraps around.
+    let start = 0;
+    if (closed) { start = pts.findIndex(q => !inside(q)); if (start < 0) { out.push(src); continue; } }
+    const seq = closed ? [...pts.slice(start), ...pts.slice(0, start), pts[start]] : pts;
+    let run = inside(seq[0]) ? [seq[0]] : null;
+    for (let i = 1; i < seq.length; i++) {
+      const a = seq[i - 1], b = seq[i];
+      if (inside(b)) {
+        if (!run) run = [cross(a, b)];
+        run.push(b);
+      } else if (run) {
+        run.push(cross(a, b));
+        out.push(polyPath(run));
+        run = null;
+      }
+    }
+    if (run && run.length > 1) out.push(polyPath(run));
+  }
+  return out;
+}
+function polyPath(pts) {
+  // drop points that are collinear with their neighbours (straight runs)
+  const keep = pts.filter((q, i) => {
+    if (i === 0 || i === pts.length - 1) return true;
+    const a = pts[i - 1], b = pts[i + 1];
+    return Math.abs((q.x - a.x) * (b.y - a.y) - (q.y - a.y) * (b.x - a.x)) > 1e-4;
+  });
+  return `<path d="M${keep.map(q => `${f(q.x)},${f(q.y)}`).join(' L')}"/>`;
+}
+
+// Column positions between x0 and x1. Handles the horizontal gradient, the
+// seamless (cylinder) mode and centres the block so both side margins match.
+function layoutColumns(p, x0, x1) {
+  const S = SHAPES[p.shape], A = x1 - x0, eps = 1e-9;
+  const slotPart = S.line ? 0 : p.slotW;
+  const stepY = p.slotH + p.gapY;
+  const grad = p.gradParam !== 'off';
+  const val = (base, x) => {
+    const u = p.gradProfile === 'center' ? Math.abs(x - (x0 + x1) / 2) / (A / 2) : (x - x0) / A;
+    return base + (p.gradEnd - base) * clamp(u, 0, 1);
+  };
+  const gxAt = x => grad && p.gradParam === 'gapX' ? Math.max(0.05, val(p.gapX, x)) : p.gapX;
+  const shAt = x => clamp(grad && p.gradParam === 'slotH' ? val(p.slotH, x) : p.slotH, 0.1, stepY - 0.1);
+  let xs = [], seamGap = null;
+
+  if (p.seamless && !(grad && p.gradParam === 'gapX')) {
+    // even column count so the stagger continues across the seam
+    const step0 = slotPart + p.gapX;
+    let n = Math.max(2, 2 * Math.round(A / step0 / 2));
+    const s = A / n;
+    seamGap = s - slotPart;
+    if (seamGap <= 0) return { cols: [], stepY, seamGap };
+    for (let k = 0; k < n; k++) xs.push(x0 + s / 2 + k * s);
+  } else {
+    const stepAt = x => slotPart + gxAt(x);
+    let x = x0 + stepAt(x0) / 2;
+    while (x + stepAt(x) / 2 <= x1 + eps && xs.length < 5000) {
+      xs.push(x);
+      x += stepAt(x + stepAt(x) / 2);
+    }
+    if (xs.length) {
+      const lead = xs[0] - x0, trail = x1 - xs[xs.length - 1];
+      const shift = (trail - lead) / 2;
+      xs = xs.map(v => v + shift);
+    }
+  }
+  return { cols: xs.map(x => ({ x, gx: seamGap ?? gxAt(x), sh: shAt(x) })), stepY, seamGap };
+}
+
+// Pattern on one board (w × h), slots between x0 and x1.
+// Returns cuts grouped per column (for ordering) and the column layout.
+function generate(p, w, h, x0, x1) {
+  const S = SHAPES[p.shape];
+  if (w <= 0 || h <= 0 || p.slotH <= 0 || p.gapY <= 0 || p.gapX <= 0 || x1 <= x0) return null;
+  const layout = layoutColumns(p, x0, x1);
+  const { cols, stepY } = layout;
+  const hw = p.slotW / 2, offset = effectiveOffset(p, h);
+  const columns = cols.map((c, k) => {
+    const out = [];
+    if (S.meander) {
+      if (p.gapY < h) out.push({ y: 0, els: [meanderSlot(c.x, hw, h, p.gapY, k % 2 === 0)] });
+      return out;
+    }
+    const hh = c.sh / 2, eps = 1e-9;
+    const base = mod((k % 2 ? 0 : stepY / 2) + offset, stepY);
+    for (let y = base - stepY; y < h + hh; y += stepY) {
+      if (S.line) {
+        const top = Math.max(0, y - hh), bot = Math.min(h, y + hh);
+        if (bot - top > eps) out.push({ y, els: S.draw(c.x, top, bot) });
+      } else if (y - hh >= -eps && y + hh <= h + eps) {
+        out.push({ y, els: S.draw(c.x, y, hw, hh) });
+      } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2) {
+        const open = p.shape === 'Stadium' && stadiumOpen(c.x, y, hw, hh, h);
+        out.push({ y, els: open ? [open] : clipToBand(S.draw(c.x, y, hw, hh), h) });
+      }
+    }
+    return out;
+  });
+  return { columns, ...layout };
+}
+
+// Zigzag through the columns (alternating direction) to keep travel short.
+// "skip" cuts every other column first so heat can spread before the neighbour is cut.
+function orderCuts(columns, mode) {
+  const idx = columns.map((_, i) => i);
+  const seq = mode === 'skip' ? [...idx.filter(i => i % 2 === 0), ...idx.filter(i => i % 2)] : idx;
+  const out = [];
+  seq.forEach((ci, n) => {
+    const col = [...columns[ci]].sort((a, b) => a.y - b.y);
+    if (n % 2) col.reverse();
+    for (const c of col) out.push(...c.els);
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------- flex estimate
+// Lattice hinge: bending is taken up by twisting the vertical bars between
+// slot columns. Each bar segment between a bridge in column k and the next
+// bridge in column k+1 (free length Lt = slotLength − pitch/2) twists by
+// the rotation between those columns, θ = Δx / R. For a rectangular bar
+// (a × b, b ≤ a) the max shear strain is γ = θ·b·β / (α·Lt) (Saint-Venant
+// coefficients). Max tensile strain under pure shear is ε = γ / 2.
+const TORSION = { r: [1, 1.5, 2, 2.5, 3, 4, 6, 10, 1e9],
+  alpha: [.208, .231, .246, .258, .267, .282, .299, .312, .333],
+  beta:  [.141, .196, .229, .249, .263, .281, .299, .312, .333] };
+function torsionCoeffs(ratio) {
+  const { r, alpha, beta } = TORSION;
+  for (let i = 1; i < r.length; i++) if (ratio <= r[i]) {
+    const u = (ratio - r[i - 1]) / (r[i] - r[i - 1]);
+    return { a: alpha[i - 1] + u * (alpha[i] - alpha[i - 1]), b: beta[i - 1] + u * (beta[i] - beta[i - 1]) };
+  }
+  return { a: .333, b: .333 };
+}
+// Returns k (mm) with ε = k / D_mid, or a reason why no estimate is possible.
+function flexFactor(p, gen) {
+  const S = SHAPES[p.shape];
+  if (S.meander) return { reason: 'r.meander' };
+  if (!(p.thick > 0)) return { reason: 'r.thick' };
+  const { cols, stepY } = gen;
+  if (cols.length < 2) return { reason: 'r.cols' };
+  let worst = 0, solid = false;
+  for (let k = 0; k < cols.length - 1; k++) {
+    const dx = cols[k + 1].x - cols[k].x;
+    const bar = S.line ? dx : dx - p.slotW;
+    const Lt = (cols[k].sh + cols[k + 1].sh) / 2 - stepY / 2;
+    if (Lt <= 0 || bar <= 0) { solid = true; continue; }
+    const a = Math.max(bar, p.thick), b = Math.min(bar, p.thick);
+    const c = torsionCoeffs(a / b);
+    worst = Math.max(worst, dx * b * c.b / (c.a * Lt));
+  }
+  if (!worst) return { reason: 'r.overlap' };
+  // γ = worst / R = 2·worst / D  →  ε = γ/2 = worst / D
+  return { k: worst, solid };
+}
+function flexStatus(eps, m) {
+  const cls = eps <= m.ok ? 'ok' : eps <= m.max ? 'warn' : 'bad';
+  return [cls, t('st.' + cls)];
+}
+
+// ---------------------------------------------------------------- document
+const LABEL_ZONE = 10;  // solid strip on test coupons for the engraved label
+const TEST_SPACING = 3;
+
+function buildDoc(p) {
+  const doc = { boards: [], cuts: [], borders: [], labels: [], count: 0, rows: [] };
+  const mat = MATERIALS[p.material], dMid = midDiameter(p);
+
+  if (p.mode === 'test') {
+    const short = TEST_SHORT[p.testParam];
+    const w = p.testW, h = p.testH, n = p.testCount;
+    for (let i = 0; i < n; i++) {
+      const v = +(p.testFrom + (p.testTo - p.testFrom) * i / (n - 1)).toFixed(3);
+      const q = { ...p, [p.testParam]: v, gradParam: 'off', seamless: false };
+      // rotated output turns top→right, so stack in reverse to keep ascending values left → right
+      const y0 = (p.rotate ? n - 1 - i : i) * (h + TEST_SPACING);
+      const gen = generate(q, w, h, LABEL_ZONE, w - p.marginX);
+      const fl = gen ? flexFactor(q, gen) : { reason: 'r.cols' };
+      const eps = fl.k ? fl.k / dMid * 100 : null;
+      const dMin = fl.k ? fl.k / (mat.ok / 100) : null;
+      doc.rows.push({ v, eps, dMin, reason: fl.reason });
+      doc.boards.push({ x: 0, y: y0, w, h });
+      const tr = `translate(0,${f(y0)})`;
+      if (gen) {
+        const cuts = orderCuts(gen.columns, p.order);
+        doc.count += cuts.length;
+        doc.cuts.push(`<g transform="${tr}">${cuts.join('')}</g>`);
+      }
+      doc.borders.push(`<rect x="0" y="${f(y0)}" width="${f(w)}" height="${f(h)}"/>`);
+      const lines = [`${short} ${fmt(v)}`, dMin ? `Ø≥${Math.round(dMin - p.thick)}` : ''];
+      lines.forEach((txt, j) => txt && doc.labels.push(
+        `<text transform="translate(${f(3.2 + j * 4)},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle">${esc(txt)}</text>`));
+    }
+    doc.w = w;
+    doc.h = n * h + (n - 1) * TEST_SPACING;
+    doc.rotate = p.rotate;
+    return doc;
+  }
+
+  const w = p.boardW, h = p.boardH;
+  const gen = generate(p, w, h, p.marginX, w - p.marginX);
+  doc.gen = gen;
+  doc.boards.push({ x: 0, y: 0, w, h });
+  if (gen) doc.cuts = orderCuts(gen.columns, p.order);
+  doc.count = doc.cuts.length;
+  if (p.border) doc.borders.push(`<rect x="0" y="0" width="${f(w)}" height="${f(h)}"/>`);
+  doc.flex = gen ? flexFactor(p, gen) : null;
+  doc.w = w; doc.h = h; doc.rotate = p.rotate;
+  return doc;
+}
+
+function flexSummary(p, doc) {
+  const mat = MATERIALS[p.material], dMid = midDiameter(p), th = p.thick;
+  if (!doc.flex || doc.flex.reason) return { text: doc.flex ? t(doc.flex.reason) : '' };
+  const eps = doc.flex.k / dMid * 100;
+  const dMin = doc.flex.k / (mat.ok / 100);  // mid-plane diameter at the "ok" limit
+  return { eps, dMin, dMinInner: dMin - th, status: flexStatus(eps, mat) };
+}
+
+function paramLines(p, doc) {
+  const dm = midDiameter(p), th = p.thick;
+  const L = [];
+  if (p.mode === 'test') {
+    L.push(t('pl.test', t('p.' + p.testParam), fmt(p.testFrom), fmt(p.testTo), p.testCount));
+    L.push(t('pl.strip', fmt(p.testW), fmt(p.testH), LABEL_ZONE));
+    L.push(t('pl.target', (dm - th).toFixed(1), dm.toFixed(1)));
+  } else {
+    L.push(t('pl.board', fmt(p.boardW), fmt(p.boardH)));
+    L.push(t('pl.dia', (dm - th).toFixed(2), dm.toFixed(2), (dm + th).toFixed(2)));
+  }
+  L.push(t('pl.material', t('mat.' + p.material), fmt(th)));
+  L.push(t('pl.shape', t('shape.' + p.shape)));
+  L.push(t('pl.slot', fmt(p.slotW), fmt(p.slotH)));
+  const seam = p.mode !== 'test' && doc.gen?.seamGap != null;
+  L.push(t('pl.gaps', fmt(p.gapY), seam ? t('pl.seamGap', fmt(+doc.gen.seamGap.toFixed(3)), fmt(p.gapX)) : `${fmt(p.gapX)} mm`));
+  const offH = p.mode === 'test' ? p.testH : p.boardH;
+  L.push(t('pl.offset', t('off.' + p.offsetMode), fmt(effectiveOffset(p, offH))));
+  if (p.mode !== 'test') {
+    L.push(t('pl.grad', p.gradParam === 'off' ? t('grad.off') : `${t('p.' + p.gradParam)} → ${fmt(p.gradEnd)} mm, ${t('prof.' + p.gradProfile)}`));
+    L.push(t('pl.seamless', p.seamless, doc.gen?.cols.length ?? 0));
+  }
+  L.push(t('pl.rotated', p.rotate));
+  L.push(t('pl.edges', fmt(p.marginX), p.openEdges, p.mode === 'test' || p.border));
+  L.push(t('pl.order', t('ord.' + p.order)));
+  if (p.mode !== 'test') {
+    const fs = flexSummary(p, doc);
+    if (fs.eps != null) L.push(t('pl.flex', fs.eps.toFixed(2), fs.status[1], Math.round(fs.dMinInner)));
+  }
+  L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
+  return L;
+}
+
+function fileName(p, doc) {
+  const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', p.shape.toLowerCase(), p.material];
+  if (p.mode === 'test') {
+    parts.push(`${TEST_SHORT[p.testParam]}${fmt(p.testFrom)}-${fmt(p.testTo)}x${p.testCount}`, `${fmt(p.testW)}x${fmt(p.testH)}x${fmt(p.thick)}mm`);
+  } else {
+    parts.push(`${fmt(p.boardW)}x${fmt(p.boardH)}x${fmt(p.thick)}mm`);
+  }
+  const gx = p.mode !== 'test' && doc.gen?.seamGap != null ? +doc.gen.seamGap.toFixed(3) : p.gapX;
+  parts.push(`slot${fmt(p.slotW)}x${fmt(p.slotH)}`, `gapV${fmt(p.gapY)}`, `gapH${fmt(gx)}`);
+  const off = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
+  if (off) parts.push(`ofs${fmt(off)}`);
+  if (p.marginX) parts.push(`m${fmt(p.marginX)}`);
+  if (p.mode !== 'test') {
+    if (p.gradParam !== 'off') parts.push(`grad${p.gradParam === 'gapX' ? 'H' : 'L'}${fmt(p.gradEnd)}${p.gradProfile === 'center' ? 'c' : 'lr'}`);
+    if (p.seamless) parts.push('seamless');
+  }
+  if (p.openEdges) parts.push('open');
+  if (p.mode !== 'test' && p.border) parts.push('border');
+  if (p.rotate) parts.push('rot90');
+  return parts.join('_') + '.svg';
+}
+
+// Rotation by 90° clockwise: (x, y) → (H − y, x)
+const rotTransform = doc => doc.rotate ? ` transform="matrix(0,1,-1,0,${f(doc.h)},0)"` : '';
+const outerSize = doc => doc.rotate ? [doc.h, doc.w] : [doc.w, doc.h];
+
+// Export document: separate Inkscape-compatible layers for cuts, border,
+// engraving and parameters. The parameter block sits below the work area.
+function buildSVG(p, doc) {
+  const [W, H] = outerSize(doc);
+  const lines = paramLines(p, doc);
+  const fs = 3.5, lh = fs * 1.4, pad = 5;
+  const totalH = H + pad + lines.length * lh + 2;
+  const { paramVisible, ...meta } = p;
+  const tr = rotTransform(doc);
+  const out = [];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${f(W)}mm" height="${f(totalH)}mm" viewBox="0 0 ${f(W)} ${f(totalH)}">`);
+  out.push(`  <title>${esc(fileName(p, doc))}</title>`);
+  out.push(`  <desc>${esc(lines.join(' | '))}</desc>`);
+  out.push(`  <metadata id="kerf-params">${esc(JSON.stringify({ generator: 'kerf-generator', unit: 'mm', ...meta }))}</metadata>`);
+  out.push(`  <g id="cuts" inkscape:groupmode="layer" inkscape:label="${t('layer.cuts')}" stroke="#ff0000" stroke-width="0.1" fill="none"${tr}>`);
+  for (const c of doc.cuts) out.push('    ' + c);
+  out.push('  </g>');
+  if (doc.borders.length) {
+    out.push(`  <g id="border" inkscape:groupmode="layer" inkscape:label="${t('layer.border')}" stroke="#ff0000" stroke-width="0.1" fill="none"${tr}>`);
+    for (const b of doc.borders) out.push('    ' + b);
+    out.push('  </g>');
+  }
+  if (doc.labels.length) {
+    out.push(`  <g id="engrave" inkscape:groupmode="layer" inkscape:label="${t('layer.engrave')}" fill="#000000" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="3"${tr}>`);
+    for (const l of doc.labels) out.push('    ' + l);
+    out.push('  </g>');
+  }
+  out.push(`  <g id="parameter" inkscape:groupmode="layer" inkscape:label="${t('layer.params')}" fill="#0000ff" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="${fs}"${paramVisible ? '' : ' style="display:none"'}>`);
+  lines.forEach((txt, i) => out.push(`    <text x="0" y="${f(H + pad + fs + i * lh)}">${esc(txt)}</text>`));
+  out.push('  </g>');
+  out.push('</svg>');
+  return out.join('\n');
+}
+
+// ---------------------------------------------------------------- preview
+const view = $('view'), stage = $('stage');
+let zoom = 1, panX = 0, panY = 0, last = null;
+
+function render() {
+  const p = readParams();
+  document.body.classList.toggle('test', p.mode === 'test');
+  const S = SHAPES[p.shape];
+  $('shapeDesc').textContent = t('desc.' + p.shape);
+  $('offset').disabled = p.offsetMode !== 'custom';
+  if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
+  $('gradProfile').disabled = $('gradEnd').disabled = p.gradParam === 'off';
+  const center = p.gradProfile === 'center';
+  $('gradDesc').textContent = p.gradParam === 'off' ? '' :
+    t('gradDesc', t('p.' + p.gradParam), fmt(p.gradParam === 'gapX' ? p.gapX : p.slotH), t(center ? 'grad.center' : 'grad.left'),
+      fmt(p.gradEnd), t(center ? 'grad.edges' : 'grad.right')) +
+    (p.gradParam === 'slotH' ? t('grad.slotNote') : '') +
+    (p.seamless && p.gradParam === 'gapX' ? t('grad.seamNote') : '');
+  const dm = midDiameter(p);
+  $('diaSummary').textContent = p.boardW > 0 ? t('diaSummary', (dm - p.thick).toFixed(2), dm.toFixed(2), (dm + p.thick).toFixed(2)) : '';
+  try { localStorage.setItem('kerf-params', JSON.stringify(p)); } catch (e) {}
+
+  const doc = buildDoc(p);
+  last = { p, doc };
+  if (!doc.count && p.mode !== 'test') {
+    stage.innerHTML = '';
+    $('info').textContent = t('info.none');
+    $('flexInfo').innerHTML = '';
+    return;
+  }
+  const [W, H] = outerSize(doc);
+  stage.innerHTML =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}">` +
+    `<g${rotTransform(doc)}>` +
+    `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${doc.boards.map(b => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('')}</g>` +
+    `<g class="cuts" fill="none" stroke="var(--cut)" stroke-width="1.2">${doc.cuts.join('')}</g>` +
+    `<g fill="var(--engrave)" font-family="Arial, Helvetica, sans-serif" font-size="3">${doc.labels.join('')}</g>` +
+    `</g></svg>`;
+  renderInfo(p, doc);
+  layout();
+}
+
+function renderInfo(p, doc) {
+  const mat = MATERIALS[p.material], dm = midDiameter(p), matName = t('mat.' + p.material);
+  let html = '';
+  if (p.mode === 'test') {
+    html += t('fi.perStrip', (dm - p.thick).toFixed(1), esc(matName), fmt(p.thick)) + '<table>';
+    html += `<tr><td>${esc(t('p.' + p.testParam))}</td><td>ε</td><td>${esc(t('fi.minD'))}</td></tr>`;
+    for (const r of doc.rows) {
+      if (r.eps == null) { html += `<tr><td>${fmt(r.v)}</td><td colspan="2">–</td></tr>`; continue; }
+      const [cls] = flexStatus(r.eps, mat);
+      html += `<tr><td>${fmt(r.v)} mm</td><td class="${cls}">${r.eps.toFixed(2)} %</td><td>${Math.round(r.dMin - p.thick)} mm</td></tr>`;
+    }
+    html += '</table>';
+  } else {
+    const fs = flexSummary(p, doc);
+    if (fs.eps == null) html += `<p>${esc(fs.text || '')}</p>`;
+    else {
+      html += `<div class="stats">` +
+        `<div><span>${esc(t('fi.strainAt', (dm - p.thick).toFixed(1)))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
+        `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(matName)} ≤ ${mat.ok} %</em></div>` +
+        `</div>`;
+      if (fs.status[0] !== 'ok') html += `<p>${esc(t('fi.softer'))}</p>`;
+      if (doc.flex.solid) html += `<p class="warn">${esc(t('fi.solid'))}</p>`;
+    }
+  }
+  const note = STR[lang]['note.' + p.material];
+  if (note) html += `<p>${esc(note)}</p>`;
+  html += `<p class="fine">${esc(t('fi.rough'))}</p>`;
+  $('flexInfo').innerHTML = html;
+
+  let info = `<b>${t('info.cuts')}:</b> ${doc.count}`;
+  if (doc.gen) info += ` · <b>${t('info.cols')}:</b> ${doc.gen.cols.length}`;
+  if (doc.gen?.seamGap != null) info += `<br>${esc(t('info.seam', doc.gen.seamGap.toFixed(3)))}`;
+  info += `<br><code>${esc(fileName(p, doc))}</code>`;
+  $('info').innerHTML = info;
+}
+
+function layout() {
+  if (!last || !stage.firstChild) return;
+  const [W, H] = outerSize(last.doc);
+  const r = view.getBoundingClientRect(), m = 30;
+  const base = Math.max(0.01, Math.min((r.width - 2 * m) / W, (r.height - 2 * m) / H));
+  const s = base * zoom;
+  const svg = stage.firstChild;
+  svg.setAttribute('width', W * s);
+  svg.setAttribute('height', H * s);
+  const x = (r.width - W * s) / 2 + panX, y = (r.height - H * s) / 2 + panY;
+  stage.style.transform = `translate(${x}px, ${y}px)`;
+  $('zLabel').textContent = Math.round(zoom * 100) + '%';
+}
+
+function setZoom(z, cx, cy) {
+  const r = view.getBoundingClientRect();
+  if (cx == null) { cx = r.width / 2; cy = r.height / 2; }
+  const nz = Math.max(0.1, Math.min(40, z));
+  // keep the point under the cursor fixed
+  const ox = cx - r.width / 2 - panX, oy = cy - r.height / 2 - panY;
+  panX -= ox * (nz / zoom - 1);
+  panY -= oy * (nz / zoom - 1);
+  zoom = nz;
+  layout();
+}
+
+$('zIn').onclick = () => setZoom(zoom * 1.4);
+$('zOut').onclick = () => setZoom(zoom / 1.4);
+$('zFit').onclick = () => { zoom = 1; panX = panY = 0; layout(); };
+view.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = view.getBoundingClientRect();
+  setZoom(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+
+let drag = null;
+view.addEventListener('pointerdown', e => {
+  if (e.target.closest('.zoom')) return;
+  drag = { x: e.clientX - panX, y: e.clientY - panY };
+  view.setPointerCapture(e.pointerId);
+  view.classList.add('dragging');
+});
+view.addEventListener('pointermove', e => {
+  if (!drag) return;
+  panX = e.clientX - drag.x; panY = e.clientY - drag.y; layout();
+});
+view.addEventListener('pointerup', () => { drag = null; view.classList.remove('dragging'); });
+window.addEventListener('resize', layout);
+
+// ---------------------------------------------------------------- wiring
+$('boardW').addEventListener('input', syncDiameter);
+$('thick').addEventListener('input', syncDiameter);
+$('diaRef').addEventListener('input', syncDiameter);
+$('diameter').addEventListener('input', diameterChanged);
+document.querySelectorAll('.panel input, .panel select').forEach(el => el.addEventListener('input', render));
+document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', () => { zoom = 1; panX = panY = 0; render(); }));
+
+$('saveBtn').onclick = () => {
+  if (!last || !last.doc.count) { alert(t('alert.none')); return; }
+  const blob = new Blob([buildSVG(last.p, last.doc)], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName(last.p, last.doc);
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+$('loadBtn').onclick = () => $('loadFile').click();
+$('loadFile').onchange = async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const doc = new DOMParser().parseFromString(await file.text(), 'image/svg+xml');
+  const m = doc.getElementById('kerf-params');
+  try {
+    writeParams(JSON.parse(m.textContent));
+    render();
+  } catch (err) {
+    alert(t('alert.noParams'));
+  }
+};
+
+$('lang').addEventListener('change', () => {
+  lang = $('lang').value;
+  try { localStorage.setItem('kerf-lang', lang); } catch (e) {}
+  applyLang();
+  render();
+});
+
+applyLang();
+try { const saved = JSON.parse(localStorage.getItem('kerf-params')); if (saved) writeParams(saved); } catch (e) {}
+syncDiameter();
+render();
+</script>
+</body>
+</html>
