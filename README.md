@@ -20,7 +20,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
 - Side margins, optional outer border, 90° rotated output.
 - **All parameters saved in the file**: in the file name, as a separate *Parameters* layer, and as metadata. *Load parameters…* restores everything from a saved SVG.
-- Shapes: stadium, line, meander, ellipse, rectangle, diamond, bone, hexagon, chevron, wave, cross.
+- Shapes: stadium, **dogbone** (round relief holes at the slot ends), **S-slot** (constant width, exact arcs), line, meander, ellipse, rectangle, diamond, hexagon, chevron, cross.
 - English and German UI.
 
 ## SVG layers
@@ -38,7 +38,7 @@ Open `index.html` in any modern browser.
 
 ## Credits
 
-Inspired by [KerfSmith](https://kerfsmith.com/web-app.html). Some of the basic slot shapes follow its pattern geometry.
+Inspired by [KerfSmith](https://kerfsmith.com/web-app.html).
 
 ## License
 

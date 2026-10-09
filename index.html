@@ -300,10 +300,10 @@ const STR = {
     'shape.Ellipse': 'Ellipse', 'desc.Ellipse': 'Rounded, reduces stress concentrations',
     'shape.Rectangle': 'Rectangle', 'desc.Rectangle': 'Rectangle with slightly rounded corners',
     'shape.Diamond': 'Diamond', 'desc.Diamond': 'Pointed ends, bends very well (prone to cracking in acrylic)',
-    'shape.Bone': 'Bone', 'desc.Bone': 'Hourglass, strong at the ends',
+    'shape.Bone': 'Dogbone', 'desc.Bone': 'Narrow slot with round relief holes at both ends (hole Ø = slot width, neck 40 %). The holes stop cracks starting at the slot ends.',
     'shape.Hexagon': 'Hexagon', 'desc.Hexagon': 'Six-sided, strong & flexible',
     'shape.Chevron': 'Chevron', 'desc.Chevron': 'V-shape, interlocks when bent',
-    'shape.Wave': 'Wave', 'desc.Wave': 'S-curve, decorative + functional',
+    'shape.Wave': 'S-slot', 'desc.Wave': 'Constant-width S-shaped slot with round ends, made of exact arcs. Slot width = overall width, the cut itself is 40 % of it.',
     'shape.Cross': 'Cross', 'desc.Cross': '+ shape, bends in two directions',
 
     'mat.pmma': 'Acrylic (PMMA)', 'mat.petg': 'PETG', 'mat.plywood': 'Plywood', 'mat.mdf': 'MDF',
@@ -380,10 +380,10 @@ const STR = {
     'shape.Ellipse': 'Ellipse', 'desc.Ellipse': 'Abgerundet, reduziert Spannungsspitzen',
     'shape.Rectangle': 'Rechteck', 'desc.Rectangle': 'Rechteck mit leicht abgerundeten Ecken',
     'shape.Diamond': 'Raute', 'desc.Diamond': 'Spitze Enden, sehr gute Biegung (bei Acryl rissanfällig)',
-    'shape.Bone': 'Knochen', 'desc.Bone': 'Sanduhr, stabil an den Enden',
+    'shape.Bone': 'Dogbone', 'desc.Bone': 'Schmaler Schlitz mit runden Entlastungslöchern an beiden Enden (Loch-Ø = Schlitzbreite, Hals 40 %). Die Löcher stoppen Risse an den Schlitzenden.',
     'shape.Hexagon': 'Sechseck', 'desc.Hexagon': 'Sechseckig, stabil & flexibel',
     'shape.Chevron': 'Chevron', 'desc.Chevron': 'V-Form, verzahnt beim Biegen',
-    'shape.Wave': 'Welle', 'desc.Wave': 'S-Kurve, dekorativ + funktional',
+    'shape.Wave': 'S-Schlitz', 'desc.Wave': 'Gleich breiter, S-förmiger Schlitz mit runden Enden aus exakten Kreisbögen. Schlitzbreite = Gesamtbreite, der Schnitt selbst ist 40 % davon.',
     'shape.Cross': 'Kreuz', 'desc.Cross': '+-Form, biegt in zwei Richtungen',
 
     'mat.pmma': 'Acryl (PMMA)', 'mat.petg': 'PETG', 'mat.plywood': 'Sperrholz', 'mat.mdf': 'MDF',
@@ -450,6 +450,7 @@ function applyLang() {
 // ---------------------------------------------------------------- shapes
 // Each shape returns SVG element strings for a slot centred at (cx, cy)
 // with half-width hw and half-height hh (all in mm).
+const NECK_RATIO = 0.4;  // dogbone neck / S-slot width as a fraction of the slot width
 const SHAPES = {
   Stadium: {
     draw(cx, cy, hw, hh) {
@@ -482,9 +483,13 @@ const SHAPES = {
     draw: (cx, cy, hw, hh) => [`<polygon points="${[[cx, cy - hh], [cx + hw, cy], [cx, cy + hh], [cx - hw, cy]].map(p => p.map(f).join(',')).join(' ')}"/>`]
   },
   Bone: {
+    // Dogbone: narrow neck with round relief holes at both ends (hole Ø = slot width).
     draw(cx, cy, hw, hh) {
-      const mw = hw * 0.4;
-      return [`<path d="M${f(cx - hw)},${f(cy - hh)} C${f(cx - mw)},${f(cy - hh * 0.3)} ${f(cx - mw)},${f(cy + hh * 0.3)} ${f(cx - hw)},${f(cy + hh)} L${f(cx + hw)},${f(cy + hh)} C${f(cx + mw)},${f(cy + hh * 0.3)} ${f(cx + mw)},${f(cy - hh * 0.3)} ${f(cx + hw)},${f(cy - hh)} Z"/>`];
+      const R = hw, n = hw * NECK_RATIO, s = Math.sqrt(R * R - n * n);
+      const yt = cy - hh + R, yb = cy + hh - R;
+      if (hw <= 0 || yb - s < yt + s) return SHAPES.Stadium.draw(cx, cy, hw, hh);
+      const A = `A${f(R)},${f(R)} 0 1 1`;
+      return [`<path d="M${f(cx + n)},${f(yt + s)} V${f(yb - s)} ${A} ${f(cx - n)},${f(yb - s)} V${f(yt + s)} ${A} ${f(cx + n)},${f(yt + s)} Z"/>`];
     }
   },
   Hexagon: {
@@ -494,9 +499,26 @@ const SHAPES = {
     draw: (cx, cy, hw, hh) => [`<polyline points="${f(cx - hw)},${f(cy - hh)} ${f(cx)},${f(cy + hh)} ${f(cx + hw)},${f(cy - hh)}"/>`]
   },
   Wave: {
+    // S-slot of constant width w with round ends. The centre line is two
+    // tangent-continuous arcs (radius R) that start and end vertical; both
+    // outline sides are concentric arcs, so the path stays exact.
     draw(cx, cy, hw, hh) {
-      const c1 = cx - hw * 0.3, c2 = cx + hw * 0.3;
-      return [`<path d="M${f(cx - hw)},${f(cy - hh)} C${f(c1)},${f(cy - hh * 0.3)} ${f(c2)},${f(cy - hh * 0.3)} ${f(cx + hw)},${f(cy - hh)} L${f(cx + hw)},${f(cy + hh)} C${f(c2)},${f(cy + hh * 0.3)} ${f(c1)},${f(cy + hh * 0.3)} ${f(cx - hw)},${f(cy + hh)} Z"/>`];
+      const w = 2 * hw * NECK_RATIO, a = hw - w / 2, h = hh - w / 2;
+      if (a <= 1e-6 || h <= 1e-6) return SHAPES.Stadium.draw(cx, cy, hw, hh);
+      const R = (a * a + h * h) / (2 * a), q = w / 2;
+      if (R - q <= 1e-6) return SHAPES.Stadium.draw(cx, cy, hw, hh);
+      const C1 = [cx - a + R, cy - h], C2 = [cx + a - R, cy + h];   // arc centres
+      const nx = (R - a) / R, ny = -h / R;                             // unit normal at the middle, towards C1
+      const pE1 = [cx - a + q, cy - h], mE1 = [cx - a - q, cy - h];   // ends, + / − side
+      const pE2 = [cx + a + q, cy + h], mE2 = [cx + a - q, cy + h];
+      const pM = [cx + q * nx, cy + q * ny], mM = [cx - q * nx, cy - q * ny];
+      const arc = (from, to, c, r) => {
+        const cross = (from[0] - c[0]) * (to[1] - c[1]) - (from[1] - c[1]) * (to[0] - c[0]);
+        return `A${f(r)},${f(r)} 0 0 ${cross > 0 ? 1 : 0} ${f(to[0])},${f(to[1])}`;
+      };
+      const cap = to => `A${f(q)},${f(q)} 0 0 1 ${f(to[0])},${f(to[1])}`;
+      return [`<path d="M${f(pE1[0])},${f(pE1[1])} ${arc(pE1, pM, C1, R - q)} ${arc(pM, pE2, C2, R + q)} ${cap(mE2)} ` +
+              `${arc(mE2, mM, C2, R - q)} ${arc(mM, mE1, C1, R + q)} ${cap(pE1)} Z"/>`];
     }
   },
   Cross: {
