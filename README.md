@@ -4,9 +4,9 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 
 **Live:** https://sonarkon.github.io/Kerf-Pattern-Generator/
 
-![Creative mode with bands and a wave modulator](screenshot.jpg)
+![Creative mode with bands and a wave modulator](screenshot-2d.jpg)
 
-![3D preview: bent to a closed cylinder with the lamp on](screenshot-3d.jpg)
+![3D preview: bent to a closed cylinder with the lamp on](screenshot-3d-lamp.jpg)
 
 ## Features
 
