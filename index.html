@@ -1478,8 +1478,12 @@ function initThree() {
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe6b0 }));
   const mat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, alphaTest: 0.5, roughness: 0.55, metalness: 0 });
   const mesh = new THREE.Mesh(new THREE.BufferGeometry(), mat);
-  scene.add(hemi, dir, lamp, bulb, mesh);
-  three = { renderer, scene, camera, controls, hemi, dir, lamp, bulb, mat, mesh, size: '' };
+  // lamp glow: slots light up (additive), drawn over the shell
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xd98a32, transparent: true, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
+  const glow = new THREE.Mesh(mesh.geometry, glowMat);
+  scene.add(hemi, dir, lamp, bulb, mesh, glow);
+  three = { renderer, scene, camera, controls, hemi, dir, lamp, bulb, mat, mesh, glow, glowMat, size: '' };
   new ResizeObserver(resize3d).observe(el);
   resize3d();
   (function loop() {
@@ -1511,7 +1515,7 @@ function bendGeometry(W, H, bend) {
   }
   g.computeVertexNormals();
   three.mesh.geometry.dispose();
-  three.mesh.geometry = g;
+  three.mesh.geometry = three.glow.geometry = g;
   return Math.max(axisZ, -Math.max(W, H));
 }
 function apply3dScene(p, doc, refit) {
@@ -1525,6 +1529,7 @@ function apply3dScene(p, doc, refit) {
   three.lamp.intensity = lampOn ? 2.4 : 0;
   three.lamp.position.set(0, 0, axisZ);
   three.bulb.visible = lampOn;
+  three.glow.visible = lampOn && !!three.glowMat.map;
   three.bulb.position.set(0, 0, axisZ);
   three.bulb.scale.setScalar(Math.max(2, Math.min(W / Math.PI, H) * 0.06));
   three.mat.color.setHex(MAT_COLORS[p.material] || 0xeeeeee);
@@ -1564,6 +1569,31 @@ function updateMask(doc) {
     if (three.mat.alphaMap) three.mat.alphaMap.dispose();
     three.mat.alphaMap = tex;
     three.mat.needsUpdate = true;
+    // glow map: slots white on black, a blurred halo plus the sharp slot
+    const gc = document.createElement('canvas');
+    gc.width = cv.width; gc.height = cv.height;
+    const g = gc.getContext('2d');
+    const inv = document.createElement('canvas');
+    inv.width = cv.width; inv.height = cv.height;
+    const ig = inv.getContext('2d');
+    ig.drawImage(cv, 0, 0);
+    ig.globalCompositeOperation = 'difference';
+    ig.fillStyle = '#fff';
+    ig.fillRect(0, 0, inv.width, inv.height);
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, gc.width, gc.height);
+    g.globalCompositeOperation = 'lighter';
+    g.filter = `blur(${Math.max(1.5, s * 0.45)}px)`;
+    g.globalAlpha = 0.45;
+    g.drawImage(inv, 0, 0);
+    g.filter = 'none';
+    g.globalAlpha = 0.85;
+    g.drawImage(inv, 0, 0);
+    const gt = new THREE.CanvasTexture(gc);
+    if (three.glowMat.map) three.glowMat.map.dispose();
+    three.glowMat.map = gt;
+    three.glowMat.needsUpdate = true;
+    three.glow.visible = view3d.lamp;
   };
   im.src = url;
 }
