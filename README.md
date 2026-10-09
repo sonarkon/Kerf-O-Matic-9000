@@ -42,4 +42,4 @@ Inspired by [KerfSmith](https://kerfsmith.com/web-app.html). Some of the basic s
 
 ## License
 
-GPL-3.0 – see [LICENSE](LICENSE).
+MIT – see [LICENSE](LICENSE).
