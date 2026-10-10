@@ -216,7 +216,7 @@
       </div>
     </div>
   </div>
-  <input type="file" id="loadFile" accept=".svg,image/svg+xml" hidden>
+  <input type="file" id="loadFile" accept=".svg,.png,.obj,.stl,image/svg+xml,image/png" hidden>
   <input type="file" id="imgFile" accept="image/*" hidden>
 </header>
 
@@ -382,14 +382,14 @@ const STR = {
   en: {
     'title': 'Kerf-O-Matic 9000',
     'project': 'Project name', 'project.ph': 'Project name (optional)',
-    'mode.aria': 'Mode', 'mode.pattern': 'Pattern', 'mode.creative': 'Creative', 'mode.test': 'Test strips',
-    'load': 'Load parameters…', 'save': 'Save SVG', 'save.stl': 'Save STL', 'save.more': 'More export formats',
+    'mode.aria': 'Mode', 'mode.pattern': 'Simple', 'mode.creative': 'Creative', 'mode.test': 'Test Pattern',
+    'load': 'Load', 'save': 'Save SVG', 'save.stl': 'Save STL', 'save.more': 'More export formats',
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Cut file for the laser cutter',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 100 % in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0 % in the 3D view)' : `3D model bent ${b} % (Bend in the 3D view)`,
-    'save.obj': 'Save OBJ', 'save.png': 'Save texture',
+    'save.obj': 'Save OBJ', 'save.png': 'Save PNG',
     'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Seamless square mask tile, e.g. for Blender',
     'stl.busy': 'Exporting…', 'stl.fail': 'Export failed (the geometry libraries could not be loaded – offline?).',
-    'alert.stlTest': '3D and texture export are available in Pattern and Creative mode.',
+    'alert.stlTest': '3D and PNG export are available in Simple and Creative mode.',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
     'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
     'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
@@ -462,7 +462,7 @@ const STR = {
     'fi.rough': 'Rough estimate (torsion of the bridges); no substitute for a test strip.',
     'info.cuts': 'Cuts', 'info.cols': 'Columns', 'info.seam': g => `Seamless: horizontal gap ${g} mm`,
     'info.none': 'No cuts – adjust parameters',
-    'alert.none': 'No cuts to save.', 'alert.noParams': 'This SVG contains no kerf parameters.',
+    'alert.none': 'No cuts to save.', 'alert.noParams': 'This file contains no Kerf-O-Matic parameters.', 'alert.stlLoad': 'STL files cannot hold the parameters. Load the SVG, OBJ or PNG of the same design instead.',
 
     'layer.cuts': 'Cuts', 'layer.border': 'Outer border', 'layer.engrave': 'Engrave', 'layer.params': 'Parameters',
     'pl.project': n => `Project: ${n}`,
@@ -490,14 +490,14 @@ const STR = {
   de: {
     'title': 'Kerf-O-Matic 9000',
     'project': 'Projektname', 'project.ph': 'Projektname (optional)',
-    'mode.aria': 'Modus', 'mode.pattern': 'Muster', 'mode.creative': 'Creative', 'mode.test': 'Teststreifen',
-    'load': 'Parameter laden…', 'save': 'SVG speichern', 'save.stl': 'STL speichern', 'save.more': 'Weitere Exportformate',
+    'mode.aria': 'Modus', 'mode.pattern': 'Simple', 'mode.creative': 'Creative', 'mode.test': 'Test Pattern',
+    'load': 'Laden', 'save': 'SVG speichern', 'save.stl': 'STL speichern', 'save.more': 'Weitere Exportformate',
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Schnittdatei für den Laser',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Bend 100 % in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Bend 0 % in der 3D-Ansicht)' : `3D-Modell, ${b} % gebogen (Bend in der 3D-Ansicht)`,
-    'save.obj': 'OBJ speichern', 'save.png': 'Textur speichern',
+    'save.obj': 'OBJ speichern', 'save.png': 'PNG speichern',
     'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Nahtlose quadratische Masken-Kachel, z. B. für Blender',
     'stl.busy': 'Exportiere…', 'stl.fail': 'Export fehlgeschlagen (Geometrie-Bibliotheken nicht ladbar – offline?).',
-    'alert.stlTest': '3D- und Textur-Export gibt es im Muster- und Creative-Modus.',
+    'alert.stlTest': '3D- und PNG-Export gibt es im Simple- und Creative-Modus.',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
     'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
     'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
@@ -570,7 +570,7 @@ const STR = {
     'fi.rough': 'Grobe Abschätzung (Torsion der Stege), ersetzt keinen Teststreifen.',
     'info.cuts': 'Schnitte', 'info.cols': 'Spalten', 'info.seam': g => `Nahtlos: Steg horizontal ${g} mm`,
     'info.none': 'Keine Schnitte – Parameter anpassen',
-    'alert.none': 'Keine Schnitte zum Speichern.', 'alert.noParams': 'Diese SVG enthält keine Kerf-Parameter.',
+    'alert.none': 'Keine Schnitte zum Speichern.', 'alert.noParams': 'Diese Datei enthält keine Kerf-O-Matic-Parameter.', 'alert.stlLoad': 'STL-Dateien können die Parameter nicht speichern. Lade stattdessen SVG, OBJ oder PNG desselben Entwurfs.',
 
     'layer.cuts': 'Schnitte', 'layer.border': 'Außenkontur', 'layer.engrave': 'Gravur', 'layer.params': 'Parameter',
     'pl.project': n => `Projekt: ${n}`,
@@ -713,7 +713,10 @@ const MATERIALS = {
 };
 
 // short codes for engraved test-strip labels (language independent)
-const TEST_SHORT = { gapX: 'gH', slotH: 'L', gapY: 'gV', slotW: 'W' };
+// engraved labels, in this order: length, width, gap V, gap H
+const TEST_SHORT = { slotH: 'L ', slotW: 'W ', gapY: 'Gap V ', gapX: 'Gap H ' };
+// compact codes for test-strip file names
+const TEST_FILE = { gapX: 'gapH', slotH: 'L', gapY: 'gapV', slotW: 'W' };
 
 for (const k of Object.keys(SHAPES)) $('shape').add(new Option(k, k));
 for (const k of Object.keys(MATERIALS)) $('material').add(new Option(k, k));
@@ -1152,7 +1155,11 @@ function heatColor(rec, dMid, mat) {
 }
 
 // ---------------------------------------------------------------- document
-const LABEL_ZONE = 10;  // solid strip on test coupons for the engraved label
+// solid strip on test coupons for the engraved label (value, min. Ø, shape + slot values, project)
+const labelZone = p => p.project ? 13 : 10;
+// width of an engraved label line in mm (Arial, font size in mm)
+const measureCtx = document.createElement('canvas').getContext('2d');
+function textWidth(str, fs) { measureCtx.font = '100px Arial, Helvetica, sans-serif'; return measureCtx.measureText(str).width / 100 * fs; }
 const TEST_SPACING = 3;
 
 function buildDoc(p) {
@@ -1167,7 +1174,7 @@ function buildDoc(p) {
       const q = { ...p, [p.testParam]: v, seamless: false };
       // rotated output turns top→right, so stack in reverse to keep ascending values left → right
       const y0 = (p.rotate ? n - 1 - i : i) * (h + TEST_SPACING);
-      const gen = generate(q, w, h, LABEL_ZONE, w - p.marginX);
+      const gen = generate(q, w, h, labelZone(p), w - p.marginX);
       const fl = gen ? flexAnalysis(q, gen) : { reason: 'r.cols' };
       const eps = fl.k ? fl.k / dMid * 100 : null;
       const dMin = fl.k ? fl.k / (mat.ok / 100) : null;
@@ -1179,9 +1186,13 @@ function buildDoc(p) {
         doc.cuts.push(`<g transform="translate(0,${f(y0)})">${cuts.join('')}</g>`);
       }
       doc.borders.push(`<rect x="0" y="${f(y0)}" width="${f(w)}" height="${f(h)}"/>`);
-      const lines = [`${short} ${fmt(v)}`, dMin ? `Ø≥${Math.round(dMin - p.thick)}` : ''];
-      lines.forEach((txt, j) => txt && doc.labels.push(
-        `<text transform="translate(${f(3.2 + j * 4)},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle">${esc(txt)}</text>`));
+      // line 1 (large): varied value and min. Ø; then smaller: shape with the other slot values, project
+      const head = `${short}${fmt(v)}` + (dMin ? ` · Ø≥${Math.round(dMin - p.thick)}` : '');
+      const spec = [shapeName(p.shape), ...Object.entries(TEST_SHORT).filter(([k]) => k !== p.testParam).map(([k, c]) => c + fmt(p[k]))].join(' ');
+      const fit = (str, fs) => { let out = str; while (out.length > 4 && textWidth(out, fs) > h - 4) out = out.slice(0, -2) + '…'; return out; };
+      // x = baseline; rotated text extends ≈ 0.75 × font size to the left of it
+      [[head, 3.2, 3.3], [spec, 2.8, 6.6], [p.project, 2.8, 9.7]].forEach(([txt, fs, x]) => txt && doc.labels.push(
+        `<text transform="translate(${x},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle" font-size="${fs}">${esc(fit(txt, fs))}</text>`));
     }
     doc.w = w;
     doc.h = n * h + (n - 1) * TEST_SPACING;
@@ -1237,7 +1248,7 @@ function paramLines(p, doc) {
   L.push(t('pl.mode', t('mode.' + p.mode)));
   if (p.mode === 'test') {
     L.push(t('pl.test', t('p.' + p.testParam), fmt(p.testFrom), fmt(p.testTo), p.testCount));
-    L.push(t('pl.strip', fmt(p.testW), fmt(p.testH), LABEL_ZONE));
+    L.push(t('pl.strip', fmt(p.testW), fmt(p.testH), labelZone(p)));
     L.push(t('pl.target', (dm - th).toFixed(1), dm.toFixed(1)));
   } else {
     L.push(t('pl.board', fmt(p.boardW), fmt(p.boardH)));
@@ -1282,7 +1293,7 @@ function fileName(p, doc) {
   const proj = slug(p.project || '');
   if (proj) parts.unshift(proj);
   if (p.mode === 'test') {
-    parts.push(`${TEST_SHORT[p.testParam]}${fmt(p.testFrom)}-${fmt(p.testTo)}x${p.testCount}`, `${fmt(p.testW)}x${fmt(p.testH)}x${fmt(p.thick)}mm`);
+    parts.push(`${TEST_FILE[p.testParam]}${fmt(p.testFrom)}-${fmt(p.testTo)}x${p.testCount}`, `${fmt(p.testW)}x${fmt(p.testH)}x${fmt(p.thick)}mm`);
   } else {
     parts.push(`${fmt(p.boardW)}x${fmt(p.boardH)}x${fmt(p.thick)}mm`);
   }
@@ -1299,6 +1310,13 @@ function fileName(p, doc) {
   return parts.join('_') + '.svg';
 }
 
+// The parameter record stored in every export that can be loaded again (SVG, OBJ, PNG).
+function paramsJSON(p) {
+  const { paramVisible, ...meta } = p;
+  if (meta.mode !== 'creative') delete meta.creative;
+  return JSON.stringify({ generator: 'kerf-generator', unit: 'mm', ...meta });
+}
+
 // Rotation by 90° clockwise: (x, y) → (H − y, x)
 const rotTransform = doc => doc.rotate ? ` transform="matrix(0,1,-1,0,${f(doc.h)},0)"` : '';
 const outerSize = doc => doc.rotate ? [doc.h, doc.w] : [doc.w, doc.h];
@@ -1310,15 +1328,14 @@ function buildSVG(p, doc) {
   const lines = paramLines(p, doc);
   const fs = 3.5, lh = fs * 1.4, pad = 5;
   const totalH = H + pad + lines.length * lh + 2;
-  const { paramVisible, ...meta } = p;
-  if (meta.mode !== 'creative') delete meta.creative;
-  const tr = rotTransform(doc);
+
+  const tr = rotTransform(doc), paramVisible = p.paramVisible;
   const out = [];
   out.push('<?xml version="1.0" encoding="UTF-8"?>');
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${f(W)}mm" height="${f(totalH)}mm" viewBox="0 0 ${f(W)} ${f(totalH)}">`);
   out.push(`  <title>${esc(p.project || fileName(p, doc))}</title>`);
   out.push(`  <desc>${esc(lines.join(' | '))}</desc>`);
-  out.push(`  <metadata id="kerf-params">${esc(JSON.stringify({ generator: 'kerf-generator', unit: 'mm', ...meta }))}</metadata>`);
+  out.push(`  <metadata id="kerf-params">${esc(paramsJSON(p))}</metadata>`);
   out.push(`  <g id="cuts" inkscape:groupmode="layer" inkscape:label="${t('layer.cuts')}" stroke="#ff0000" stroke-width="0.1" fill="none"${tr}>`);
   for (const c of doc.cuts) out.push('    ' + c);
   out.push('  </g>');
@@ -1979,12 +1996,12 @@ async function exportAs(fmt) {
     await new Promise(r => setTimeout(r, 20));   // let the button repaint
     if (fmt === 'png') {
       const tile = await buildTile(p);
-      download(tile.blob, `${base}_tile_${fmt3(tile.w)}x${fmt3(tile.h)}mm.png`);
+      download(await pngWithParams(tile.blob, paramsJSON(p)), `${base}_tile_${fmt3(tile.w)}x${fmt3(tile.h)}mm.png`);
     } else {
       await ensureGeoLibs();
       const bend = view3d.bend, tris = buildMesh(p, doc, bend / 100);
       if (fmt === 'stl') download(new Blob([stlBytes(tris)], { type: 'model/stl' }), `${base}_bend${bend}.stl`);
-      else download(new Blob([objText(tris, base)], { type: 'model/obj' }), `${base}_bend${bend}.obj`);
+      else download(new Blob([objText(tris, base, paramsJSON(p))], { type: 'model/obj' }), `${base}_bend${bend}.obj`);
     }
   } catch (e) {
     console.error(e);
@@ -2007,8 +2024,8 @@ $('saveMenu').addEventListener('click', e => {
   saveFormat = b.dataset.fmt;
   try { localStorage.setItem('kerf-save', saveFormat); } catch (err) {}
   toggleSaveMenu(false);
-  updateSaveLabel();
-  exportAs(saveFormat);
+  updateSaveLabel();   // choosing only switches the format; the main button saves
+  $('saveBtn').focus();
 });
 document.addEventListener('click', e => { if (!e.target.closest('.savegroup')) toggleSaveMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('saveMenu').hidden) { toggleSaveMenu(false); $('saveMenuBtn').focus(); } });
@@ -2204,8 +2221,37 @@ function stlBytes(tris) {
   }
   return buf;
 }
+// PNG text chunks: the parameters go into an iTXt chunk (UTF-8) before IEND.
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(bytes) { let c = 0xffffffff; for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+async function pngWithParams(blob, json) {
+  const png = new Uint8Array(await blob.arrayBuffer()), enc = new TextEncoder();
+  const data = new Uint8Array([...enc.encode('kerf-params'), 0, 0, 0, 0, 0, ...enc.encode(json)]);   // keyword, no compression, no language
+  const chunk = new Uint8Array(12 + data.length), dv = new DataView(chunk.buffer);
+  dv.setUint32(0, data.length);
+  chunk.set(enc.encode('iTXt'), 4);
+  chunk.set(data, 8);
+  dv.setUint32(8 + data.length, crc32(chunk.subarray(4, 8 + data.length)));
+  const iend = png.length - 12;   // IEND is always the last 12 bytes
+  return new Blob([png.subarray(0, iend), chunk, png.subarray(iend)], { type: 'image/png' });
+}
+function pngParams(buf) {
+  const b = new Uint8Array(buf), dv = new DataView(buf), dec = new TextDecoder();
+  for (let o = 8; o + 8 <= b.length;) {
+    const len = dv.getUint32(o), type = dec.decode(b.subarray(o + 4, o + 8)), d = b.subarray(o + 8, o + 8 + len);
+    if (type === 'iTXt' && dec.decode(d.subarray(0, 11)) === 'kerf-params') {
+      let i = 12 + 2;                      // keyword + NUL + flags
+      while (d[i]) i++; i++;               // language tag
+      while (d[i]) i++; i++;               // translated keyword
+      return dec.decode(d.subarray(i));
+    }
+    o += 12 + len;
+  }
+  return null;
+}
+
 // OBJ with shared vertices (welded at 0.1 µm), so the mesh stays connected in Blender
-function objText(tris, name) {
+function objText(tris, name, params) {
   const idx = new Map(), verts = [], faces = [];
   const id = j => {
     const k = `${Math.round(tris[j] * 1e4)},${Math.round(tris[j + 1] * 1e4)},${Math.round(tris[j + 2] * 1e4)}`;
@@ -2214,7 +2260,7 @@ function objText(tris, name) {
     return i;
   };
   for (let k = 0; k < tris.length; k += 9) faces.push(`f ${id(k)} ${id(k + 3)} ${id(k + 6)}`);
-  return `# Kerf-O-Matic 9000 OBJ, units mm\no ${name}\n${verts.join('\n')}\n${faces.join('\n')}\n`;
+  return `# Kerf-O-Matic 9000 OBJ, units mm\n# kerf-params: ${params}\no ${name}\n${verts.join('\n')}\n${faces.join('\n')}\n`;
 }
 
 $('loadBtn').onclick = () => $('loadFile').click();
@@ -2222,10 +2268,14 @@ $('loadFile').onchange = async e => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
-  const doc = new DOMParser().parseFromString(await file.text(), 'image/svg+xml');
-  const m = doc.getElementById('kerf-params');
+  const ext = file.name.toLowerCase().split('.').pop();
+  if (ext === 'stl') { alert(t('alert.stlLoad')); return; }
+  let json = null;
   try {
-    writeParams(JSON.parse(m.textContent));
+    if (ext === 'png') json = pngParams(await file.arrayBuffer());
+    else if (ext === 'obj') json = ((await file.text()).match(/^# kerf-params: (.*)$/m) || [])[1];
+    else json = new DOMParser().parseFromString(await file.text(), 'image/svg+xml').getElementById('kerf-params')?.textContent;
+    writeParams(JSON.parse(json));
     render();
   } catch (err) {
     alert(t('alert.noParams'));
