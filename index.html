@@ -222,20 +222,20 @@
 
 <aside id="design" class="panel">
   <details class="sec" open>
-    <summary data-i18n="sec.board"></summary>
+    <summary><span data-i18n="sec.board" data-modes="pattern creative"></span><span data-i18n="material" data-modes="test"></span></summary>
     <div class="grid2">
-      <label><span data-i18n="boardW"></span><input type="number" id="boardW" value="150" min="1" step="0.5"></label>
-      <label><span data-i18n="boardH"></span><input type="number" id="boardH" value="100" min="1" step="0.5"></label>
+      <label data-modes="pattern creative"><span data-i18n="boardW"></span><input type="number" id="boardW" value="150" min="1" step="0.5"></label>
+      <label data-modes="pattern creative"><span data-i18n="boardH"></span><input type="number" id="boardH" value="100" min="1" step="0.5"></label>
       <label><span data-i18n="thick"></span><input type="number" id="thick" value="3" min="0.1" step="0.1"></label>
       <label><span data-i18n="material"></span><select id="material"></select></label>
-      <label><span data-i18n="diameter"></span><input type="number" id="diameter" min="0.1" step="0.5"></label>
-      <label><span data-i18n="diaRef"></span><select id="diaRef">
+      <label data-modes="pattern creative"><span data-i18n="diameter"></span><input type="number" id="diameter" min="0.1" step="0.5"></label>
+      <label data-modes="pattern creative"><span data-i18n="diaRef"></span><select id="diaRef">
         <option value="inner" data-i18n="ref.inner"></option>
         <option value="mid" data-i18n="ref.mid"></option>
         <option value="outer" data-i18n="ref.outer"></option>
       </select></label>
     </div>
-    <div class="desc" id="diaSummary"></div>
+    <div class="desc" id="diaSummary" data-modes="pattern creative"></div>
     <div class="checks" data-modes="pattern creative">
       <label class="check"><input type="checkbox" id="seamless"> <span data-i18n="seamless"></span></label>
     </div>
@@ -290,7 +290,7 @@
       </select></label>
       <label><span data-i18n="testFrom"></span><input type="number" id="testFrom" value="1" min="0" step="0.1"></label>
       <label><span data-i18n="testTo"></span><input type="number" id="testTo" value="3" min="0" step="0.1"></label>
-      <label><span data-i18n="testCount"></span><input type="number" id="testCount" value="5" min="2" max="30" step="1"></label>
+      <label><span data-i18n="testCount"></span><input type="number" id="testCount" value="5" min="1" max="30" step="1"></label>
       <label><span data-i18n="testSize"></span>
         <span style="display:flex;gap:4px"><input type="number" id="testW" value="80" min="10" step="1"><input type="number" id="testH" value="40" min="5" step="1"></span>
       </label>
@@ -452,7 +452,7 @@ const STR = {
     'st.ok': 'good', 'st.warn': 'borderline', 'st.bad': 'too high',
 
     'diaSummary': (i, m, o) => `Ø inner ${i} · mid ${m} · outer ${o} mm`,
-    'fi.perStrip': (d, mat, th) => `<b>Flex per strip</b> at target inner Ø ${d} mm (${mat}, ${th} mm)`,
+    'fi.perStrip': (mat, th, ok) => `<b>Smallest inner Ø per strip</b> that stays “good” (${mat}, ${th} mm, ε ≤ ${ok} %)`,
     'fi.minD': 'Min inner Ø', 'fi.strainAt': (d, b) => b >= 100 ? `Max. strain at Ø ${d}` : `Max. strain at Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flat, no bending strain', 'fi.minGood': 'Min inner Ø (good)',
     'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
     'fi.solid': 'In places the slots don’t overlap or are removed – it will barely bend there.',
@@ -467,9 +467,8 @@ const STR = {
     'layer.cuts': 'Cuts', 'layer.border': 'Outer border', 'layer.engrave': 'Engrave', 'layer.params': 'Parameters',
     'pl.project': n => `Project: ${n}`,
     'pl.mode': m => `Mode: ${m}`,
-    'pl.test': (name, a, b, n) => `Test strips: ${name} ${a} … ${b} mm in ${n} steps`,
+    'pl.test': (name, a, b, n) => n === 1 ? `Test strip: ${name} ${a} mm` : `Test strips: ${name} ${a} … ${b} mm in ${n} steps`,
     'pl.strip': (w, h, z) => `Strip: ${w} × ${h} mm, label zone ${z} mm`,
-    'pl.target': (i, m) => `Target Ø for rating: inner ${i} / mid ${m} mm`,
     'pl.board': (w, h) => `Board: ${w} × ${h} mm`,
     'pl.dia': (i, m, o) => `Cylinder Ø: inner ${i} · mid ${m} · outer ${o} mm`,
     'pl.material': (m, th) => `Material: ${m}, ${th} mm`,
@@ -560,7 +559,7 @@ const STR = {
     'st.ok': 'gut', 'st.warn': 'grenzwertig', 'st.bad': 'zu hoch',
 
     'diaSummary': (i, m, o) => `Ø innen ${i} · Mitte ${m} · außen ${o} mm`,
-    'fi.perStrip': (d, mat, th) => `<b>Flex je Streifen</b> bei Ziel-Ø innen ${d} mm (${mat}, ${th} mm)`,
+    'fi.perStrip': (mat, th, ok) => `<b>Kleinster Innen-Ø je Streifen</b>, der „gut“ bleibt (${mat}, ${th} mm, ε ≤ ${ok} %)`,
     'fi.minD': 'Min-Ø innen', 'fi.strainAt': (d, b) => b >= 100 ? `Max. Dehnung bei Ø ${d}` : `Max. Dehnung bei Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flach, keine Biegedehnung', 'fi.minGood': 'Min-Ø innen (gut)',
     'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
     'fi.solid': 'Stellenweise überlappen die Schlitze nicht oder fehlen – dort biegt es sich kaum.',
@@ -575,9 +574,8 @@ const STR = {
     'layer.cuts': 'Schnitte', 'layer.border': 'Außenkontur', 'layer.engrave': 'Gravur', 'layer.params': 'Parameter',
     'pl.project': n => `Projekt: ${n}`,
     'pl.mode': m => `Modus: ${m}`,
-    'pl.test': (name, a, b, n) => `Teststreifen: ${name} ${a} … ${b} mm in ${n} Stufen`,
+    'pl.test': (name, a, b, n) => n === 1 ? `Teststreifen: ${name} ${a} mm` : `Teststreifen: ${name} ${a} … ${b} mm in ${n} Stufen`,
     'pl.strip': (w, h, z) => `Streifen: ${w} × ${h} mm, Beschriftungszone ${z} mm`,
-    'pl.target': (i, m) => `Ziel-Ø für Bewertung: innen ${i} / Mitte ${m} mm`,
     'pl.board': (w, h) => `Platte: ${w} × ${h} mm`,
     'pl.dia': (i, m, o) => `Zylinder-Ø: innen ${i} · Mitte ${m} · außen ${o} mm`,
     'pl.material': (m, th) => `Material: ${m}, ${th} mm`,
@@ -753,7 +751,7 @@ function readParams() {
   for (const k of SEL) p[k] = $(k).value;
   for (const k of CHK) p[k] = $(k).checked;
   p.project = $('project').value.trim();
-  p.testCount = clamp(Math.round(p.testCount), 2, 30);
+  p.testCount = clamp(Math.round(p.testCount), 1, 30);
   p.creative = JSON.parse(JSON.stringify(creative));
   return p;
 }
@@ -1156,7 +1154,14 @@ function heatColor(rec, dMid, mat) {
 
 // ---------------------------------------------------------------- document
 // solid strip on test coupons for the engraved label (value, min. Ø, shape + slot values, project)
-const labelZone = p => p.project ? 13 : 10;
+const labelZone = p => 10 + (specSplit(p) ? 3 : 0) + (p.project ? 3 : 0);
+// slot values engraved on a test strip; split over two lines when one line at the
+// smallest size would not fit along the strip (decided once for all strips)
+const specParts = q => [`${shapeName(q.shape)} L ${fmt(q.slotH)} W ${fmt(q.slotW)}`, `Gap V ${fmt(q.gapY)} H ${fmt(q.gapX)}`];
+function specSplit(p) {
+  const longest = (p.testCount === 1 ? [p.testFrom] : [p.testFrom, p.testTo]).map(v => specParts({ ...p, [p.testParam]: v }).join(' ')).sort((a, b) => b.length - a.length)[0];
+  return textWidth(longest, 2.2) > p.testH - 4;
+}
 // width of an engraved label line in mm (Arial, font size in mm)
 const measureCtx = document.createElement('canvas').getContext('2d');
 function textWidth(str, fs) { measureCtx.font = '100px Arial, Helvetica, sans-serif'; return measureCtx.measureText(str).width / 100 * fs; }
@@ -1170,7 +1175,7 @@ function buildDoc(p) {
     const short = TEST_SHORT[p.testParam];
     const w = p.testW, h = p.testH, n = p.testCount;
     for (let i = 0; i < n; i++) {
-      const v = +(p.testFrom + (p.testTo - p.testFrom) * i / (n - 1)).toFixed(3);
+      const v = n === 1 ? p.testFrom : +(p.testFrom + (p.testTo - p.testFrom) * i / (n - 1)).toFixed(3);
       const q = { ...p, [p.testParam]: v, seamless: false };
       // rotated output turns top→right, so stack in reverse to keep ascending values left → right
       const y0 = (p.rotate ? n - 1 - i : i) * (h + TEST_SPACING);
@@ -1188,11 +1193,23 @@ function buildDoc(p) {
       doc.borders.push(`<rect x="0" y="${f(y0)}" width="${f(w)}" height="${f(h)}"/>`);
       // line 1 (large): varied value and min. Ø; then smaller: shape with the other slot values, project
       const head = `${short}${fmt(v)}` + (dMin ? ` · Ø≥${Math.round(dMin - p.thick)}` : '');
-      const spec = [shapeName(p.shape), ...Object.entries(TEST_SHORT).filter(([k]) => k !== p.testParam).map(([k, c]) => c + fmt(p[k]))].join(' ');
-      const fit = (str, fs) => { let out = str; while (out.length > 4 && textWidth(out, fs) > h - 4) out = out.slice(0, -2) + '…'; return out; };
+      // every slot value of this strip is always engraved, so each strip documents itself
+      const spec = specSplit(p) ? specParts(q) : [specParts(q).join(' ')];
+      // shrink a line (down to `min`) before cutting it, so it fits along the strip
+      const fit = (str, fs, min) => {
+        while (fs > min + 1e-9 && textWidth(str, fs) > h - 4) fs = +(fs - 0.1).toFixed(1);
+        let out = str;
+        while (out.length > 4 && textWidth(out, fs) > h - 4) out = out.slice(0, -2) + '…';
+        return [out, fs];
+      };
       // x = baseline; rotated text extends ≈ 0.75 × font size to the left of it
-      [[head, 3.2, 3.3], [spec, 2.8, 6.6], [p.project, 2.8, 9.7]].forEach(([txt, fs, x]) => txt && doc.labels.push(
-        `<text transform="translate(${x},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle" font-size="${fs}">${esc(fit(txt, fs))}</text>`));
+      const rows = [[head, 3.2, 2.6], ...spec.map(sp => [sp, 2.8, 2.2]), [p.project, 2.8, 2.2]];
+      rows.forEach(([txt, fs0, min], j) => {
+        const x = 3.3 + j * 3.1 + (j ? 0.2 : 0);
+        if (!txt) return;
+        const [str, fs] = fit(txt, fs0, min);
+        doc.labels.push(`<text transform="translate(${x},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle" font-size="${fs}">${esc(str)}</text>`);
+      });
     }
     doc.w = w;
     doc.h = n * h + (n - 1) * TEST_SPACING;
@@ -1249,7 +1266,6 @@ function paramLines(p, doc) {
   if (p.mode === 'test') {
     L.push(t('pl.test', t('p.' + p.testParam), fmt(p.testFrom), fmt(p.testTo), p.testCount));
     L.push(t('pl.strip', fmt(p.testW), fmt(p.testH), labelZone(p)));
-    L.push(t('pl.target', (dm - th).toFixed(1), dm.toFixed(1)));
   } else {
     L.push(t('pl.board', fmt(p.boardW), fmt(p.boardH)));
     L.push(t('pl.dia', (dm - th).toFixed(2), dm.toFixed(2), (dm + th).toFixed(2)));
@@ -1293,7 +1309,7 @@ function fileName(p, doc) {
   const proj = slug(p.project || '');
   if (proj) parts.unshift(proj);
   if (p.mode === 'test') {
-    parts.push(`${TEST_FILE[p.testParam]}${fmt(p.testFrom)}-${fmt(p.testTo)}x${p.testCount}`, `${fmt(p.testW)}x${fmt(p.testH)}x${fmt(p.thick)}mm`);
+    parts.push(p.testCount === 1 ? `${TEST_FILE[p.testParam]}${fmt(p.testFrom)}` : `${TEST_FILE[p.testParam]}${fmt(p.testFrom)}-${fmt(p.testTo)}x${p.testCount}`, `${fmt(p.testW)}x${fmt(p.testH)}x${fmt(p.thick)}mm`);
   } else {
     parts.push(`${fmt(p.boardW)}x${fmt(p.boardH)}x${fmt(p.thick)}mm`);
   }
@@ -1493,6 +1509,7 @@ function render() {
   $('shapeDesc').textContent = t('desc.' + p.shape);
   $('meanderNote').hidden = !(p.mode === 'creative' && SHAPES[p.shape].meander);
   $('offset').disabled = p.offsetMode !== 'custom';
+  $('testTo').disabled = p.testCount === 1;
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
   const dm = midDiameter(p);
   $('diaSummary').textContent = p.boardW > 0 ? t('diaSummary', (dm - p.thick).toFixed(2), dm.toFixed(2), (dm + p.thick).toFixed(2)) : '';
@@ -1855,12 +1872,11 @@ function renderInfo(p, doc) {
   const mat = MATERIALS[p.material], dm = midDiameter(p), matName = t('mat.' + p.material);
   let html = '';
   if (p.mode === 'test') {
-    html += t('fi.perStrip', (dm - p.thick).toFixed(1), esc(matName), fmt(p.thick)) + '<table>';
-    html += `<tr><td>${esc(t('p.' + p.testParam))}</td><td>ε</td><td>${esc(t('fi.minD'))}</td></tr>`;
+    html += t('fi.perStrip', esc(matName), fmt(p.thick), mat.ok) + '<table>';
+    html += `<tr><td>${esc(t('p.' + p.testParam))}</td><td>${esc(t('fi.minD'))}</td></tr>`;
     for (const r of doc.rows) {
-      if (r.eps == null) { html += `<tr><td>${fmt(r.v)}</td><td colspan="2">–</td></tr>`; continue; }
-      const [cls] = flexStatus(r.eps, mat);
-      html += `<tr><td>${fmt(r.v)} mm</td><td class="${cls}">${r.eps.toFixed(2)} %</td><td>${Math.round(r.dMin - p.thick)} mm</td></tr>`;
+      if (r.dMin == null) { html += `<tr><td>${fmt(r.v)} mm</td><td>–</td></tr>`; continue; }
+      html += `<tr><td>${fmt(r.v)} mm</td><td><b>${Math.round(r.dMin - p.thick)} mm</b></td></tr>`;
     }
     html += '</table>';
     const reason = doc.rows.find(r => r.reason)?.reason;
