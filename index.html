@@ -1783,7 +1783,7 @@ function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
 function buildParts(p, doc) {
   for (const prt of three.parts) { prt.mesh.geometry.dispose(); three.group.remove(prt.mesh); }
   three.parts = [];
-  const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, tris = buildSolid(p, doc);
+  const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, tris = buildSolid(p, doc, true);
   const flat = new Float32Array(tris.length), uv = new Float32Array(tris.length / 3 * 2);
   for (let k = 0, j = 0; k < tris.length; k += 3, j += 2) {
     flat[k] = tris[k]; flat[k + 1] = tris[k + 1] - H / 2; flat[k + 2] = tris[k + 2] - th / 2;
@@ -1791,14 +1791,18 @@ function buildParts(p, doc) {
   }
   three.solid = makePart(flat, uv, null, three.solidMat);
   three.glow = stripPart(W, -H / 2, H / 2, th / 2 + 0.05, th / 2 + 0.05, 0, 1, three.glowMat);
+  // a glue tab sits one thickness further in, under the overlapping end (eased in over 3 mm)
+  three.tab = p.joint === 'tab' ? { start: W / 2, ramp: Math.min(3, p.jointSize || 3), th } : null;
 }
 // Returns the cylinder axis position (z) for the lamp.
 function bendParts(W, bend) {
-  const theta = bend * 2 * Math.PI, R = theta > 1e-4 ? W / theta : 0;
+  const theta = bend * 2 * Math.PI, R = theta > 1e-4 ? W / theta : 0, tab = three.tab;
   for (const prt of three.parts) {
     const pos = prt.mesh.geometry.attributes.position, fl = prt.flat;
     for (let i = 0, j = 0; i < pos.count; i++, j += 3) {
-      const x = fl[j], y = fl[j + 1], d = fl[j + 2];
+      const x = fl[j], y = fl[j + 1];
+      let d = fl[j + 2];
+      if (tab && x > tab.start) { const u = Math.min(1, (x - tab.start) / tab.ramp); d -= tab.th * bend * u * u * (3 - 2 * u); }
       if (R) {
         const phi = x / R, r = R + d;
         pos.setXYZ(i, r * Math.sin(phi), y, r * Math.cos(phi) - R);
@@ -2291,25 +2295,37 @@ function splitSeamTJunctions(tris, seams) {
   for (const x of out) tris.push(x);
 }
 // The board as a closed flat solid: triangles (x centred, y up 0…H, z 0…th).
-function buildSolid(p, doc) {
+// With `withJoint` the board outline includes the seam joint (3D view only;
+// STL/OBJ stay at the plain circumference).
+function buildSolid(p, doc, withJoint = false) {
   const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, S = STL_SCALE;
   const holes = slotPolygons(doc);
-  const n = Math.max(1, Math.ceil(W / STL_STRIP)), WS = Math.round(W * S), HS = Math.round(H * S);
+  const HS = Math.round(H * S);
+  const outline = (withJoint && doc.outline ? doc.outline : [[0, 0], [W, 0], [W, H], [0, H]])
+    .map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round((H - y) * S) }));
+  const minX = Math.min(...outline.map(q => q.X)), maxX = Math.max(...outline.map(q => q.X));
+  const n = Math.max(1, Math.ceil((maxX - minX) / S / STL_STRIP));
   const tris = [];   // flat triangles: 9 numbers each, (x mm, y mm up, z 0…th)
   const P = (q, z) => [q.X / S - W / 2, q.Y / S, z];
   const tri = (a, b, c) => tris.push(...a, ...b, ...c);
   // inner strip seams are nudged by 13 µm so they rarely land exactly on a slot vertex
   // (column centres often sit on the 2 mm grid); remaining T-junctions are split below
-  const seamX = k => k === 0 ? 0 : k === n ? WS : Math.round(WS * k / n) + 13;
+  const seamX = k => k === 0 ? minX : k === n ? maxX : minX + Math.round((maxX - minX) * k / n) + 13;
   for (let i = 0; i < n; i++) {
     const X0 = seamX(i), X1 = seamX(i + 1);
+    // this strip of the board outline …
+    const ci = new ClipperLib.Clipper(), piece = new ClipperLib.Paths();
+    ci.AddPath(outline, ClipperLib.PolyType.ptSubject, true);
+    ci.AddPath([{ X: X0, Y: 0 }, { X: X1, Y: 0 }, { X: X1, Y: HS }, { X: X0, Y: HS }], ClipperLib.PolyType.ptClip, true);
+    ci.Execute(ClipperLib.ClipType.ctIntersection, piece, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+    // … minus the slots
     const cl = new ClipperLib.Clipper();
     cl.StrictlySimple = true;
-    cl.AddPath([{ X: X0, Y: 0 }, { X: X1, Y: 0 }, { X: X1, Y: HS }, { X: X0, Y: HS }], ClipperLib.PolyType.ptSubject, true);
+    cl.AddPaths(piece, ClipperLib.PolyType.ptSubject, true);
     for (const h of holes) if (h.maxX > X0 && h.minX < X1) cl.AddPath(h.p, ClipperLib.PolyType.ptClip, true);
     const tree = new ClipperLib.PolyTree();
     cl.Execute(ClipperLib.ClipType.ctDifference, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
-    const seam = (a, b) => a.X === b.X && ((a.X === X0 && X0 !== 0) || (a.X === X1 && X1 !== WS));
+    const seam = (a, b) => a.X === b.X && ((a.X === X0 && X0 !== minX) || (a.X === X1 && X1 !== maxX));
     const face = (outer, inner) => {
       outer = cleanRing(outer);
       inner = inner.map(cleanRing).filter(r => r.length >= 3);
