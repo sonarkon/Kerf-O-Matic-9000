@@ -447,7 +447,7 @@ const STR = {
 
     'diaSummary': (i, m, o) => `Ø inner ${i} · mid ${m} · outer ${o} mm`,
     'fi.perStrip': (d, mat, th) => `<b>Flex per strip</b> at target inner Ø ${d} mm (${mat}, ${th} mm)`,
-    'fi.minD': 'Min inner Ø', 'fi.strainAt': d => `Max. strain at Ø ${d}`, 'fi.minGood': 'Min inner Ø (good)',
+    'fi.minD': 'Min inner Ø', 'fi.strainAt': (d, b) => b >= 100 ? `Max. strain at Ø ${d}` : `Max. strain at Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flat, no bending strain', 'fi.minGood': 'Min inner Ø (good)',
     'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
     'fi.solid': 'In places the slots don’t overlap or are removed – it will barely bend there.',
     'fi.counts': (over, rigid) => `${over} slots above the limit · ${rigid} rigid`,
@@ -478,7 +478,7 @@ const STR = {
     'pl.order': o => `Cut order: ${o}`,
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, height ${h}, W ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
-    'pl.flex': (e, st, d) => `Flex (guide value): ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
+    'pl.flex': (e, st, d, b) => `Flex (guide value) at Bend ${b} %: ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
     'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d}`
   },
   de: {
@@ -555,7 +555,7 @@ const STR = {
 
     'diaSummary': (i, m, o) => `Ø innen ${i} · Mitte ${m} · außen ${o} mm`,
     'fi.perStrip': (d, mat, th) => `<b>Flex je Streifen</b> bei Ziel-Ø innen ${d} mm (${mat}, ${th} mm)`,
-    'fi.minD': 'Min-Ø innen', 'fi.strainAt': d => `Max. Dehnung bei Ø ${d}`, 'fi.minGood': 'Min-Ø innen (gut)',
+    'fi.minD': 'Min-Ø innen', 'fi.strainAt': (d, b) => b >= 100 ? `Max. Dehnung bei Ø ${d}` : `Max. Dehnung bei Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flach, keine Biegedehnung', 'fi.minGood': 'Min-Ø innen (gut)',
     'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
     'fi.solid': 'Stellenweise überlappen die Schlitze nicht oder fehlen – dort biegt es sich kaum.',
     'fi.counts': (over, rigid) => `${over} Schlitze über dem Limit · ${rigid} starr`,
@@ -586,7 +586,7 @@ const STR = {
     'pl.order': o => `Schnittreihenfolge: ${o}`,
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, Höhe ${h}, B ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
-    'pl.flex': (e, st, d) => `Flex (Richtwert): ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
+    'pl.flex': (e, st, d, b) => `Flex (Richtwert) bei Bend ${b} %: ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
     'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d}`
   }
 };
@@ -784,6 +784,11 @@ function effectiveOffset(p, h) {
 
 // Width is the circumference on the material's mid-plane (neutral axis).
 const midDiameter = p => p.boardW / Math.PI;
+// The Bend slider sets how far the board is bent: 100 % = closed cylinder,
+// 50 % = half the curvature (twice the radius), 0 % = flat. Strain scales with
+// the curvature, so the analysis uses this effective mid-plane diameter.
+const bendFactor = () => (typeof view3d === 'object' ? view3d.bend : 100) / 100;
+const bendDiameter = p => { const b = bendFactor(); return b > 0 ? midDiameter(p) / b : Infinity; };
 function syncDiameter() {
   const w = parseFloat($('boardW').value), th = parseFloat($('thick').value) || 0;
   if (!(w > 0)) return;
@@ -1195,7 +1200,7 @@ function buildDoc(p) {
 }
 
 function flexSummary(p, doc) {
-  const mat = MATERIALS[p.material], dMid = midDiameter(p), th = p.thick;
+  const mat = MATERIALS[p.material], dMid = bendDiameter(p), th = p.thick;
   if (!doc.flex || doc.flex.reason) return { text: doc.flex ? t(doc.flex.reason) : '' };
   const eps = doc.flex.k / dMid * 100;
   const dMin = doc.flex.k / (mat.ok / 100);  // mid-plane diameter at the "ok" limit
@@ -1253,7 +1258,7 @@ function paramLines(p, doc) {
   L.push(t('pl.order', t('ord.' + p.order)));
   if (p.mode !== 'test') {
     const fs = flexSummary(p, doc);
-    if (fs.eps != null) L.push(t('pl.flex', fs.eps.toFixed(2), fs.status[1], Math.round(fs.dMinInner)));
+    if (fs.eps != null) L.push(t('pl.flex', fs.eps.toFixed(2), fs.status[1], Math.round(fs.dMinInner), view3d.bend));
   }
   L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
   return L;
@@ -1450,7 +1455,7 @@ function previewInner(p, doc, vm) {
       `<g fill="#ffe7b0" stroke="#ffe7b0" stroke-width="0.2">${all}</g>`;
   }
   if (vm === 'flex') {
-    const dMid = midDiameter(p), mat = MATERIALS[p.material];
+    const dMid = bendDiameter(p), mat = MATERIALS[p.material];
     return `<g class="boards" fill="var(--board)" stroke="var(--muted)" stroke-width="1">${boards}</g>` +
       `<g stroke="#00000066" stroke-width="0.15">${doc.recs.map(r => `<g fill="${heatColor(r, dMid, mat)}">${r.els.join('')}</g>`).join('')}</g>`;
   }
@@ -1484,7 +1489,9 @@ function render() {
   const vm = is3d ? '3d' : ov === 'light' ? 'light' : ov === 'flex' ? 'flex' : 'cut';
   view.classList.toggle('dark', ov === 'light');
   view.classList.toggle('is3d', is3d);
-  $('three').hidden = $('bendCtl').hidden = !is3d;
+  $('three').hidden = !is3d;
+  $('bendCtl').hidden = test;
+  $('bendVal').textContent = view3d.bend + ' %';
   $('overlayCtl').hidden = test;
   stage.hidden = is3d;
   $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
@@ -1601,7 +1608,7 @@ function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
 // gets its slot's heat colour (used by the flex overlay).
 function wallFlat(p, doc) {
   const W = doc.w, H = doc.h, a = -p.thick / 2, b = p.thick / 2, out = [], cols = [];
-  const dMid = midDiameter(p), mat = MATERIALS[p.material], c = new THREE.Color();
+  const dMid = bendDiameter(p), mat = MATERIALS[p.material], c = new THREE.Color();
   const items = doc.recs.length ? doc.recs : doc.cuts.map(src => ({ els: [src] }));
   for (const rec of items) {
     c.set(rec.kf !== undefined || rec.rigid ? heatColor(rec, dMid, mat) : HEAT.none);
@@ -1755,7 +1762,7 @@ function setTexture(mat, key, canvas) {
 function buildHeat(p, doc) {
   return new Promise(resolve => {
     const W = doc.w, H = doc.h, s = Math.min(6, 2048 / W, 2048 / H);
-    const dMid = midDiameter(p), mat = MATERIALS[p.material], halo = Math.max(0.6, p.gapX);
+    const dMid = bendDiameter(p), mat = MATERIALS[p.material], halo = Math.max(0.6, p.gapX);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
       `<rect width="${W}" height="${H}" fill="#d9d4ca"/>` +
       doc.recs.map(r => { const c = heatColor(r, dMid, mat); return `<g fill="${c}" stroke="${c}" stroke-width="${halo}" stroke-linejoin="round">${r.els.join('')}</g>`; }).join('') +
@@ -1795,9 +1802,19 @@ function show3d(p, doc) {
   }).catch(() => { $('threeMsg').textContent = t('three.fail'); threeLoading = null; });
 }
 function save3d() { try { localStorage.setItem('kerf-3d', JSON.stringify(view3d)); } catch (e) {} }
+let bendFrame = 0, heatTimer = null;
 $('bend').addEventListener('input', () => {
   view3d.bend = +$('bend').value; save3d(); updateSaveLabel();
-  if (three && last) apply3dScene(last.p, last.doc, false);
+  $('bendVal').textContent = view3d.bend + ' %';
+  if (!last) return;
+  if (view.classList.contains('is3d')) {
+    if (three) apply3dScene(last.p, last.doc, false);
+    renderInfo(last.p, last.doc);
+    // the 3D heatmap colours depend on the bend: rebuild them once the slider rests
+    if (view3d.overlay === 'flex' && three) { clearTimeout(heatTimer); heatTimer = setTimeout(() => rebuild3d(last.p, last.doc), 200); }
+  } else if (!bendFrame) {
+    bendFrame = requestAnimationFrame(() => { bendFrame = 0; render(); });
+  }
 });
 // light and flex are exclusive overlays
 function setOverlay(ov) {
@@ -1830,7 +1847,7 @@ function renderInfo(p, doc) {
     if (fs.eps == null) html += `<p>${esc(fs.text || '')}</p>`;
     else {
       html += `<div class="stats">` +
-        `<div><span>${esc(t('fi.strainAt', (dm - p.thick).toFixed(1)))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
+        `<div><span>${esc(bendFactor() > 0 ? t('fi.strainAt', (bendDiameter(p) - p.thick).toFixed(1), view3d.bend) : t('fi.flat'))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
         `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(matName)} ≤ ${mat.ok} %</em></div>` +
         `</div>`;
       if (p.mode === 'creative' && (fs.over || fs.rigid)) {

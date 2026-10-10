@@ -22,7 +22,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
   - The image is stored (downscaled) in the SVG metadata, so a design can be reloaded completely.
 - **Preview**: *2D* or *3D*, with two overlay buttons at the top right: **lamp** (glowing slots on a dark board – how a lampshade will look) and **flex heatmap** (strain per slot: good / borderline / too high / rigid). Both work in 2D and 3D.
 - **3D preview** with the real material thickness: outer and inner surface, walls along every slot, rims and edges. A *Bend* slider goes from flat to a closed cylinder; acrylic and PETG are semi-transparent, wood is opaque; orbit and zoom with the mouse. three.js is loaded only when the 3D view is opened.
-- **Bendability estimate**: strain in the twisting bridges for the target diameter, computed for every slot-to-slot link, plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
+- **Bendability estimate**: strain in the twisting bridges, computed for every slot-to-slot link and scaled with the *Bend* slider (100 % = closed cylinder, 50 % = half the curvature), plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 - **Test strips**: a set of coupons that vary one parameter, each with an engraved label (value and min. diameter).
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
 - Side margins, optional outer border, 90° rotated output.
