@@ -239,6 +239,15 @@
     <div class="checks" data-modes="pattern creative">
       <label class="check"><input type="checkbox" id="seamless"> <span data-i18n="seamless"></span></label>
     </div>
+    <div class="grid2" data-modes="pattern creative" style="margin-top:8px">
+      <label><span data-i18n="joint"></span><select id="joint">
+        <option value="none" data-i18n="joint.none"></option>
+        <option value="tab" data-i18n="joint.tab"></option>
+        <option value="fingers" data-i18n="joint.fingers"></option>
+      </select></label>
+      <label><span data-i18n="jointSize"></span><input type="number" id="jointSize" value="10" min="1" step="0.5"></label>
+    </div>
+    <div class="desc" id="jointDesc" data-modes="pattern creative"></div>
   </details>
 
   <details class="sec" open>
@@ -339,6 +348,7 @@
     <h2 data-i18n="sec.output"></h2>
     <div class="grid2">
       <label><span data-i18n="marginX"></span><input type="number" id="marginX" value="0" min="0" step="0.5"></label>
+      <label><span data-i18n="kerf"></span><input type="number" id="kerf" value="0" min="0" max="1" step="0.01"></label>
       <label><span data-i18n="order"></span><select id="order">
         <option value="zigzag" data-i18n="ord.zigzag"></option>
         <option value="skip" data-i18n="ord.skip"></option>
@@ -394,6 +404,11 @@ const STR = {
     'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
     'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
     'seamless': 'Seamless: fit column count to circumference',
+    'joint': 'Seam joint', 'joint.none': 'None', 'joint.tab': 'Glue tab', 'joint.fingers': 'Finger joint', 'jointSize': 'Size (mm)',
+    'joint.tab.d': 'A solid tab of this width is added past the circumference; the other end overlaps it for gluing.',
+    'joint.fingers.d': 'Fingers of this depth on the right edge fit into matching notches on the left edge.',
+    'joint.border': ' The outer border is always cut.',
+    'kerf': 'Kerf (mm)',
     'sec.shape': 'Shape', 'sec.slot': 'Slots',
     'slotH': 'Slot length (mm)', 'slotW': 'Slot width (mm)', 'gapY': 'Vertical gap (mm)', 'gapX': 'Horizontal gap (mm)',
     'offsetMode': 'Vertical offset', 'off.top': 'Top aligned', 'off.center': 'Centered', 'off.custom': 'Custom', 'offset': 'Offset (mm)',
@@ -481,6 +496,7 @@ const STR = {
     'pl.rotated': on => `Rotated: ${on ? '90°' : 'no'}`,
     'pl.edges': (m, open, border) => `Side margin: ${m} mm · Open edges: ${open ? 'yes' : 'no'} · Outer border: ${border ? 'yes' : 'no'}`,
     'pl.order': o => `Cut order: ${o}`,
+    'pl.joint': (j, sz) => `Seam joint: ${j}${sz}`, 'pl.kerf': k => `Kerf compensation: ${k} mm (slots drawn ${k} mm smaller, outline ${k / 2} mm larger per side)`,
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, height ${h}, W ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
     'pl.flex': (e, st, d, b) => `Flex (guide value) at Bend ${b} %: ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
@@ -501,6 +517,11 @@ const STR = {
     'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
     'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
     'seamless': 'Nahtlos: Spaltenzahl an Umfang anpassen',
+    'joint': 'Naht-Verbindung', 'joint.none': 'Keine', 'joint.tab': 'Klebelasche', 'joint.fingers': 'Fingerzinken', 'jointSize': 'Größe (mm)',
+    'joint.tab.d': 'Eine volle Lasche dieser Breite wird hinter dem Umfang angesetzt; das andere Ende überlappt sie zum Verkleben.',
+    'joint.fingers.d': 'Zinken dieser Tiefe an der rechten Kante greifen in passende Aussparungen an der linken Kante.',
+    'joint.border': ' Die Außenkontur wird immer geschnitten.',
+    'kerf': 'Laserfuge (mm)',
     'sec.shape': 'Form', 'sec.slot': 'Schlitz',
     'slotH': 'Schlitzlänge (mm)', 'slotW': 'Schlitzbreite (mm)', 'gapY': 'Steg vertikal (mm)', 'gapX': 'Steg horizontal (mm)',
     'offsetMode': 'Vertikaler Versatz', 'off.top': 'Oben bündig', 'off.center': 'Zentriert', 'off.custom': 'Eigener Wert', 'offset': 'Versatz (mm)',
@@ -588,6 +609,7 @@ const STR = {
     'pl.rotated': on => `Gedreht: ${on ? '90°' : 'nein'}`,
     'pl.edges': (m, open, border) => `Rand links/rechts: ${m} mm · Ränder offen: ${open ? 'ja' : 'nein'} · Außenkontur: ${border ? 'ja' : 'nein'}`,
     'pl.order': o => `Schnittreihenfolge: ${o}`,
+    'pl.joint': (j, sz) => `Naht-Verbindung: ${j}${sz}`, 'pl.kerf': k => `Fugen-Ausgleich: ${k} mm (Schlitze ${k} mm kleiner, Kontur je Seite ${k / 2} mm größer gezeichnet)`,
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, Höhe ${h}, B ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
     'pl.flex': (e, st, d, b) => `Flex (Richtwert) bei Bend ${b} %: ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
@@ -739,9 +761,9 @@ function newMod(p) {
 }
 
 // ---------------------------------------------------------------- params
-const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset',
+const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'kerf', 'jointSize',
              'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
-const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam'];
+const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint'];
 const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible'];
 const MODES = ['pattern', 'creative', 'test'];
 
@@ -885,6 +907,64 @@ function clipToBand(elements, h) {
   }
   return out;
 }
+// Outline points of one of our SVG elements, computed from its geometry (lines
+// and circular/elliptic arcs only), with arcs split finely enough to stay within
+// `tol` mm of the true curve. Returns [[x, y], …] in SVG coordinates; closed
+// outlines do not repeat the first point.
+const arcSteps = (r, sweep, tol) => clamp(Math.ceil(Math.abs(sweep) / (2 * Math.acos(Math.max(-1, 1 - tol / Math.max(r, tol))))), 2, 720);
+function arcPoints(x0, y0, r, large, sweep, x1, y1, tol, out) {
+  const dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy);
+  if (d < 1e-9) return;
+  r = Math.max(r, d / 2);
+  const h = Math.sqrt(Math.max(0, r * r - d * d / 4)), sgn = large !== sweep ? 1 : -1;
+  const cx = (x0 + x1) / 2 - sgn * h * dy / d, cy = (y0 + y1) / 2 + sgn * h * dx / d;
+  const a0 = Math.atan2(y0 - cy, x0 - cx);
+  let da = Math.atan2(y1 - cy, x1 - cx) - a0;
+  if (sweep && da < 0) da += 2 * Math.PI;
+  if (!sweep && da > 0) da -= 2 * Math.PI;
+  const n = arcSteps(r, da, tol);
+  for (let i = 1; i <= n; i++) out.push(i === n ? [x1, y1] : [cx + r * Math.cos(a0 + da * i / n), cy + r * Math.sin(a0 + da * i / n)]);
+}
+function sampleOutline(el, closed, tol = 0.005) {
+  const num = a => +el.getAttribute(a), tag = el.tagName, out = [];
+  if (tag === 'line') return [[num('x1'), num('y1')], [num('x2'), num('y2')]];
+  if (tag === 'polyline' || tag === 'polygon') return el.getAttribute('points').trim().split(/\s+/).map(q => q.split(',').map(Number));
+  if (tag === 'ellipse') {
+    const cx = num('cx'), cy = num('cy'), rx = num('rx'), ry = num('ry'), n = arcSteps(Math.max(rx, ry), 2 * Math.PI, tol);
+    for (let i = 0; i < n; i++) out.push([cx + rx * Math.cos(2 * Math.PI * i / n), cy + ry * Math.sin(2 * Math.PI * i / n)]);
+    return out;
+  }
+  if (tag === 'rect') {
+    const x = num('x'), y = num('y'), w = num('width'), h = num('height'), r = Math.min(+el.getAttribute('rx') || 0, w / 2, h / 2);
+    if (!r) return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+    out.push([x + r, y], [x + w - r, y]); arcPoints(x + w - r, y, r, 0, 1, x + w, y + r, tol, out);
+    out.push([x + w, y + h - r]); arcPoints(x + w, y + h - r, r, 0, 1, x + w - r, y + h, tol, out);
+    out.push([x + r, y + h]); arcPoints(x + r, y + h, r, 0, 1, x, y + h - r, tol, out);
+    out.push([x, y + r]); arcPoints(x, y + r, r, 0, 1, x + r, y, tol, out);
+    return out;
+  }
+  // path: absolute M, L, H, V, A, Z (all our generators write these)
+  const tok = el.getAttribute('d').match(/[MLHVAZ]|-?[\d.]+(?:e-?\d+)?/gi);
+  let i = 0, cmd = '', x = 0, y = 0;
+  const n = () => +tok[i++];
+  while (i < tok.length) {
+    if (/[A-Z]/i.test(tok[i])) cmd = tok[i++].toUpperCase();
+    if (cmd === 'Z') continue;
+    if (cmd === 'M' || cmd === 'L') { x = n(); y = n(); out.push([x, y]); }
+    else if (cmd === 'H') { x = n(); out.push([x, y]); }
+    else if (cmd === 'V') { y = n(); out.push([x, y]); }
+    else if (cmd === 'A') {
+      const r = n(); n(); n(); const large = n(), sweep = n(), x1 = n(), y1 = n();
+      arcPoints(x, y, r, large, sweep, x1, y1, tol, out);
+      x = x1; y = y1;
+    } else i++;
+  }
+  if (closed && out.length > 1) {
+    const a = out[0], b = out[out.length - 1];
+    if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-6) out.pop();
+  }
+  return out;
+}
 function polyPath(pts) {
   // drop points that are collinear with their neighbours (straight runs)
   const keep = pts.filter((q, i) => {
@@ -928,12 +1008,14 @@ function generate(p, w, h, x0, x1, slotFn) {
   const layout = layoutColumns(p, x0, x1);
   const { cols, stepY } = layout;
   const offset = effectiveOffset(p, h), eps = 1e-9;
+  // kerf compensation: shapes are drawn k2 smaller all round so the cut slot has the nominal size
+  const k2 = Math.max(0, p.kerf || 0) / 2;
   const slots = [];
   const fixed = { shape: p.shape, hw: p.slotW / 2, hh: p.slotH / 2, skip: false };
   const columns = cols.map((c, k) => {
     const out = [];
     if (S0.meander && !slotFn) {
-      if (p.gapY < h) out.push({ k, x: c.x, y: 0, els: [meanderSlot(c.x, p.slotW / 2, h, p.gapY, k % 2 === 0)], status: 'cut' });
+      if (p.gapY < h) out.push({ k, x: c.x, y: 0, els: [meanderSlot(c.x, Math.max(0, p.slotW / 2 - k2), h, p.gapY + k2, k % 2 === 0)], status: 'cut' });
       return out;
     }
     const base = mod((k % 2 ? 0 : stepY / 2) + offset, stepY);
@@ -947,10 +1029,11 @@ function generate(p, w, h, x0, x1, slotFn) {
         const top = Math.max(0, y - hh), bot = Math.min(h, y + hh);
         if (bot - top > eps) rec.els = S.draw(c.x, top, bot);
       } else if (y - hh >= -eps && y + hh <= h + eps) {
-        rec.els = S.draw(c.x, y, hw, hh);
+        rec.els = S.draw(c.x, y, Math.max(0, hw - k2), Math.max(0.05, hh - k2));
       } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2) {
-        const open = sp.shape === 'Pill' && pillOpen(c.x, y, hw, hh, h);
-        rec.els = open ? [open] : clipToBand(S.draw(c.x, y, hw, hh), h);
+        const dw = Math.max(0, hw - k2), dh = Math.max(0.05, hh - k2);
+        const open = sp.shape === 'Pill' && pillOpen(c.x, y, dw, dh, h);
+        rec.els = open ? [open] : clipToBand(S.draw(c.x, y, dw, dh), h);
       }
       if (rec.status === 'cut' && !(rec.els && rec.els.length)) rec.status = 'edge';
       slots.push(rec);
@@ -982,10 +1065,12 @@ function hash2(ix, iy, seed) {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
-function valueNoise(x, y, seed) {
+// px > 0 makes the noise repeat every px cells along x (seamless around a cylinder)
+function valueNoise(x, y, seed, px = 0) {
   const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
   const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-  const a = hash2(ix, iy, seed), b = hash2(ix + 1, iy, seed), c = hash2(ix, iy + 1, seed), d = hash2(ix + 1, iy + 1, seed);
+  const X = i => px ? mod(i, px) : i;
+  const a = hash2(X(ix), iy, seed), b = hash2(X(ix + 1), iy, seed), c = hash2(X(ix), iy + 1, seed), d = hash2(X(ix + 1), iy + 1, seed);
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 }
 
@@ -1018,8 +1103,10 @@ function sampleGrid(g, u, v) {
   return at(0, 0) * (1 - fx) * (1 - fy) + at(1, 0) * fx * (1 - fy) + at(0, 1) * (1 - fx) * fy + at(1, 1) * fx * fy;
 }
 
-// Source function v(x, y) → 0…1 for one modulator on a W × H board.
-function modSource(m, W, H) {
+// Source function v(x, y) → 0…1 for one modulator on a W × H board. With
+// `wrap` (seamless cylinder) radial, waves and noise repeat exactly every W
+// along x, so the design continues across the glue seam.
+function modSource(m, W, H, wrap) {
   const rad = (m.angle || 0) * Math.PI / 180, cs = Math.cos(rad), sn = Math.sin(rad);
   switch (m.source) {
     case 'linear': {
@@ -1031,16 +1118,19 @@ function modSource(m, W, H) {
     }
     case 'radial': {
       const cx = W * m.cx / 100, cy = H * m.cy / 100, r = Math.max(0.1, m.radius);
-      return (x, y) => Math.hypot(x - cx, y - cy) / r;
+      return (x, y) => { let dx = x - cx; if (wrap) dx -= W * Math.round(dx / W); return Math.hypot(dx, y - cy) / r; };
     }
     case 'wave': {
       const per = Math.max(0.5, m.period), ph = (m.phase || 0) * Math.PI / 180;
-      return (x, y) => 0.5 + 0.5 * Math.sin(2 * Math.PI * (x * cs + y * sn) / per + ph);
+      // around the cylinder only whole wave counts close the seam: round the x frequency
+      const kx = wrap ? Math.round(W * cs / per) / W : cs / per, ky = sn / per;
+      return (x, y) => 0.5 + 0.5 * Math.sin(2 * Math.PI * (x * kx + y * ky) + ph);
     }
     case 'noise': {
       const s = Math.max(0.5, m.scale), seed = Math.round(m.seed) || 0;
+      const nx = wrap ? Math.max(1, Math.round(W / s)) : 0, sx = nx ? W / nx : s;   // cell size along x
       return (x, y) => {
-        const v = 0.67 * valueNoise(x / s, y / s, seed) + 0.33 * valueNoise(2 * x / s, 2 * y / s, seed + 17);
+        const v = 0.67 * valueNoise(x / sx, y / s, seed, nx) + 0.33 * valueNoise(2 * x / sx, 2 * y / s, seed + 17, 2 * nx);
         return (v - 0.5) * 1.8 + 0.5;   // stretch: octave mixing compresses the range
       };
     }
@@ -1060,7 +1150,7 @@ function creativeSlotFn(p, W, H) {
   const bands = creative.bands, ends = [];
   let acc = 0;
   for (const b of bands) ends.push(acc += Math.max(0, +b.height || 0));
-  const mods = creative.mods.map(m => ({ m, fn: modSource(m, W, H) })).filter(o => o.fn);
+  const mods = creative.mods.map(m => ({ m, fn: modSource(m, W, H, p.seamless) })).filter(o => o.fn);
   const num = v => v === null || v === '' || v === undefined || isNaN(+v) ? null : +v;
   return (x, y) => {
     let shape = baseShape, sw = p.slotW, sh = p.slotH, skip = false;
@@ -1167,6 +1257,39 @@ const measureCtx = document.createElement('canvas').getContext('2d');
 function textWidth(str, fs) { measureCtx.font = '100px Arial, Helvetica, sans-serif'; return measureCtx.measureText(str).width / 100 * fs; }
 const TEST_SPACING = 3;
 
+// Board outline as a rectilinear polygon (board coordinates, y down), with the
+// seam joint: a glue tab past the circumference, or fingers on the right edge
+// that fit into notches on the left edge.
+function fingerRows(H, size) {
+  let n = Math.max(3, Math.round(H / Math.max(4, size * 2)));
+  if (n % 2 === 0) n++;
+  return Array.from({ length: n + 1 }, (_, i) => H * i / n);
+}
+function boardOutline(p, W, H) {
+  const j = p.joint, d = Math.max(0.5, p.jointSize || 0);
+  if (j === 'tab') return [[0, 0], [W + d, 0], [W + d, H], [0, H]];
+  if (j !== 'fingers') return [[0, 0], [W, 0], [W, H], [0, H]];
+  const ys = fingerRows(H, d), n = ys.length - 1, pts = [[0, 0], [W, 0]];
+  for (let i = 0; i < n; i++) if (i % 2) pts.push([W, ys[i]], [W + d, ys[i]], [W + d, ys[i + 1]], [W, ys[i + 1]]);
+  pts.push([W, H], [0, H]);
+  for (let i = n - 1; i >= 0; i--) if (i % 2) pts.push([0, ys[i + 1]], [d, ys[i + 1]], [d, ys[i]], [0, ys[i]]);
+  return pts;
+}
+// Offset a rectilinear polygon outward by k (kerf compensation of the outline).
+function offsetOutline(pts, k) {
+  if (!k) return pts;
+  let area = 0;
+  for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; area += a[0] * b[1] - b[0] * a[1]; }
+  const sgn = area > 0 ? -1 : 1;   // y down: positive area = clockwise on screen, so the left normal points inward
+  const nrm = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [-dy / l * sgn, dx / l * sgn]; };
+  return pts.map((q, i) => {
+    const a = pts[(i + pts.length - 1) % pts.length], b = pts[(i + 1) % pts.length];
+    const n1 = nrm(a, q), n2 = nrm(q, b);
+    return [q[0] + k * (n1[0] + n2[0]), q[1] + k * (n1[1] + n2[1])];
+  });
+}
+const outlinePath = pts => `<path d="M${pts.map(q => `${f(q[0])},${f(q[1])}`).join(' L')} Z"/>`;
+
 function buildDoc(p) {
   const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
   const mat = MATERIALS[p.material], dMid = midDiameter(p);
@@ -1190,9 +1313,9 @@ function buildDoc(p) {
         doc.count += cuts.length;
         doc.cuts.push(`<g transform="translate(0,${f(y0)})">${cuts.join('')}</g>`);
       }
-      doc.borders.push(`<rect x="0" y="${f(y0)}" width="${f(w)}" height="${f(h)}"/>`);
-      // line 1 (large): varied value and min. Ø; then smaller: shape with the other slot values, project
-      const head = `${short}${fmt(v)}` + (dMin ? ` · Ø≥${Math.round(dMin - p.thick)}` : '');
+      doc.borders.push(outlinePath(offsetOutline([[0, y0], [w, y0], [w, y0 + h], [0, y0 + h]], (p.kerf || 0) / 2)));
+      // line 1 (large): varied value; then smaller: all slot values, project
+      const head = `${short}${fmt(v)}`;   // the estimated min. Ø stays on screen only – the strip is there to measure it
       // every slot value of this strip is always engraved, so each strip documents itself
       const spec = specSplit(p) ? specParts(q) : [specParts(q).join(' ')];
       // shrink a line (down to `min`) before cutting it, so it fits along the strip
@@ -1219,17 +1342,22 @@ function buildDoc(p) {
 
   const w = p.boardW, h = p.boardH;
   const slotFn = p.mode === 'creative' ? creativeSlotFn(p, w, h) : null;
-  const gen = generate(p, w, h, p.marginX, w - p.marginX, slotFn);
+  // finger notches cut into the left edge: keep the pattern clear of them
+  const left = p.joint === 'fingers' ? Math.max(p.marginX, (p.jointSize || 0) + p.gapX) : p.marginX;
+  const gen = generate(p, w, h, left, w - p.marginX, slotFn);
   doc.gen = gen;
-  doc.boards.push({ x: 0, y: 0, w, h });
+  doc.outline = boardOutline(p, w, h);
+  doc.boards.push({ x: 0, y: 0, w, h, outline: doc.outline });
   if (gen) {
     doc.cuts = orderCuts(gen.columns, p.order);
     doc.recs = gen.columns.flat();
     doc.flex = flexAnalysis(p, gen);
   }
   doc.count = doc.cuts.length;
-  if (p.border) doc.borders.push(`<rect x="0" y="0" width="${f(w)}" height="${f(h)}"/>`);
-  doc.w = w; doc.h = h; doc.rotate = p.rotate;
+  // with a seam joint the outline is part of the joint, so it is always cut
+  if (p.border || p.joint === 'tab' || p.joint === 'fingers') doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
+  doc.bw = w;   // circumference; doc.w also covers a tab or fingers past it
+  doc.w = Math.max(...doc.outline.map(q => q[0])); doc.h = h; doc.rotate = p.rotate;
   return doc;
 }
 
@@ -1288,6 +1416,8 @@ function paramLines(p, doc) {
   }
   L.push(t('pl.rotated', p.rotate));
   L.push(t('pl.edges', fmt(p.marginX), p.openEdges, p.mode === 'test' || p.border));
+  if (p.mode !== 'test' && p.joint && p.joint !== 'none') L.push(t('pl.joint', t('joint.' + p.joint), `, ${fmt(p.jointSize)} mm`));
+  if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
   L.push(t('pl.order', t('ord.' + p.order)));
   if (p.mode !== 'test') {
     const fs = flexSummary(p, doc);
@@ -1318,6 +1448,8 @@ function fileName(p, doc) {
   const off = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
   if (off) parts.push(`ofs${fmt(off)}`);
   if (p.marginX) parts.push(`m${fmt(p.marginX)}`);
+  if (p.mode !== 'test' && p.joint && p.joint !== 'none') parts.push(`${p.joint}${fmt(p.jointSize)}`);
+  if (p.kerf) parts.push(`kerf${fmt(p.kerf)}`);
   if (p.mode === 'creative') parts.push(`creative-b${p.creative.bands.length}m${p.creative.mods.length}`);
   if (p.mode !== 'test' && p.seamless) parts.push('seamless');
   if (p.openEdges) parts.push('open');
@@ -1485,7 +1617,7 @@ if (viewMode !== '3d') { legacyView = viewMode; viewMode = '2d'; }   // cut / li
 document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
-  const boards = doc.boards.map(b => `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
+  const boards = doc.boards.map(b => b.outline ? outlinePath(b.outline) : `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
   if (vm === 'light') {
     const all = doc.cuts.join('');
     return `<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.4"/></filter></defs>` +
@@ -1498,7 +1630,7 @@ function previewInner(p, doc, vm) {
     return `<g class="boards" fill="var(--board)" stroke="var(--muted)" stroke-width="1">${boards}</g>` +
       `<g stroke="#00000066" stroke-width="0.15">${doc.recs.map(r => `<g fill="${heatColor(r, dMid, mat)}">${r.els.join('')}</g>`).join('')}</g>`;
   }
-  return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
+  return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' || (p.joint && p.joint !== 'none') ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
     `<g class="cuts" fill="none" stroke="var(--cut)" stroke-width="1.2">${doc.cuts.join('')}</g>` +
     `<g fill="var(--engrave)" font-family="Arial, Helvetica, sans-serif" font-size="3">${doc.labels.join('')}</g>`;
 }
@@ -1509,6 +1641,8 @@ function render() {
   $('shapeDesc').textContent = t('desc.' + p.shape);
   $('meanderNote').hidden = !(p.mode === 'creative' && SHAPES[p.shape].meander);
   $('offset').disabled = p.offsetMode !== 'custom';
+  $('jointSize').disabled = p.joint === 'none';
+  $('jointDesc').textContent = p.joint === 'none' ? '' : t('joint.' + p.joint + '.d') + (p.border ? '' : t('joint.border'));
   $('testTo').disabled = p.testCount === 1;
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
   const dm = midDiameter(p);
@@ -1544,7 +1678,8 @@ function render() {
 }
 
 // ---------------------------------------------------------------- 3D preview
-// three.js is loaded on first use. The board is built with its real
+// three.js is loaded on first use (the seam joint is not modelled – 3D uses
+// the circumference doc.bw). The board is built with its real
 // thickness – outer and inner surface (cut pattern as alpha mask), a wall
 // along every slot outline, top/bottom rims and side edges – and bent around
 // the vertical axis (bend 100 % = closed cylinder). Bending is radial, so
@@ -1594,14 +1729,13 @@ function initThree() {
   const dir = new THREE.DirectionalLight(0xffffff, 0.6);
   dir.position.set(0.6, 1, 1.4);
   const lamp = new THREE.PointLight(0xffb45e, 2.4, 0, 1);
-  const shellMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, alphaTest: 0.5, roughness: 0.55, metalness: 0 });
-  const wallMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.55, metalness: 0 });
+  const solidMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.55, metalness: 0 });
   // lamp glow: slots light up (additive), drawn just outside the outer surface
   const glowMat = new THREE.MeshBasicMaterial({ color: 0xd98a32, transparent: true, blending: THREE.AdditiveBlending,
     depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
   const group = new THREE.Group();
   scene.add(hemi, dir, lamp, group);
-  three = { renderer, scene, camera, controls, hemi, dir, lamp, shellMat, wallMat, glowMat, group, parts: [], size: '', outer: null, glow: null };
+  three = { renderer, scene, camera, controls, hemi, dir, lamp, solidMat, glowMat, group, parts: [], size: '', solid: null, glow: null };
   new ResizeObserver(resize3d).observe(el);
   resize3d();
   (function loop() {
@@ -1619,13 +1753,12 @@ function resize3d() {
 }
 
 // A part keeps its unbent coordinates as (x, y, d): x along the width
-// (centred), y up, d across the thickness (+ = outside). bendParts() maps
-// them onto the current bend.
-function makePart(flat, uv, index, material, colors) {
+// (centred), y up (centred), d across the thickness (+ = outside).
+// bendParts() maps them onto the current bend.
+function makePart(flat, uv, index, material) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(flat.length), 3));
   if (uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
-  if (colors) g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
   if (index) g.setIndex(index);
   const mesh = new THREE.Mesh(g, material);
   three.group.add(mesh);
@@ -1633,7 +1766,7 @@ function makePart(flat, uv, index, material, colors) {
   three.parts.push(part);
   return part;
 }
-// Strip along the width at height y (or two heights) – used for both surfaces and the rims.
+// Strip along the width at height y0…y1 – used for the lamp glow layer.
 function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
   const flat = [], uv = [], index = [];
   for (let i = 0; i <= SEG_X; i++) {
@@ -1644,51 +1777,20 @@ function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
   }
   return makePart(flat, uv, index, material);
 }
-// Walls along every slot outline, sampled from the cut paths. Each wall also
-// gets its slot's heat colour (used by the flex overlay).
-function wallFlat(p, doc) {
-  const W = doc.w, H = doc.h, a = -p.thick / 2, b = p.thick / 2, out = [], cols = [];
-  const dMid = bendDiameter(p), mat = MATERIALS[p.material], c = new THREE.Color();
-  const items = doc.recs.length ? doc.recs : doc.cuts.map(src => ({ els: [src] }));
-  for (const rec of items) {
-    c.set(rec.kf !== undefined || rec.rigid ? heatColor(rec, dMid, mat) : HEAT.none);
-    sampler.innerHTML = rec.els.join('');
-    for (const el of sampler.children) {
-      const len = el.getTotalLength();
-      if (!(len > 0)) continue;
-      const closed = /^(rect|ellipse|polygon|circle)$/.test(el.tagName) || /z\s*$/i.test(el.getAttribute('d') || '');
-      const n = clamp(Math.ceil(len / 0.5), 6, 200);
-      const pts = [];
-      for (let i = 0; i <= n; i++) {
-        if (closed && i === n) { pts.push(pts[0]); break; }
-        const q = el.getPointAtLength(len * i / n);
-        pts.push([q.x - W / 2, H / 2 - q.y]);
-      }
-      for (let i = 0; i < pts.length - 1; i++) {
-        const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
-        out.push(x0, y0, a, x0, y0, b, x1, y1, b, x0, y0, a, x1, y1, b, x1, y1, a);
-        for (let k = 0; k < 6; k++) cols.push(c.r, c.g, c.b);
-      }
-    }
-  }
-  return { out, cols };
-}
+// The 3D view uses the same extruded solid as the STL/OBJ export, so slots
+// have exact round ends and real walls; texture coordinates follow the board
+// (for the heatmap).
 function buildParts(p, doc) {
-  const th = p.thick;
   for (const prt of three.parts) { prt.mesh.geometry.dispose(); three.group.remove(prt.mesh); }
   three.parts = [];
-  const W = doc.w, H = doc.h, t2 = Math.max(0.01, th / 2);
-  three.outer = stripPart(W, -H / 2, H / 2, t2, t2, 0, 1, three.shellMat);
-  stripPart(W, -H / 2, H / 2, -t2, -t2, 0, 1, three.shellMat);
-  stripPart(W, H / 2, H / 2, -t2, t2, 1, 1, three.shellMat);      // top rim: mask's top row
-  stripPart(W, -H / 2, -H / 2, -t2, t2, 0, 0, three.shellMat);    // bottom rim
-  for (const sx of [-1, 1]) {                                     // side edges
-    const x = sx * W / 2, u = sx < 0 ? 0 : 1;
-    makePart([x, -H / 2, -t2, x, H / 2, -t2, x, -H / 2, t2, x, H / 2, t2], [u, 0, u, 1, u, 0, u, 1], [0, 2, 1, 1, 2, 3], three.shellMat);
+  const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, tris = buildSolid(p, doc);
+  const flat = new Float32Array(tris.length), uv = new Float32Array(tris.length / 3 * 2);
+  for (let k = 0, j = 0; k < tris.length; k += 3, j += 2) {
+    flat[k] = tris[k]; flat[k + 1] = tris[k + 1] - H / 2; flat[k + 2] = tris[k + 2] - th / 2;
+    uv[j] = tris[k] / W + 0.5; uv[j + 1] = tris[k + 1] / H;
   }
-  const walls = wallFlat(p, doc);
-  if (walls.out.length) makePart(walls.out, null, null, three.wallMat, walls.cols);
-  three.glow = stripPart(W, -H / 2, H / 2, t2 + 0.05, t2 + 0.05, 0, 1, three.glowMat);
+  three.solid = makePart(flat, uv, null, three.solidMat);
+  three.glow = stripPart(W, -H / 2, H / 2, th / 2 + 0.05, th / 2 + 0.05, 0, 1, three.glowMat);
 }
 // Returns the cylinder axis position (z) for the lamp.
 function bendParts(W, bend) {
@@ -1708,25 +1810,22 @@ function bendParts(W, bend) {
   }
   return R ? -R : null;
 }
-function styleMaterial(m, p, lampOn, masked, flexOn) {
+function styleMaterial(m, p, lampOn, flexOn) {
   // the heatmap is shown on an opaque, white-lit surface so the colours read true
   const op = flexOn ? 1 : MAT_OPACITY[p.material] ?? 1;
   if (m.transparent !== op < 1) m.needsUpdate = true;
-  if (masked) {
-    const map = flexOn ? three.heatTex : null;
-    if (m.map !== map) { m.map = map; m.needsUpdate = true; }
-  } else if (m.vertexColors !== flexOn) { m.vertexColors = flexOn; m.needsUpdate = true; }
+  const map = flexOn ? three.heatTex : null;
+  if (m.map !== map) { m.map = map; m.needsUpdate = true; }
   m.color.setHex(flexOn ? 0xffffff : MAT_COLORS[p.material] || 0xeeeeee);
   m.transparent = op < 1;
   m.opacity = op;
-  if (masked) m.alphaTest = op / 2;   // the mask is multiplied by opacity before the test
   m.depthWrite = op >= 1;
   m.roughness = op < 1 ? 0.25 : 0.55;
   m.emissive.setHex(lampOn && p.material === 'pmma' ? 0x3a2410 : 0x000000);
 }
 function apply3dScene(p, doc, refit) {
   if (!three.parts.length) return;
-  const W = doc.w, H = doc.h, lampOn = view3d.overlay === 'light', flexOn = view3d.overlay === 'flex';
+  const W = doc.bw ?? doc.w, H = doc.h, lampOn = view3d.overlay === 'light', flexOn = view3d.overlay === 'flex';
   $('bendVal').textContent = view3d.bend + ' %';
   const axis = bendParts(W, view3d.bend / 100);
   const axisZ = axis == null ? -H : Math.max(axis, -Math.max(W, H));
@@ -1736,13 +1835,12 @@ function apply3dScene(p, doc, refit) {
   three.lamp.intensity = lampOn ? 2.4 : 0;
   three.lamp.position.set(0, 0, axisZ);
   three.glow.mesh.visible = lampOn && !!three.glowMat.map;
-  styleMaterial(three.shellMat, p, lampOn, true, flexOn);
-  styleMaterial(three.wallMat, p, lampOn, false, flexOn);
+  styleMaterial(three.solidMat, p, lampOn, flexOn);
   const size = `${W}x${H}`;
   if (refit || three.size !== size) {
     // fit to the bent shape's actual extent
     three.size = size;
-    const g = three.outer.mesh.geometry;
+    const g = three.solid.mesh.geometry;
     g.computeBoundingBox();
     const bb = g.boundingBox, cz = (bb.min.z + bb.max.z) / 2;
     const tanV = Math.tan(three.camera.fov * Math.PI / 360);
@@ -1754,11 +1852,11 @@ function apply3dScene(p, doc, refit) {
     three.camera.updateProjectionMatrix();
   }
 }
-// Rasterise the cuts (black on white) into the alpha mask (≤ 4096 px) and
-// derive the glow map (slots white on black, a soft halo plus the sharp slot).
+// Rasterise the cuts (≤ 4096 px) into the lamp glow map: slots white on black,
+// a soft halo plus the sharp slot.
 function buildMasks(doc) {
   return new Promise(resolve => {
-    const W = doc.w, H = doc.h, s = Math.min(10, 4096 / W, 4096 / H);
+    const W = doc.bw ?? doc.w, H = doc.h, s = Math.min(10, 4096 / W, 4096 / H);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
       `<rect width="${W}" height="${H}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="0.25">${doc.cuts.join('')}</g></svg>`;
     const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
@@ -1801,7 +1899,7 @@ function setTexture(mat, key, canvas) {
 }
 function buildHeat(p, doc) {
   return new Promise(resolve => {
-    const W = doc.w, H = doc.h, s = Math.min(6, 2048 / W, 2048 / H);
+    const W = doc.bw ?? doc.w, H = doc.h, s = Math.min(6, 2048 / W, 2048 / H);
     const dMid = bendDiameter(p), mat = MATERIALS[p.material], halo = Math.max(0.6, p.gapX);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
       `<rect width="${W}" height="${H}" fill="#d9d4ca"/>` +
@@ -1821,14 +1919,15 @@ function buildHeat(p, doc) {
 }
 async function rebuild3d(p, doc) {
   const token = ++buildToken;
-  const [masks, heat] = await Promise.all([buildMasks(doc), buildHeat(p, doc)]);
+  let masks, heat;
+  try { [masks, heat] = await Promise.all([buildMasks(doc), buildHeat(p, doc), ensureGeoLibs()]); }
+  catch (e) { geoLoading = null; $('threeMsg').textContent = t('three.fail'); return; }
   if (token !== buildToken) return;
   buildParts(p, doc);
-  setTexture(three.shellMat, 'alphaMap', masks.mask);
   setTexture(three.glowMat, 'map', masks.glow);
   if (three.heatTex) three.heatTex.dispose();
   three.heatTex = new THREE.CanvasTexture(heat);
-  if (three.shellMat.map) { three.shellMat.map = null; three.shellMat.needsUpdate = true; }
+  if (three.solidMat.map) { three.solidMat.map = null; three.solidMat.needsUpdate = true; }
   apply3dScene(p, doc, false);
 }
 function show3d(p, doc) {
@@ -2090,7 +2189,7 @@ function buildTile(p) {
 // is bent radially like the 3D preview. Zero-width cuts (lines, chevrons)
 // get the laser kerf as width.
 const GEO_LIBS = ['https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js'];
-const STL_SCALE = 1000, STL_STRIP = 2, STL_STEP = 0.4, KERF = 0.2;
+const STL_SCALE = 1000, STL_STRIP = 2, KERF = 0.2;
 let geoLoading = null;
 function ensureGeoLibs() {
   if (!geoLoading) geoLoading = (async () => { for (const u of GEO_LIBS) await loadScript(u); })();
@@ -2106,12 +2205,7 @@ function slotPolygons(doc) {
       if (!(len > 0)) continue;
       const open = el.tagName === 'line' || el.tagName === 'polyline';
       const notch = el.tagName === 'path' && !/z\s*$/i.test(el.getAttribute('d') || '');
-      const n = clamp(Math.ceil(len / STL_STEP), 8, 800);
-      const pts = [];
-      for (let i = 0; i < n + (open || notch ? 1 : 0); i++) {
-        const q = el.getPointAtLength(len * i / n);
-        pts.push({ X: Math.round(q.x * S), Y: Math.round((H - q.y) * S) });
-      }
+      const pts = sampleOutline(el, !(open || notch)).map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round((H - y) * S) }));
       if (notch) {
         // paths cut open at the board edge start and end on that edge; extend both ends
         // 1 mm past the edge so the notch cuts through cleanly instead of leaving a sliver
@@ -2154,17 +2248,60 @@ function cleanRing(r) {
   return pts;
 }
 const ringArea = r => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j].X - r[i].X) * (r[j].Y + r[i].Y); return a / 2; };
-function buildMesh(p, doc, bend) {
-  const W = doc.w, H = doc.h, th = p.thick, S = STL_SCALE;
+// Neighbouring strips can place different vertices on their shared seam (earcut
+// drops collinear points on one side but not the other). Split every face
+// triangle whose edge runs along a seam at the seam vertices lying inside that
+// edge, so the faces on both sides share their vertices and the mesh is closed.
+function splitSeamTJunctions(tris, seams) {
+  const idx = new Map(seams.map((x, i) => [Math.round(x * 1e6), i]));
+  const seamOf = x => idx.get(Math.round(x * 1e6));
+  const pts = new Map();   // seam index + z → sorted y values of vertices on that seam
+  for (let k = 0; k < tris.length; k += 3) {
+    const si = seamOf(tris[k]);
+    if (si === undefined) continue;
+    const key = si + ':' + tris[k + 2];
+    if (!pts.has(key)) pts.set(key, new Set());
+    pts.get(key).add(tris[k + 1]);
+  }
+  const sorted = new Map([...pts].map(([key, set]) => [key, [...set].sort((a, b) => a - b)]));
+  const out = [];
+  for (let k = 0; k < tris.length; k += 9) {
+    const v = [0, 1, 2].map(j => tris.slice(k + j * 3, k + j * 3 + 3));
+    let done = false;
+    for (let e = 0; e < 3 && !done; e++) {
+      const a = v[e], b = v[(e + 1) % 3], c = v[(e + 2) % 3];
+      const si = seamOf(a[0]);
+      if (si === undefined || seamOf(b[0]) !== si || a[2] !== b[2]) continue;
+      const ys = sorted.get(si + ':' + a[2]) || [];
+      const lo = Math.min(a[1], b[1]), hi = Math.max(a[1], b[1]);
+      let inner = ys.filter(y => y > lo + 1e-9 && y < hi - 1e-9);
+      if (!inner.length) continue;
+      if (a[1] > b[1]) inner = inner.reverse();   // walk from a to b
+      let prev = a;
+      for (const y of [...inner, null]) {
+        const next = y === null ? b : [a[0], y, a[2]];
+        out.push(...prev, ...next, ...c);
+        prev = next;
+      }
+      done = true;
+    }
+    if (!done) for (let j = 0; j < 9; j++) out.push(tris[k + j]);
+  }
+  tris.length = 0;
+  for (const x of out) tris.push(x);
+}
+// The board as a closed flat solid: triangles (x centred, y up 0…H, z 0…th).
+function buildSolid(p, doc) {
+  const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, S = STL_SCALE;
   const holes = slotPolygons(doc);
   const n = Math.max(1, Math.ceil(W / STL_STRIP)), WS = Math.round(W * S), HS = Math.round(H * S);
   const tris = [];   // flat triangles: 9 numbers each, (x mm, y mm up, z 0…th)
   const P = (q, z) => [q.X / S - W / 2, q.Y / S, z];
   const tri = (a, b, c) => tris.push(...a, ...b, ...c);
+  // inner strip seams are nudged by 13 µm so they rarely land exactly on a slot vertex
+  // (column centres often sit on the 2 mm grid); remaining T-junctions are split below
+  const seamX = k => k === 0 ? 0 : k === n ? WS : Math.round(WS * k / n) + 13;
   for (let i = 0; i < n; i++) {
-    // inner strip seams are nudged by 13 µm so they never land exactly on a slot vertex
-    // (column centres often sit on the 2 mm grid), which would leave T-junctions
-    const seamX = k => k === 0 ? 0 : k === n ? WS : Math.round(WS * k / n) + 13;
     const X0 = seamX(i), X1 = seamX(i + 1);
     const cl = new ClipperLib.Clipper();
     cl.StrictlySimple = true;
@@ -2204,7 +2341,12 @@ function buildMesh(p, doc, bend) {
     };
     walk(tree);
   }
-  // bend: x around a vertical axis, thickness radial (top face = outside)
+  splitSeamTJunctions(tris, Array.from({ length: n - 1 }, (_, k) => seamX(k + 1) / S - W / 2));
+  return tris;
+}
+// The solid bent for STL/OBJ: x around a vertical axis, thickness radial (top face = outside).
+function buildMesh(p, doc, bend) {
+  const W = doc.bw ?? doc.w, th = p.thick, tris = buildSolid(p, doc);
   const theta = bend * 2 * Math.PI, R = theta > 1e-4 ? W / theta : 0;
   const map = (x, y, z) => {
     if (!R) return [x, z, y];

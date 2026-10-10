@@ -14,14 +14,17 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 - **Pill slots** as one closed path with true arcs, not a rectangle plus two overlapping circles.
 - **Cylinder sizing**: enter the inner, mid-plane or outer diameter and the board width (circumference) is calculated on the material's mid-plane.
 - **Seamless mode**: adjusts the horizontal pitch to an even number of columns, so the pattern continues across the glue seam without a break.
+- **Seam joint**: a glue tab past the circumference, or finger joints (fingers on one edge, matching notches on the other).
+- **Kerf compensation**: slots are drawn smaller and the outline larger by half the laser kerf, so the cut part has the nominal dimensions.
 - **Open edges**: slots run out through the top and bottom edges, so no continuous solid strip is left.
 - **Vertical offset**: top-aligned, centered (top and bottom mirror each other) or a custom value.
 - **Simple, Creative and Test Pattern modes.** **Creative** is for lampshades and other designs, on top of the same slot grid:
   - **Bands**: horizontal zones, each with its own shape and optional slot size (mix pill, dogbone, S-slot …).
   - **Modulators**: linear gradient (any angle, optionally mirrored), radial, waves, noise or a greyscale **image** drive slot width, slot length, slot removal or a shape swap. They stack from top to bottom with adjustable strength.
+  - With *Seamless* on, radial, waves and noise wrap around the cylinder, so the design continues across the glue seam.
   - The image is stored (downscaled) in the SVG metadata, so a design can be reloaded completely.
 - **Preview**: *2D* or *3D*, with two overlay buttons at the top right: **lamp** (glowing slots on a dark board – how a lampshade will look) and **flex heatmap** (strain per slot: good / borderline / too high / rigid). Both work in 2D and 3D.
-- **3D preview** with the real material thickness: outer and inner surface, walls along every slot, rims and edges. A *Bend* slider goes from flat to a closed cylinder; acrylic and PETG are semi-transparent, wood is opaque; orbit and zoom with the mouse. three.js is loaded only when the 3D view is opened.
+- **3D preview** of the extruded part with its real thickness (the same closed solid as the STL/OBJ export). A *Bend* slider goes from flat to a closed cylinder; acrylic and PETG are semi-transparent, wood is opaque; orbit and zoom with the mouse. three.js is loaded only when the 3D view is opened.
 - **Bendability estimate**: strain in the twisting bridges, computed for every slot-to-slot link and scaled with the *Bend* slider (100 % = closed cylinder, 50 % = half the curvature), plus the smallest recommended diameter per material (acrylic, PETG, plywood, MDF). It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 - **Test Pattern mode**: a set of test strips that vary one parameter, each with an engraved label (value and min. diameter).
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
