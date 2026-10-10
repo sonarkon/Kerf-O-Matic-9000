@@ -26,6 +26,10 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, with a focus 
 - **Test strips**: a set of coupons that vary one parameter, each with an engraved label (value and min. diameter).
 - **Cut order**: zigzag, or every other column first (less heat build-up, useful for acrylic).
 - Side margins, optional outer border, 90° rotated output.
+- **Export** (menu next to *Save*):
+  - **SVG** – the cut file for the laser.
+  - **STL** / **OBJ** – the part as a closed 3D solid with real thickness, bent as set with *Bend* in the 3D view (100 % = closed cylinder, 0 % = flat). Zero-width cuts get a 0.2 mm kerf. OBJ has welded vertices for further work in Blender.
+  - **Texture (PNG)** – a seamless, square 2048 px tile of the base pattern as a mask (white = material, black = hole); the tile size in mm is in the file name.
 - **All parameters saved in the file**: in the file name, as a separate *Parameters* layer, and as metadata. *Load parameters…* restores everything from a saved SVG.
 - Optional **project name**: used as the file-name prefix and as the first line of the parameter layer.
 - Shapes: pill, **dogbone** (round relief holes at the slot ends), **S-slot** (constant width, exact arcs), line, meander, ellipse, rectangle, diamond, hexagon, chevron, cross.

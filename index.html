@@ -43,6 +43,17 @@
   header .actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
   header .actions button { white-space: nowrap; }
   header #lang { width: auto; padding-right: 22px; }
+  .savegroup { position: relative; display: flex; }
+  .savegroup #saveBtn { border-radius: 6px 0 0 6px; min-width: 96px; }
+  .savegroup .caret { border-radius: 0 6px 6px 0; border-left: 1px solid #ffffff55; padding: 8px 9px; }
+  .menu {
+    position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 260px; padding: 4px;
+    display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: 0 8px 24px #0003;
+  }
+  .menu button { border: 0; background: none; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; white-space: normal; }
+  .menu button:hover, .menu button:focus-visible { background: var(--input); }
+  .menu span { font-size: 12px; color: var(--muted); }
   .panel {
     background: var(--panel); padding: 12px 16px 16px; overflow-y: auto;
     display: flex; flex-direction: column; gap: 4px;
@@ -190,7 +201,16 @@
       <option value="de">DE</option>
     </select>
     <button id="loadBtn" data-i18n="load"></button>
-    <button class="primary" id="saveBtn" data-i18n="save"></button>
+    <div class="savegroup">
+      <button class="primary" id="saveBtn"></button>
+      <button class="primary caret" id="saveMenuBtn" aria-haspopup="menu" aria-expanded="false" data-i18n-aria="save.more">▾</button>
+      <div class="menu" id="saveMenu" role="menu" hidden>
+        <button role="menuitem" data-fmt="svg"><b data-i18n="fmt.svg"></b><span data-i18n="fmt.svg.d"></span></button>
+        <button role="menuitem" data-fmt="stl"><b data-i18n="fmt.stl"></b><span class="bendDesc"></span></button>
+        <button role="menuitem" data-fmt="obj"><b data-i18n="fmt.obj"></b><span class="bendDesc"></span></button>
+        <button role="menuitem" data-fmt="png"><b data-i18n="fmt.png"></b><span data-i18n="fmt.png.d"></span></button>
+      </div>
+    </div>
   </div>
   <input type="file" id="loadFile" accept=".svg,image/svg+xml" hidden>
   <input type="file" id="imgFile" accept="image/*" hidden>
@@ -357,7 +377,13 @@ const STR = {
     'title': 'Kerf-O-Matic 9000',
     'project': 'Project name', 'project.ph': 'Project name (optional)',
     'mode.aria': 'Mode', 'mode.pattern': 'Pattern', 'mode.creative': 'Creative', 'mode.test': 'Test strips',
-    'load': 'Load parameters…', 'save': 'Save SVG',
+    'load': 'Load parameters…', 'save': 'Save SVG', 'save.stl': 'Save STL', 'save.more': 'More export formats',
+    'fmt.svg': 'SVG', 'fmt.svg.d': 'Cut file for the laser cutter',
+    'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 100 % in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0 % in the 3D view)' : `3D model bent ${b} % (Bend in the 3D view)`,
+    'save.obj': 'Save OBJ', 'save.png': 'Save texture',
+    'fmt.obj': 'OBJ', 'fmt.png': 'Texture (PNG)', 'fmt.png.d': 'Seamless square tile of the base pattern as a mask (white = material, black = hole), e.g. for Blender',
+    'stl.busy': 'Exporting…', 'stl.fail': 'Export failed (the geometry libraries could not be loaded – offline?).',
+    'alert.stlTest': '3D and texture export are available in Pattern and Creative mode.',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
     'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
     'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
@@ -459,7 +485,13 @@ const STR = {
     'title': 'Kerf-O-Matic 9000',
     'project': 'Projektname', 'project.ph': 'Projektname (optional)',
     'mode.aria': 'Modus', 'mode.pattern': 'Muster', 'mode.creative': 'Creative', 'mode.test': 'Teststreifen',
-    'load': 'Parameter laden…', 'save': 'SVG speichern',
+    'load': 'Parameter laden…', 'save': 'SVG speichern', 'save.stl': 'STL speichern', 'save.more': 'Weitere Exportformate',
+    'fmt.svg': 'SVG', 'fmt.svg.d': 'Schnittdatei für den Laser',
+    'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Bend 100 % in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Bend 0 % in der 3D-Ansicht)' : `3D-Modell, ${b} % gebogen (Bend in der 3D-Ansicht)`,
+    'save.obj': 'OBJ speichern', 'save.png': 'Textur speichern',
+    'fmt.obj': 'OBJ', 'fmt.png': 'Textur (PNG)', 'fmt.png.d': 'Nahtlose quadratische Kachel des Grundmusters als Maske (weiß = Material, schwarz = Loch), z. B. für Blender',
+    'stl.busy': 'Exportiere…', 'stl.fail': 'Export fehlgeschlagen (Geometrie-Bibliotheken nicht ladbar – offline?).',
+    'alert.stlTest': '3D- und Textur-Export gibt es im Muster- und Creative-Modus.',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
     'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
     'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
@@ -575,6 +607,7 @@ function applyLang() {
   for (const o of $('shape').options) o.textContent = t('shape.' + o.value);
   for (const o of $('material').options) o.textContent = t('mat.' + o.value);
   renderCreativeUI();
+  updateSaveLabel();
 }
 
 // ---------------------------------------------------------------- shapes
@@ -1763,7 +1796,7 @@ function show3d(p, doc) {
 }
 function save3d() { try { localStorage.setItem('kerf-3d', JSON.stringify(view3d)); } catch (e) {} }
 $('bend').addEventListener('input', () => {
-  view3d.bend = +$('bend').value; save3d();
+  view3d.bend = +$('bend').value; save3d(); updateSaveLabel();
   if (three && last) apply3dScene(last.p, last.doc, false);
 });
 // light and flex are exclusive overlays
@@ -1897,15 +1930,269 @@ $('addBand').onclick = () => { creative.bands.push(newBand(readParams())); rende
 $('addMod').onclick = () => { creative.mods.push(newMod(readParams())); renderCreativeUI(); render(); };
 $('imgFile').onchange = e => { const file = e.target.files[0]; e.target.value = ''; if (file) loadImage(file); };
 
-$('saveBtn').onclick = () => {
-  if (!last || !last.doc.count) { alert(t('alert.none')); return; }
-  const blob = new Blob([buildSVG(last.p, last.doc)], { type: 'image/svg+xml' });
+// ---------------------------------------------------------------- export
+let saveFormat = 'svg';
+try { const f = localStorage.getItem('kerf-save'); if (['stl', 'obj', 'png'].includes(f)) saveFormat = f; } catch (e) {}
+function updateSaveLabel() {
+  $('saveBtn').textContent = t(saveFormat === 'svg' ? 'save' : 'save.' + saveFormat);
+  const d = t('fmt.stl.d', typeof view3d === 'object' ? view3d.bend : 100);
+  document.querySelectorAll('.bendDesc').forEach(el => { el.textContent = d; });
+}
+function download(blob, name) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = fileName(last.p, last.doc);
+  a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
+}
+async function exportAs(fmt) {
+  if (!last || !last.doc.count) { alert(t('alert.none')); return; }
+  const { p, doc } = last;
+  if (fmt === 'svg') { download(new Blob([buildSVG(p, doc)], { type: 'image/svg+xml' }), fileName(p, doc)); return; }
+  if (p.mode === 'test') { alert(t('alert.stlTest')); return; }
+  const btn = $('saveBtn'), base = fileName(p, doc).replace(/\.svg$/, '');
+  btn.disabled = true; btn.textContent = t('stl.busy');
+  try {
+    await new Promise(r => setTimeout(r, 20));   // let the button repaint
+    if (fmt === 'png') {
+      const tile = await buildTile(p);
+      download(tile.blob, `${base}_tile_${fmt3(tile.w)}x${fmt3(tile.h)}mm.png`);
+    } else {
+      await ensureGeoLibs();
+      const bend = view3d.bend, tris = buildMesh(p, doc, bend / 100);
+      if (fmt === 'stl') download(new Blob([stlBytes(tris)], { type: 'model/stl' }), `${base}_bend${bend}.stl`);
+      else download(new Blob([objText(tris, base)], { type: 'model/obj' }), `${base}_bend${bend}.obj`);
+    }
+  } catch (e) {
+    console.error(e);
+    alert(t('stl.fail'));
+    geoLoading = null;
+  } finally {
+    btn.disabled = false; updateSaveLabel();
+  }
+}
+$('saveBtn').onclick = () => exportAs(saveFormat);
+function toggleSaveMenu(open) {
+  $('saveMenu').hidden = !open;
+  $('saveMenuBtn').setAttribute('aria-expanded', open);
+  if (open) { updateSaveLabel(); $('saveMenu').querySelector('button').focus(); }
+}
+$('saveMenuBtn').onclick = e => { e.stopPropagation(); toggleSaveMenu($('saveMenu').hidden); };
+$('saveMenu').addEventListener('click', e => {
+  const b = e.target.closest('button[data-fmt]');
+  if (!b) return;
+  saveFormat = b.dataset.fmt;
+  try { localStorage.setItem('kerf-save', saveFormat); } catch (err) {}
+  toggleSaveMenu(false);
+  updateSaveLabel();
+  exportAs(saveFormat);
+});
+document.addEventListener('click', e => { if (!e.target.closest('.savegroup')) toggleSaveMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('saveMenu').hidden) { toggleSaveMenu(false); $('saveMenuBtn').focus(); } });
+
+// Texture: a seamless tile of the base pattern (bands and modulators are left
+// out – they are not periodic). The pattern repeats every 2 columns across and
+// every row pitch down; the tile uses the whole multiples that come closest to
+// a square and is stretched slightly onto the square image.
+const fmt3 = v => String(+v.toFixed(2));
+function buildTile(p) {
+  const stepX = (SHAPES[p.shape].line ? 0 : p.slotW) + p.gapX, stepY = p.slotH + p.gapY;
+  let best = null;
+  for (let m = 1; m <= 40; m++) for (let k = 1; k <= 40; k++) {
+    const w = 2 * m * stepX, h = k * stepY, err = Math.abs(w / h - 1);
+    if (w > 600 || h > 600) continue;
+    if (!best || err < best.err - 1e-9) best = { w, h, err };
+    if (err < 0.01) break;
+  }
+  const { w, h } = best;
+  const q = { ...p, mode: 'pattern', shape: SHAPES[p.shape].meander ? 'Pill' : p.shape, seamless: false,
+              openEdges: true, offsetMode: 'top', offset: 0, marginX: 0, boardW: w + 1e-6, boardH: h };
+  const gen = generate(q, q.boardW, h, 0, q.boardW);
+  const cuts = gen ? gen.columns.flat().flatMap(r => r.els) : [];
+  const N = 2048;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">` +
+    `<rect width="${w}" height="${h}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="${KERF}">${cuts.join('')}</g></svg>`;
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    const im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = N;
+      cv.getContext('2d').drawImage(im, 0, 0, N, N);
+      cv.toBlob(blob => blob ? resolve({ blob, w, h }) : reject(new Error('png')), 'image/png');
+    };
+    im.onerror = reject;
+    im.src = url;
+  });
+}
+
+// STL: the board as a closed solid. Board minus slots is computed with
+// Clipper in narrow vertical strips (so the bent model stays round and the
+// triangulation stays fast), each strip's faces are triangulated with earcut,
+// walls follow every contour except the internal strip seams, and the result
+// is bent radially like the 3D preview. Zero-width cuts (lines, chevrons)
+// get the laser kerf as width.
+const GEO_LIBS = ['https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js'];
+const STL_SCALE = 1000, STL_STRIP = 2, STL_STEP = 0.4, KERF = 0.2;
+let geoLoading = null;
+function ensureGeoLibs() {
+  if (!geoLoading) geoLoading = (async () => { for (const u of GEO_LIBS) await loadScript(u); })();
+  return geoLoading;
+}
+// Slot outlines as integer polygons in y-up board coordinates.
+function slotPolygons(doc) {
+  const H = doc.h, S = STL_SCALE, polys = [], opens = [];
+  for (const rec of doc.recs) {
+    sampler.innerHTML = rec.els.join('');
+    for (const el of sampler.children) {
+      const len = el.getTotalLength();
+      if (!(len > 0)) continue;
+      const open = el.tagName === 'line' || el.tagName === 'polyline';
+      const notch = el.tagName === 'path' && !/z\s*$/i.test(el.getAttribute('d') || '');
+      const n = clamp(Math.ceil(len / STL_STEP), 8, 800);
+      const pts = [];
+      for (let i = 0; i < n + (open || notch ? 1 : 0); i++) {
+        const q = el.getPointAtLength(len * i / n);
+        pts.push({ X: Math.round(q.x * S), Y: Math.round((H - q.y) * S) });
+      }
+      if (notch) {
+        // paths cut open at the board edge start and end on that edge; extend both ends
+        // 1 mm past the edge so the notch cuts through cleanly instead of leaving a sliver
+        const out = q => ({ X: q.X, Y: q.Y <= H * S / 2 ? -S : Math.round(H * S) + S });
+        pts.push(out(pts[pts.length - 1]));
+        pts.unshift(out(pts[0]));
+      }
+      (open ? opens : polys).push(pts);
+    }
+  }
+  if (opens.length) {
+    const co = new ClipperLib.ClipperOffset();
+    co.AddPaths(opens, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etOpenRound);
+    const sol = new ClipperLib.Paths();
+    co.Execute(sol, KERF / 2 * S);
+    polys.push(...sol);
+  }
+  // merge touching/overlapping slots into clean, strictly simple outlines first
+  const un = new ClipperLib.Clipper();
+  un.StrictlySimple = true;
+  un.AddPaths(polys, ClipperLib.PolyType.ptSubject, true);
+  const merged = new ClipperLib.Paths();
+  un.Execute(ClipperLib.ClipType.ctUnion, merged, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+  return merged.map(p => {
+    let minX = Infinity, maxX = -Infinity;
+    for (const q of p) { if (q.X < minX) minX = q.X; if (q.X > maxX) maxX = q.X; }
+    return { p, minX, maxX };
+  });
+}
+// earcut drops duplicate and collinear points; drop them up front so faces and walls share vertices
+function cleanRing(r) {
+  let pts = r.slice(), changed = true;
+  while (changed && pts.length > 3) {
+    changed = false;
+    for (let i = 0; i < pts.length && pts.length > 3; i++) {
+      const a = pts[(i + pts.length - 1) % pts.length], b = pts[i], c = pts[(i + 1) % pts.length];
+      if ((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X) === 0) { pts.splice(i, 1); i--; changed = true; }
+    }
+  }
+  return pts;
+}
+const ringArea = r => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j].X - r[i].X) * (r[j].Y + r[i].Y); return a / 2; };
+function buildMesh(p, doc, bend) {
+  const W = doc.w, H = doc.h, th = p.thick, S = STL_SCALE;
+  const holes = slotPolygons(doc);
+  const n = Math.max(1, Math.ceil(W / STL_STRIP)), WS = Math.round(W * S), HS = Math.round(H * S);
+  const tris = [];   // flat triangles: 9 numbers each, (x mm, y mm up, z 0…th)
+  const P = (q, z) => [q.X / S - W / 2, q.Y / S, z];
+  const tri = (a, b, c) => tris.push(...a, ...b, ...c);
+  for (let i = 0; i < n; i++) {
+    // inner strip seams are nudged by 13 µm so they never land exactly on a slot vertex
+    // (column centres often sit on the 2 mm grid), which would leave T-junctions
+    const seamX = k => k === 0 ? 0 : k === n ? WS : Math.round(WS * k / n) + 13;
+    const X0 = seamX(i), X1 = seamX(i + 1);
+    const cl = new ClipperLib.Clipper();
+    cl.StrictlySimple = true;
+    cl.AddPath([{ X: X0, Y: 0 }, { X: X1, Y: 0 }, { X: X1, Y: HS }, { X: X0, Y: HS }], ClipperLib.PolyType.ptSubject, true);
+    for (const h of holes) if (h.maxX > X0 && h.minX < X1) cl.AddPath(h.p, ClipperLib.PolyType.ptClip, true);
+    const tree = new ClipperLib.PolyTree();
+    cl.Execute(ClipperLib.ClipType.ctDifference, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+    const seam = (a, b) => a.X === b.X && ((a.X === X0 && X0 !== 0) || (a.X === X1 && X1 !== WS));
+    const face = (outer, inner) => {
+      outer = cleanRing(outer);
+      inner = inner.map(cleanRing).filter(r => r.length >= 3);
+      if (outer.length < 3) return;
+      if (ringArea(outer) < 0) outer = [...outer].reverse();            // outer CCW
+      inner = inner.map(r => ringArea(r) > 0 ? [...r].reverse() : r);   // holes CW
+      const rings = [outer, ...inner], flat = [], idx = [], pts = [];
+      for (const r of rings) { if (pts.length) idx.push(pts.length); for (const q of r) { pts.push(q); flat.push(q.X, q.Y); } }
+      const ti = earcut(flat, idx.length ? idx : null);
+      for (let k = 0; k < ti.length; k += 3) {
+        let a = pts[ti[k]], b = pts[ti[k + 1]], c = pts[ti[k + 2]];
+        if ((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X) < 0) [b, c] = [c, b];
+        tri(P(a, th), P(b, th), P(c, th));   // top, facing +z
+        tri(P(a, 0), P(c, 0), P(b, 0));      // bottom, facing −z
+      }
+      for (const r of rings) for (let k = 0; k < r.length; k++) {
+        const a = r[k], b = r[(k + 1) % r.length];
+        if (seam(a, b)) continue;
+        tri(P(a, 0), P(b, 0), P(b, th));
+        tri(P(a, 0), P(b, th), P(a, th));
+      }
+    };
+    const walk = node => {
+      for (const c of node.Childs()) {
+        if (c.IsHole()) continue;
+        face(c.Contour(), c.Childs().map(h => h.Contour()));
+        for (const h of c.Childs()) walk(h);   // islands inside holes
+      }
+    };
+    walk(tree);
+  }
+  // bend: x around a vertical axis, thickness radial (top face = outside)
+  const theta = bend * 2 * Math.PI, R = theta > 1e-4 ? W / theta : 0;
+  const map = (x, y, z) => {
+    if (!R) return [x, z, y];
+    const phi = x / R, r = R + z - th / 2;
+    return [r * Math.sin(phi), r * Math.cos(phi), y];
+  };
+  // both mappings swap y and z (height becomes z), which mirrors – swap b/c to keep normals outward
+  const out = new Float32Array(tris.length);
+  for (let k = 0; k < tris.length; k += 9) {
+    out.set(map(tris[k], tris[k + 1], tris[k + 2]), k);
+    out.set(map(tris[k + 6], tris[k + 7], tris[k + 8]), k + 3);
+    out.set(map(tris[k + 3], tris[k + 4], tris[k + 5]), k + 6);
+  }
+  return out;
+}
+function stlBytes(tris) {
+  const count = tris.length / 9;
+  const buf = new ArrayBuffer(84 + count * 50), dv = new DataView(buf);
+  const head = 'Kerf-O-Matic 9000 STL, units mm';
+  for (let i = 0; i < head.length; i++) dv.setUint8(i, head.charCodeAt(i));
+  dv.setUint32(80, count, true);
+  let o = 84;
+  for (let k = 0; k < tris.length; k += 9) {
+    const ux = tris[k + 3] - tris[k], uy = tris[k + 4] - tris[k + 1], uz = tris[k + 5] - tris[k + 2];
+    const vx = tris[k + 6] - tris[k], vy = tris[k + 7] - tris[k + 1], vz = tris[k + 8] - tris[k + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, l = Math.hypot(nx, ny, nz) || 1;
+    for (const v of [nx / l, ny / l, nz / l]) { dv.setFloat32(o, v, true); o += 4; }
+    for (let j = 0; j < 9; j++) { dv.setFloat32(o, tris[k + j], true); o += 4; }
+    o += 2;
+  }
+  return buf;
+}
+// OBJ with shared vertices (welded at 0.1 µm), so the mesh stays connected in Blender
+function objText(tris, name) {
+  const idx = new Map(), verts = [], faces = [];
+  const id = j => {
+    const k = `${Math.round(tris[j] * 1e4)},${Math.round(tris[j + 1] * 1e4)},${Math.round(tris[j + 2] * 1e4)}`;
+    let i = idx.get(k);
+    if (i === undefined) { i = verts.length + 1; idx.set(k, i); verts.push(`v ${f(tris[j])} ${f(tris[j + 1])} ${f(tris[j + 2])}`); }
+    return i;
+  };
+  for (let k = 0; k < tris.length; k += 9) faces.push(`f ${id(k)} ${id(k + 3)} ${id(k + 6)}`);
+  return `# Kerf-O-Matic 9000 OBJ, units mm\no ${name}\n${verts.join('\n')}\n${faces.join('\n')}\n`;
+}
 
 $('loadBtn').onclick = () => $('loadFile').click();
 $('loadFile').onchange = async e => {
