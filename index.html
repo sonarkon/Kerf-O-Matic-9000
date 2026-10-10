@@ -131,7 +131,11 @@
   #stage { position: absolute; left: 0; top: 0; }
   #stage svg { display: block; overflow: visible; }
   #stage svg .cuts *, #stage svg .boards * { vector-effect: non-scaling-stroke; }
-  .viewbar { position: absolute; left: 12px; top: 12px; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  /* one bar across the preview: 2D/3D on the left, bend + overlays on the right; wraps when narrow */
+  .topbar { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 2; display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
+  .topbar > * { pointer-events: auto; }
+  .viewbar { display: flex; gap: 8px; }
   .viewseg { width: 130px; }
   .viewseg label { padding: 5px; font-size: 12px; }
   .pill {
@@ -140,7 +144,7 @@
   }
   .pill input[type=range] { width: 140px; accent-color: var(--accent); }
   .pill output { min-width: 38px; font-variant-numeric: tabular-nums; color: var(--muted); }
-  .toggles { position: absolute; right: 12px; top: 12px; z-index: 2; display: flex; gap: 6px; }
+  .toggles { display: flex; gap: 6px; margin-left: auto; }
   .iconbtn {
     position: relative; width: 34px; height: 34px; padding: 0;
     display: grid; place-items: center; cursor: pointer; color: var(--muted);
@@ -297,6 +301,7 @@
 
 <main id="view">
   <div id="stage"></div>
+  <div class="topbar">
   <div class="viewbar" data-modes="pattern creative">
     <div class="seg viewseg" role="radiogroup" data-i18n-aria="view.aria">
       <label><input type="radio" name="view" value="2d" checked> <span data-i18n="view.2d"></span></label>
@@ -317,6 +322,7 @@
         <path d="M14 14.76V4a2 2 0 1 0-4 0v10.76a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>
       </svg>
     </label>
+  </div>
   </div>
   <div id="three" hidden><div class="threemsg" id="threeMsg"></div></div>
   <div class="hint" id="hint"></div>
