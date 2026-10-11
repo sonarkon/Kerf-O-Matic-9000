@@ -166,7 +166,7 @@ The **Save** button exports in the format chosen from its menu:
 | Format | Content |
 |---|---|
 | **SVG** | The cut file for the laser (true size in mm). |
-| **STL** / **OBJ** | A closed 3D solid with real thickness, bent as set with *Bend* (Lamp: the whole assembly). Zero-width cuts get a 0.2 mm kerf; OBJ has welded vertices for Blender. |
+| **STL** / **OBJ** | A closed 3D solid with real thickness, bent as set with *Bend* (Lamp: the whole assembly). Zero-width cuts get a 0.2 mm kerf; OBJ has welded vertices for Blender. The bend follows the circle within 0.01 mm, so small parts for 3D printing come out round too. |
 | **PNG** | A mask texture (white = material, black = hole), the size in mm in the file name. Simple: a seamless, square 2048 px tile of the pattern. Creative: when the design only changes from top to bottom (bands, gradients and waves at 90°), a stripe of two columns over the full height that repeats around the cylinder (`_stripe_`); otherwise the whole board (`_texture_`, seamless around with *Seamless* on). |
 
 **All parameters are saved with the design** – in the file name, as a *Parameters* layer and as metadata. **Load** restores a design from a saved SVG, OBJ or PNG (STL cannot hold the parameters). An optional **project name** becomes the file-name prefix and the first line of the parameter layer.

@@ -996,6 +996,9 @@ function writeParams(p) {
   if (p.creative) creative = { bands: p.creative.bands || [], mods: (p.creative.mods || []).map(m => ({ ...newMod(p), ...m })) };
   // parts list; older designs had one top and one bottom part
   if (Array.isArray(p.mountParts)) lampParts = p.mountParts.map(q => ({ ...newPart(q.from === 'bottom' ? 'bottom' : 'top'), ...q }));
+  // in between, the attachment at the ends was one setting for both: hand it to the end parts
+  if (Array.isArray(p.mountParts) && ['tabs', 'edge'].includes(p.mountFix))
+    for (const q of lampParts) if (!(q.offset > 0) && (!q.fix || q.fix === 'glue')) q.fix = p.mountFix;
   else if (p.mountTop || p.mountBottom) lampParts = [['top', p.mountTop], ['bottom', p.mountBottom]]
     .filter(([, k]) => k && k !== 'none').map(([from, kind]) => ({ ...newPart(from), kind, fix: p.mountFix || 'glue' }));
   syncDiameter();
@@ -3413,6 +3416,13 @@ function buildTile(p) {
 // get the laser kerf as width.
 const GEO_LIBS = ['https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js', 'https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js'];
 const STL_SCALE = 1000, STL_STRIP = 2, KERF = 0.2;
+// Width of the flat strips the board is bent in: narrow enough that each flat
+// facet stays within 0.01 mm of the true circle on the inner surface (chord
+// sagitta s²/(8R)), at most 2 mm – small parts for 3D printing come out round.
+function stripWidth(p, W) {
+  const r = Math.max(0.3, W / (2 * Math.PI) - p.thick / 2);
+  return clamp(Math.sqrt(8 * r * 0.01), 0.1, STL_STRIP);
+}
 let geoLoading = null;
 function ensureGeoLibs() {
   if (!geoLoading) geoLoading = (async () => { for (const u of GEO_LIBS) await loadScript(u); })();
@@ -3571,7 +3581,7 @@ function buildSolid(p, doc, withJoint = false) {
     .map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round((H - y) * S) }));
   const minY = Math.min(...outline.map(q => q.Y)), maxY = Math.max(...outline.map(q => q.Y));
   const minX = Math.min(...outline.map(q => q.X)), maxX = Math.max(...outline.map(q => q.X));
-  const n = Math.max(1, Math.ceil((maxX - minX) / S / STL_STRIP));
+  const n = Math.max(1, Math.ceil((maxX - minX) / S / stripWidth(p, W)));
   const tris = [];   // flat triangles: 9 numbers each, (x mm, y mm up, z 0…th)
   const P = (q, z) => [q.X / S - W / 2, q.Y / S, z];
   const tri = (a, b, c) => tris.push(...a, ...b, ...c);
