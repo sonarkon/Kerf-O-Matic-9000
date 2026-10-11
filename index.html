@@ -115,6 +115,7 @@
   .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 11px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fixbtn { width: 100%; margin-top: 8px; }
   .stats div { display: flex; flex-direction: column; }
   .stats span { font-size: 11px; }
   .stats strong { font-size: 20px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
@@ -531,6 +532,7 @@ const STR = {
     'mat.delConfirm': n => `Delete the material “${n}”?`,
     'note.pmma': 'Cast acrylic (GS) tolerates more than extruded (XT). Bending with a heat gun/oven (~90 °C) greatly reduces the residual stress.',
     'note.plywood': 'Slots across the grain of the face veneer bend better; glue and plywood quality matter a lot.',
+    'note.mdf': 'MDF fibres hold together only weakly: thin, twisted bridges fray and break easily. Prefer longer slots and gentle bends.',
 
     'r.meander': 'No estimate for meander (different bending mechanism).',
     'r.thick': 'Thickness missing.', 'r.cols': 'Too few columns.',
@@ -547,6 +549,10 @@ const STR = {
     'fi.useFlex': 'Turn on the Flex heatmap (thermometer, top right) to see where.',
     'fi.lg.ok': 'good', 'fi.lg.warn': 'borderline', 'fi.lg.bad': 'too high', 'fi.lg.rigid': 'rigid',
     'fi.rough': 'Rough estimate (torsion of the bridges); no substitute for a test strip.',
+    'fix.btn': 'Optimize', 'fix.title': 'Lengthens the slots – and if needed shortens the vertical gap – just enough to reach “good”. Thickness and diameter stay.',
+    'fix.slotH': 'slot length', 'fix.gapY': 'vertical gap', 'fix.undo': 'Undo',
+    'fix.done': c => `Adjusted: ${c}.`,
+    'fix.none': d => `Not reachable by adjusting the slots (up to half the board height, vertical gap down to 1.5 mm). With the softest pattern found it is good from inner Ø ${d} mm – choose a larger diameter, thinner material or narrower bridges.`,
     'info.cuts': 'Cuts', 'info.cols': 'Columns', 'info.seam': g => `Seamless: horizontal gap ${g} mm`,
     'info.none': 'No cuts – adjust parameters',
     'alert.none': 'No cuts to save.', 'alert.noParams': 'This file contains no Kerf-O-Matic parameters.', 'alert.stlLoad': 'STL files cannot hold the parameters. Load the SVG, OBJ or PNG of the same design instead.',
@@ -672,6 +678,7 @@ const STR = {
     'mat.delConfirm': n => `Material „${n}“ löschen?`,
     'note.pmma': 'Gegossenes Acryl (GS) verträgt mehr als extrudiertes (XT). Mit Heißluft/Ofen (~90 °C) gebogen sinkt die Dauerspannung stark.',
     'note.plywood': 'Schlitze quer zur Faser des Deckfurniers biegen sich besser; Leim und Plattenqualität machen viel aus.',
+    'note.mdf': 'MDF-Fasern halten untereinander nur schwach zusammen: dünne, verdrehte Stege fasern leicht auf und brechen. Lieber längere Schlitze und sanfte Biegungen.',
 
     'r.meander': 'Für Mäander gibt es keine Abschätzung (anderes Biegeprinzip).',
     'r.thick': 'Materialstärke fehlt.', 'r.cols': 'Zu wenige Spalten.',
@@ -688,6 +695,10 @@ const STR = {
     'fi.useFlex': 'Flex-Heatmap einschalten (Thermometer oben rechts), um zu sehen wo.',
     'fi.lg.ok': 'gut', 'fi.lg.warn': 'grenzwertig', 'fi.lg.bad': 'zu hoch', 'fi.lg.rigid': 'starr',
     'fi.rough': 'Grobe Abschätzung (Torsion der Stege), ersetzt keinen Teststreifen.',
+    'fix.btn': 'Optimieren', 'fix.title': 'Verlängert die Schlitze – und verkürzt bei Bedarf den vertikalen Abstand – gerade so weit, dass es „gut“ ist. Dicke und Durchmesser bleiben.',
+    'fix.slotH': 'Schlitzlänge', 'fix.gapY': 'vertikaler Abstand', 'fix.undo': 'Rückgängig',
+    'fix.done': c => `Angepasst: ${c}.`,
+    'fix.none': d => `Mit den Schlitzen allein nicht erreichbar (höchstens halbe Plattenhöhe, vertikaler Abstand bis 1,5 mm). Mit dem weichsten gefundenen Muster ist es ab Innen-Ø ${d} mm gut – größeren Durchmesser, dünneres Material oder schmalere Stege wählen.`,
     'info.cuts': 'Schnitte', 'info.cols': 'Spalten', 'info.seam': g => `Nahtlos: Steg horizontal ${g} mm`,
     'info.none': 'Keine Schnitte – Parameter anpassen',
     'alert.none': 'Keine Schnitte zum Speichern.', 'alert.noParams': 'Diese Datei enthält keine Kerf-O-Matic-Parameter.', 'alert.stlLoad': 'STL-Dateien können die Parameter nicht speichern. Lade stattdessen SVG, OBJ oder PNG desselben Entwurfs.',
@@ -828,7 +839,7 @@ const SLOT_SHAPES = Object.keys(SHAPES).filter(k => !SHAPES[k].meander);
 const MATERIALS = {
   pmma:    { ok: 0.8, max: 1.5, color: 0xf3efe6, opacity: 0.6, plastic: true },
   plywood: { ok: 0.5, max: 0.8, color: 0xd8b98a, opacity: 1 },
-  mdf:     { ok: 0.5, max: 1.0, color: 0xa98563, opacity: 1 }
+  mdf:     { ok: 0.4, max: 0.8, color: 0xa98563, opacity: 1 }
 };
 // Own materials: { id: { name, base, ok, max } }, kept in the browser and saved
 // with every design (materialDef), so a loaded file brings its material along.
@@ -2331,6 +2342,87 @@ $('explode').addEventListener('input', () => {
 });
 $('flexOn').addEventListener('change', () => setOverlay($('flexOn').checked ? 'flex' : null));
 
+// ---------------------------------------------------------------- adjust pattern
+// Finds the smallest change that brings the strain into the "good" range:
+// longer slots first (up to half the board height), then a smaller vertical
+// gap (down to 1.5 mm). Thickness and diameter are the user's choice and stay.
+// Bands and slot-length modulators in Creative mode scale along.
+let fixNote = null;   // { html, prev, after } shown under the stats until the design changes
+function withSlots(p, slotH, gapY) {
+  const r = slotH / p.slotH, q = { ...p, slotH, gapY, creative: JSON.parse(JSON.stringify(p.creative)) };
+  for (const b of q.creative.bands) if (b.slotH != null && b.slotH !== '' && !isNaN(+b.slotH)) b.slotH = +(b.slotH * r).toFixed(2);
+  for (const m of q.creative.mods) if (m.target === 'slotH') { m.from = +(m.from * r).toFixed(2); m.to = +(m.to * r).toFixed(2); }
+  return q;
+}
+function fitSummary(q) {
+  const mount = q.mode === 'mount', s = mount ? { ...q, mode: q.shellMode || 'pattern' } : q;
+  const saved = creative;
+  creative = q.creative;   // the generator reads the global creative settings
+  try { return flexSummary(s, buildDoc(s), mount ? 100 : view3d.bend); } finally { creative = saved; }
+}
+function adjustPattern() {
+  const p = readParams(), ok = matOf(p).ok;
+  // remembers the softest valid variant, for the message when "good" is out of reach
+  let soft = null;
+  const fits = q => {
+    const fs = fitSummary(q);
+    if (fs.eps == null) return false;   // pattern no longer interlocks: no valid estimate
+    if (!soft || fs.eps < soft.eps) soft = { eps: fs.eps, dMinInner: fs.dMinInner, q };
+    return fs.eps <= ok;
+  };
+  const hMax = Math.max(p.slotH, p.boardH / 2), gMin = Math.min(p.gapY, 1.5);
+  let best = null;
+  // longer slots: coarse steps, then 0.5 mm steps inside the first step that fits
+  const step = Math.max(0.5, Math.ceil((hMax - p.slotH) / 40 * 2) / 2);
+  let lo = p.slotH;
+  for (let h = p.slotH + step; ; h += step) {
+    h = Math.min(h, hMax);
+    if (fits(withSlots(p, h, p.gapY))) {
+      best = withSlots(p, h, p.gapY);
+      for (let x = Math.ceil((lo + 0.01) * 2) / 2; x < h; x += 0.5) if (fits(withSlots(p, x, p.gapY))) { best = withSlots(p, x, p.gapY); break; }
+      break;
+    }
+    lo = h;
+    if (h >= hMax) break;
+  }
+  // then a smaller vertical gap with the longest slots that still interlock
+  const hSoft = soft ? soft.q.slotH : p.slotH;
+  if (!best) for (let g = p.gapY - 0.25; g >= gMin - 1e-9; g -= 0.25) {
+    const q = withSlots(p, hSoft, +g.toFixed(2));
+    if (fits(q)) { best = q; break; }
+  }
+  if (!best) {
+    fixNote = { html: `<p class="warn">${esc(t('fix.none', soft ? Math.ceil(soft.dMinInner) : '–'))}</p>`, after: JSON.stringify(p) };
+    render();
+    return;
+  }
+  const changes = [];
+  if (best.slotH !== p.slotH) changes.push(`${t('fix.slotH')} ${fmt(p.slotH)} → ${fmt(best.slotH)} mm`);
+  if (best.gapY !== p.gapY) changes.push(`${t('fix.gapY')} ${fmt(p.gapY)} → ${fmt(best.gapY)} mm`);
+  $('slotH').value = best.slotH; $('gapY').value = best.gapY;
+  creative = best.creative;
+  renderCreativeUI();
+  fixNote = { html: `<p class="ok">${esc(t('fix.done', changes.join(', ')))} <a href="#" id="fixUndo">${esc(t('fix.undo'))}</a></p>`, prev: p };
+  render();
+  fixNote.after = JSON.stringify(readParams());
+}
+// the button and the undo link are re-rendered with the info panel
+$('flexInfo').addEventListener('click', e => {
+  if (e.target.id === 'fixBtn') adjustPattern();
+  if (e.target.id === 'fixUndo') {
+    e.preventDefault();
+    const prev = fixNote?.prev;
+    fixNote = null;
+    if (prev) { writeParams(prev); render(); }
+  }
+});
+function fixHtml(p, fs) {
+  if (fixNote?.after && fixNote.after !== JSON.stringify(p)) fixNote = null;   // the design changed since
+  let html = '';
+  if (fs.status[0] !== 'ok') html += `<button type="button" class="fixbtn" id="fixBtn" title="${esc(t('fix.title'))}">${esc(t('fix.btn'))}</button>`;
+  if (fixNote) html += fixNote.html;
+  return html;
+}
 function renderInfo(p, doc) {
   $('flexHead').textContent = t(p.mode === 'mount' ? 'sec.mountInfo' : 'sec.flex');
   if (p.mode === 'mount') {
@@ -2344,6 +2436,7 @@ function renderInfo(p, doc) {
         `<div><span>${esc(t('fi.strainAt', (midDiameter(p) - p.thick).toFixed(1), 100))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
         `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(mat.name)} ≤ ${mat.ok} %</em></div></div>`;
       if (fs.status[0] !== 'ok') html += `<p class="${fs.status[0]}">${esc(t(fs.status[0] === 'bad' ? 'mt.flexBad' : 'mt.flexWarn'))}</p>`;
+      html += fixHtml(p, fs);
     } else if (fs.text) html += `<p class="warn">${esc(fs.text)}</p>`;
     if (mat.plastic) html += `<p class="warn">${esc(t('mt.led'))}</p>`;
     if (g.edge) {
@@ -2376,6 +2469,7 @@ function renderInfo(p, doc) {
         `<div><span>${esc(bendFactor() > 0 ? t('fi.strainAt', (bendDiameter(p) - p.thick).toFixed(1), view3d.bend) : t('fi.flat'))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
         `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(matName)} ≤ ${mat.ok} %</em></div>` +
         `</div>`;
+      html += fixHtml(p, fs);
       if (p.mode === 'creative' && (fs.over || fs.rigid)) {
         html += `<p class="${fs.over ? 'bad' : 'warn'}">${esc(t('fi.counts', fs.over, fs.rigid))}</p>`;
         if (view3d.overlay !== 'flex') html += `<p>${esc(t('fi.useFlex'))}</p>`;

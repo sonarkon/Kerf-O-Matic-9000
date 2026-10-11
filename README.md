@@ -102,6 +102,25 @@ Strain in the twisting bridges between the slot columns, computed for every slot
 
 It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 
+**Optimize** appears when the strain is borderline or too high. It lengthens the slots just enough to reach “good” (up to half the board height, as long as the slots still interlock) and, if that is not enough, shortens the vertical gap (down to 1.5 mm). In Creative mode, band slot lengths and slot-length modulators scale along. Thickness and diameter are never changed. The panel lists what was changed, with **Undo**; if “good” is out of reach, it names the inner diameter that would work.
+
+**Thickness** enters in two ways:
+
+- **Bridge cross-section** (the main effect): each bridge is a small bar, as wide as the gap between the slot columns and as thick as the material. In torsion the *shorter* side of that cross-section governs the strain. While the material is thinner than the bridge is wide, the strain grows almost in proportion to the thickness; once it is thicker, the bridge width governs and more thickness adds little strain – the shade mainly gets stiffer.
+- **Reference diameter**: everything is computed on the mid-plane (inner Ø + thickness), which links the width (circumference) to the diameter.
+
+Example with the default pattern (2 mm bridges, inner Ø 44.7 mm, acrylic):
+
+| Thickness | Strain | Smallest “good” inner Ø |
+|---|---|---|
+| 1 mm | 0.98 % | 57 mm |
+| 2 mm | 1.42 % | 83 mm |
+| 3 mm | 1.78 % | 103 mm |
+| 4 mm | 1.95 % | 112 mm |
+| 6 mm | 2.06 % | 117 mm |
+
+Not modelled: forces – how hard the shade is to bend and how strongly it springs back – which grow with thickness.
+
 ### Material limits
 
 Each material has two strain limits: up to **good** the hinge should bend reliably, up to **max** it is borderline, and above that it will probably crack. The limits are shown under *Material*.
@@ -110,7 +129,7 @@ Each material has two strain limits: up to **good** the hinge should bend reliab
 |---|---|---|---|
 | Acrylic (PMMA) | 0.8 % | 1.5 % | breaks at about 4–6 % (cast, datasheets¹); craze tests bend it to 0.5–1 %² |
 | Plywood | 0.5 % | 0.8 % | breaks at about 0.75–0.8 % (bending strength ÷ stiffness³) |
-| MDF | 0.5 % | 1.0 % | breaks at about 1.1 % (bending strength ÷ stiffness³) |
+| MDF | 0.4 % | 0.8 % | breaks at about 0.85–1.1 % (bending strength ÷ stiffness³ ⁵); fibres bond only weakly, so twisted bridges fray |
 
 **These are estimates, not tested hinge values.** They are derived from published material data: the limits stay below the strain at break and, for acrylic, near the strain where crazing (fine cracks) becomes a concern. No source gives allowable strains for laser-cut hinges directly, and the data come from bending tests, while the bridges of a hinge twist. Grade (cast vs. extruded acrylic), plywood quality and glue, grain direction (slots across the face grain bend better), temperature and the laser settings all change the real limit. In practice wood is also more forgiving than acrylic, which is brittle and sensitive to notches.
 
@@ -119,6 +138,7 @@ Sources:
 2. Solvent-crazing test at 0.5 / 1.0 % outer-fibre strain: [J-STAGE](https://www.jstage.jst.go.jp/browse/koron1944/23/257/_contents)
 3. Modulus of rupture and elasticity of wood-based panels: [Journal of Wood Science](https://jwoodscience.springeropen.com/articles/10.1007/s10086-017-1632-5/tables/4)
 4. Torsion design of lattice hinges (acrylic data from MatWeb, 60 % of the torsional yield stress for repeated bending): [DefProc](http://marksabino.com/defproc/blog/2011/laser-cut-lattice-living-hinges/)
+5. MDF datasheets (EN 622-5 minimum values for thin boards: 23 N/mm², 2700 N/mm²): [Kastamonu MEDEPAN](https://www.kastamonuentegre.com/uploads/2023/01/004-ts-eng-001-2-medepan-technical-specifications.pdf), [Swiss Krono](https://www.swisskrono.com/pl-en/products/interiors/mdf-boards/technical-data/), [Pfleiderer](https://www.pfleiderer.com/file_pim/Dokumente/technical-data-styleboard-mdf-plus-im0016459.pdf)
 
 **Own materials:** *Duplicate to edit* copies the selected material; you can then rename it and set your own limits – ideally calibrated with a few [test strips](#test-pattern): bend each strip to a known diameter and note where it starts to crack. Own materials are kept in the browser and saved with every design, so a loaded SVG/OBJ/PNG brings its material along.
 
