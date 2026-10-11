@@ -25,6 +25,8 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, made for **cy
 4. Cut a few strips in **Test Pattern** mode to find the right values for your material.
 5. **Save SVG** and cut. For a lamp, switch to **Lamp** and save the complete cut set.
 
+Every section has a **↺** button that resets just that section to its defaults (for example only the lamp settings); *Reset settings* at the bottom resets everything.
+
 ## Modes
 
 | Mode | What it is for |
@@ -49,6 +51,8 @@ Everything from Simple, plus per-slot variation on the same grid, so the shade s
   - sources: linear gradient (any angle, optionally mirrored), radial, waves, noise, or a greyscale **image**;
   - targets: slot width, slot length, remove slots, swap the shape;
   - they stack from top to bottom with adjustable strength.
+- Drag a band or modulator by its header to reorder it (or use ↑ / ↓); click the header to collapse or expand it.
+- ⧉ duplicates a band or modulator; the checkbox in a modulator's header switches it off for a moment without deleting it.
 - With **Seamless** on, radial, waves and noise wrap around the cylinder, so the design continues across the glue seam.
 - An image is stored (downscaled) with the design, so it reloads completely.
 
@@ -64,13 +68,16 @@ Everything from Simple, plus per-slot variation on the same grid, so the shade s
 
 Parts for a **pendant lamp with an E27 socket** around the shade from Simple or Creative (whichever was used last):
 
-- **Top / bottom part:** spider with socket hole, disc with socket hole, disc, ring, or none. The socket hole defaults to Ø 40 mm (E27 shade ring – check yours, 40–42 mm is common).
+- **Parts:** a list like the bands – by default a spider at the top and a ring at the bottom. Each part is a spider with socket hole, disc with socket hole, disc or ring, sits at the top or bottom and can be moved inward by an **offset**; add more parts (for example stiffening rings in long lamps), drag, collapse, duplicate or delete them. The socket hole defaults to Ø 40 mm (E27 shade ring – check yours, 40–42 mm is common).
 - **Adjustable:** spokes, spoke and hub width, ring width, fit clearance; kerf compensation applies.
-- **Attachment:**
-  - **Glued in** – the parts sit inside the cylinder.
-  - **Tabs & slots** – the shade gets tabs on its top and bottom edges (edge slots under a tab are left out); the parts sit on the ends with matching slots. The tabs also appear in the Simple/Creative shade file.
-  - **Edge interlock** – no extra tabs: the parts get curved slots on the wall's exact curvature for the wall pieces between the open edge slots and reach through those slots to an outer rim. Needs open edges whose slots are at least one material thickness deep.
-- **2D view and SVG** contain the complete cut set – the flat shade plus the parts, engraved TOP/BOTTOM.
+- **Attachment** – set per part. At the end (offset 0):
+  - **Glued in** – the part sits inside the cylinder.
+  - **Tabs & slots** – the shade gets tabs on that edge (edge slots under a tab are left out); the part sits on the end with matching slots. The tabs also appear in the Simple/Creative shade file while *Cut Lamp tabs* (under Output) is on – turn it off when you are not making a lamp. The Lamp mode always adds them.
+  - **Edge interlock** – no extra tabs: the part gets curved slots on the wall's exact curvature for the wall pieces between the open edge slots and reach through those slots to an outer rim. Needs open edges whose slots are at least one material thickness deep.
+- **With an offset** the part sits inside the tube (no outer rim) and is either **glued in** – *Engrave part positions on the shade* (under Output) engraves a dashed line where each one goes – or held by **tabs through the wall**: the part gets tabs reaching through matching slots cut into the shade; the pattern keeps solid material around those slots (rigid in the Flex view).
+- … or by **fingers in the pattern slots**: one finger in every pattern slot (pill, rectangle, dogbone) whose straight part spans the part's height. They keep the part centred, but the slots are longer than the part is thick, so it can slide – the panel reminds you to glue it as well, and warns about fingers narrower than 1.5 mm.
+- The panel warns when a part leaves the shade or two parts overlap.
+- **2D view and SVG** contain the complete cut set – the flat shade plus the parts, engraved with number, end and offset (e.g. `3 TOP 60`).
 - **3D view** shows the assembled lamp with the light at the socket; the **Explode** slider lifts the parts off.
 - **STL/OBJ** export the whole assembly.
 
@@ -101,6 +108,8 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
 Strain in the twisting bridges between the slot columns, computed for every slot-to-slot link and scaled with **Bend** (100 % = closed cylinder, 50 % = half the curvature). The panel shows the maximum strain and the smallest inner diameter that stays “good” for the chosen material.
 
 It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
+
+**Lamp tabs:** with open edges, the edge slots under each tab are left out, so the wall stays solid there. The Flex view shows that zone as rigid – opaque as deep as no column has a slot, then fading out where only some columns are solid – and the panel names the flat facet it forms (≈ tab width² ÷ (4 × diameter)).
 
 **Optimize** appears when the strain is borderline or too high. It lengthens the slots just enough to reach “good” (up to half the board height, as long as the slots still interlock) and, if that is not enough, shortens the vertical gap (down to 1.5 mm). In Creative mode, band slot lengths and slot-length modulators scale along. Thickness and diameter are never changed. The panel lists what was changed, with **Undo**; if “good” is out of reach, it names the inner diameter that would work.
 
@@ -152,7 +161,7 @@ The **Save** button exports in the format chosen from its menu:
 |---|---|
 | **SVG** | The cut file for the laser (true size in mm). |
 | **STL** / **OBJ** | A closed 3D solid with real thickness, bent as set with *Bend* (Lamp: the whole assembly). Zero-width cuts get a 0.2 mm kerf; OBJ has welded vertices for Blender. |
-| **PNG** | A seamless, square 2048 px mask tile of the base pattern (white = material, black = hole); the tile size in mm is in the file name. |
+| **PNG** | A mask texture (white = material, black = hole), the size in mm in the file name. Simple: a seamless, square 2048 px tile of the pattern. Creative: when the design only changes from top to bottom (bands, gradients and waves at 90°), a stripe of two columns over the full height that repeats around the cylinder (`_stripe_`); otherwise the whole board (`_texture_`, seamless around with *Seamless* on). |
 
 **All parameters are saved with the design** – in the file name, as a *Parameters* layer and as metadata. **Load** restores a design from a saved SVG, OBJ or PNG (STL cannot hold the parameters). An optional **project name** becomes the file-name prefix and the first line of the parameter layer.
 

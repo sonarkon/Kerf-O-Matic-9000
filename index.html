@@ -70,11 +70,16 @@
   details.sec > summary::before { content: "▸"; font-size: 10px; transition: transform .15s; }
   details.sec[open] > summary::before { transform: rotate(90deg); }
   details.sec > summary::-webkit-details-marker { display: none; }
+  details.sec > summary .reset { margin-left: auto; padding: 0 6px; font-size: 13px; line-height: 1.5; color: var(--muted); background: none; border-color: transparent; text-transform: none; }
+  details.sec > summary .reset:hover, details.sec > summary .reset:focus-visible { color: var(--text); border-color: var(--line); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .span2 { grid-column: 1 / -1; }
   label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
   label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
+  .rows { display: flex; flex-direction: column; gap: 6px; }
+  label.inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+  label.inline > input, label.inline > select { width: 58%; flex: 0 0 58%; min-width: 0; }
   input[type=number], input[type=text], select {
     font: inherit; color: var(--text); background: var(--input);
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 100%; min-width: 0;
@@ -92,10 +97,25 @@
   }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
   button.add { width: 100%; margin-top: 8px; padding: 6px; border-style: dashed; color: var(--muted); }
+  h3.sub { font-size: 12px; font-weight: 600; margin: 14px 0 2px; color: var(--text); }
+  #stage .marks { stroke: var(--engrave); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-top: 8px; }
   .card-head { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
   .card-head span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-head button { padding: 1px 7px; font-size: 12px; line-height: 1.4; }
+  .card-head { cursor: grab; touch-action: none; user-select: none; }
+  .card-head button { cursor: pointer; }
+  .card.collapsed .card-head { margin-bottom: 0; }
+  .card.off .card-head span, .card.off .grid2 { opacity: .5; }
+  .card-head .fold { flex: 0 0 auto; font-style: normal; color: var(--muted); width: 10px; }
+  .card-head .onoff { display: flex; margin: 0; }
+  .card-head .onoff input { width: auto; margin: 0 2px; }
+  .card-head .grip { flex: 0 0 auto; font-style: normal; color: var(--muted); font-size: 14px; line-height: 1; }
+  .card.dragging { position: fixed; z-index: 50; margin: 0; pointer-events: none; border-color: var(--accent);
+    box-shadow: 0 14px 32px #0005; transform: rotate(-1.2deg) scale(1.03); transition: transform .12s, box-shadow .12s; }
+  .card.dragging.settle { transform: none; box-shadow: 0 2px 6px #0002; transition: top .16s ease-out, transform .16s, box-shadow .16s; }
+  .card-ph { margin-top: 8px; border: 2px dashed var(--accent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  body.card-drag, body.card-drag * { cursor: grabbing !important; user-select: none; }
   .card .grid2, .card .grid3 { gap: 6px; }
   .card input, .card select { padding: 4px 6px; font-size: 13px; }
   .card .imgrow { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
@@ -125,6 +145,7 @@
   .stats em { font-style: normal; font-size: 11px; }
   .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
   .credit { margin-top: auto; padding-top: 12px; font-size: 11px; color: var(--muted); }
+  a { color: var(--accent); }
   .credit a { color: inherit; }
   main { position: relative; overflow: hidden; cursor: grab; touch-action: none; }
   main.dragging { cursor: grabbing; }
@@ -256,18 +277,17 @@
       <label><span data-i18n="jointSize"></span><input type="number" id="jointSize" value="10" min="1" step="0.5"></label>
     </div>
     <div class="desc" id="jointDesc" data-modes="pattern creative"></div>
-    <div class="desc warn" id="tabsNote" data-modes="pattern creative" data-i18n="mt.tabsNote"></div>
   </details>
 
   <details class="sec" open data-modes="pattern creative test">
-    <summary data-i18n="sec.shape"></summary>
+    <summary><span data-i18n="sec.shape"></span></summary>
     <select id="shape"></select>
     <div class="desc" id="shapeDesc"></div>
     <div class="desc warn" id="meanderNote" hidden data-i18n="cr.meanderNote"></div>
   </details>
 
   <details class="sec" open data-modes="pattern creative test">
-    <summary data-i18n="sec.slot"></summary>
+    <summary><span data-i18n="sec.slot"></span></summary>
     <div class="grid2">
       <label><span data-i18n="slotH"></span><input type="number" id="slotH" value="20" min="0.1" step="0.5"></label>
       <label><span data-i18n="slotW"></span><input type="number" id="slotW" value="2" min="0" step="0.1"></label>
@@ -279,61 +299,50 @@
         <option value="custom" data-i18n="off.custom"></option>
       </select></label>
       <label><span data-i18n="offset"></span><input type="number" id="offset" value="0" step="0.5"></label>
+      <label><span data-i18n="marginX"></span><input type="number" id="marginX" value="0" min="0" step="0.5"></label>
+    </div>
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="openEdges"> <span data-i18n="openEdges"></span></label>
     </div>
     <div class="desc" data-modes="creative" data-i18n="cr.baseHint"></div>
   </details>
 
   <details class="sec" open data-modes="creative">
-    <summary data-i18n="sec.bands"></summary>
+    <summary><span data-i18n="sec.bands"></span></summary>
     <div class="desc" data-i18n="bands.desc"></div>
     <div id="bandList"></div>
     <button class="add" id="addBand" data-i18n="bands.add"></button>
   </details>
 
   <details class="sec" open data-modes="creative">
-    <summary data-i18n="sec.mods"></summary>
+    <summary><span data-i18n="sec.mods"></span></summary>
     <div class="desc" data-i18n="mods.desc"></div>
     <div id="modList"></div>
     <button class="add" id="addMod" data-i18n="mods.add"></button>
   </details>
 
   <details class="sec" open data-modes="mount">
-    <summary data-i18n="sec.mount"></summary>
+    <summary><span data-i18n="sec.mount"></span></summary>
     <div class="grid2">
-      <label><span data-i18n="mt.top"></span><select id="mountTop">
-        <option value="spider" data-i18n="mt.spider"></option>
-        <option value="disc" data-i18n="mt.disc"></option>
-        <option value="closed" data-i18n="mt.closed"></option>
-        <option value="ring" data-i18n="mt.ring"></option>
-        <option value="none" data-i18n="mt.none"></option>
-      </select></label>
-      <label><span data-i18n="mt.bottom"></span><select id="mountBottom">
-        <option value="spider" data-i18n="mt.spider"></option>
-        <option value="disc" data-i18n="mt.disc"></option>
-        <option value="closed" data-i18n="mt.closed"></option>
-        <option value="ring" data-i18n="mt.ring" selected></option>
-        <option value="none" data-i18n="mt.none"></option>
-      </select></label>
       <label><span data-i18n="mt.hole"></span><input type="number" id="socketHole" value="40" min="5" step="0.5"></label>
       <label><span data-i18n="mt.ringW"></span><input type="number" id="ringW" value="8" min="2" step="0.5"></label>
       <label><span data-i18n="mt.spokes"></span><input type="number" id="spokes" value="3" min="2" max="8" step="1"></label>
       <label><span data-i18n="mt.spokeW"></span><input type="number" id="spokeW" value="6" min="2" step="0.5"></label>
       <label><span data-i18n="mt.hubW"></span><input type="number" id="hubW" value="6" min="2" step="0.5"></label>
       <label><span data-i18n="mt.clear"></span><input type="number" id="mountClear" value="0.3" min="0" step="0.1"></label>
-      <label class="span2"><span data-i18n="mt.fix"></span><select id="mountFix">
-        <option value="glue" data-i18n="mt.fix.glue"></option>
-        <option value="tabs" data-i18n="mt.fix.tabs"></option>
-        <option value="edge" data-i18n="mt.fix.edge"></option>
-      </select></label>
       <label data-tabs><span data-i18n="mt.tabCount"></span><input type="number" id="tabCount" value="4" min="2" max="24" step="1"></label>
       <label data-tabs><span data-i18n="mt.tabW"></span><input type="number" id="tabW" value="10" min="2" step="0.5"></label>
       <label data-rim><span data-i18n="mt.rim"></span><input type="number" id="rim" value="4" min="1" step="0.5"></label>
     </div>
     <div class="desc" id="mountDesc"></div>
+    <h3 class="sub" data-i18n="mt.parts"></h3>
+    <div class="desc" data-i18n="mt.partsDesc"></div>
+    <div id="partList"></div>
+    <button class="add" id="addPart" data-i18n="mt.addPart"></button>
   </details>
 
   <details class="sec" open data-modes="test">
-    <summary data-i18n="sec.test"></summary>
+    <summary><span data-i18n="sec.test"></span></summary>
     <div class="grid2">
       <label class="span2"><span data-i18n="testParam"></span><select id="testParam">
         <option value="gapX" data-i18n="p.gapX"></option>
@@ -391,17 +400,17 @@
 <aside id="output" class="panel">
   <section>
     <h2 data-i18n="sec.output"></h2>
-    <div class="grid2">
-      <label data-modes="pattern creative test"><span data-i18n="marginX"></span><input type="number" id="marginX" value="0" min="0" step="0.5"></label>
-      <label><span data-i18n="kerf"></span><input type="number" id="kerf" value="0" min="0" max="1" step="0.01"></label>
-      <label data-modes="pattern creative test"><span data-i18n="order"></span><select id="order">
+    <div class="rows">
+      <label class="inline"><span data-i18n="kerf"></span><input type="number" id="kerf" value="0" min="0" max="1" step="0.01"></label>
+      <label class="inline" data-modes="pattern creative test"><span data-i18n="order"></span><select id="order">
         <option value="zigzag" data-i18n="ord.zigzag"></option>
         <option value="skip" data-i18n="ord.skip"></option>
       </select></label>
     </div>
     <div class="checks">
-      <label class="check" data-modes="pattern creative test"><input type="checkbox" id="openEdges"> <span data-i18n="openEdges"></span></label>
       <label class="check" data-modes="pattern creative"><input type="checkbox" id="border" checked> <span data-i18n="border"></span></label>
+      <label class="check" id="tabsNote" data-modes="pattern creative"><input type="checkbox" id="lampTabs" checked> <span data-i18n="mt.lampTabs"></span></label>
+      <label class="check" id="marksRow" data-modes="mount"><input type="checkbox" id="mountMarks" checked> <span data-i18n="mt.marks"></span></label>
       <label class="check"><input type="checkbox" id="rotate"> <span data-i18n="rotate"></span></label>
       <label class="check"><input type="checkbox" id="paramVisible" checked> <span data-i18n="paramVisible"></span></label>
     </div>
@@ -442,13 +451,14 @@ const STR = {
     'sec.mount': 'Pendant lamp (E27)', 'sec.mountInfo': 'Lamp',
     'mt.top': 'Top part', 'mt.bottom': 'Bottom part', 'mt.spider': 'Spider + socket hole', 'mt.disc': 'Disc + socket hole', 'mt.closed': 'Disc', 'mt.ring': 'Ring', 'mt.none': 'None',
     'mt.hole': 'Socket hole Ø (mm)', 'mt.ringW': 'Ring width (mm)', 'mt.spokes': 'Spokes', 'mt.spokeW': 'Spoke width (mm)', 'mt.hubW': 'Hub width (mm)', 'mt.clear': 'Fit clearance (mm)',
-    'mt.fix': 'Attachment', 'mt.fix.glue': 'Glued in (inside the cylinder)', 'mt.fix.tabs': 'Tabs & slots (parts on the ends)', 'mt.fix.edge': 'Edge interlock (fits the edge slots)',
+    'mt.fix': 'Attachment at the ends', 'mt.fix.glue': 'Glued in (inside the cylinder)', 'mt.fix.tabs': 'Tabs & slots (parts on the ends)', 'mt.fix.edge': 'Edge interlock (fits the edge slots)',
     'mt.desc.edge': 'The part is pushed onto the cylinder edge: curved slots take the wall pieces between the open edge slots, and the part reaches through those slots to an outer rim. Needs open edges whose slots are at least one material thickness deep.',
     'mt.noNotches': p => `No usable edge slots on the ${p} edge: turn on “Open edges” and make sure the edge slots are at least one material thickness deep.`,
     'mt.notches': (top, bottom) => `Edge interlock: ${top} slots at the top, ${bottom} at the bottom.`,
-    'mt.tabCount': 'Tabs per edge', 'mt.tabW': 'Tab width (mm)', 'mt.rim': 'Rim outside (mm)',
-    'mt.tabsNote': 'Tabs for the Lamp mount are added to the top and bottom edges (set in Lamp mode).',
-    'mt.desc': 'The parts sit inside the cylinder from Simple/Creative and are glued in. E27 shade rings usually need a 40–42 mm hole – check your socket.',
+    'mt.tabCount': 'Tabs per part', 'mt.tabW': 'Tab width (mm)', 'mt.rim': 'Rim outside (mm)',
+    'mt.tabsNote': 'Tabs for the Lamp mount are added to the top and bottom edges (set in Lamp mode).', 'mt.lampTabs': 'Cut Lamp tabs',
+    'reset.sec': 'Reset this section to the defaults', 'reset.secConfirm': n => `Reset “${n}” to the defaults?`,
+    'mt.desc': 'The parts are set up below – each with its own attachment. E27 shade rings usually need a 40–42 mm hole – check your socket.',
     'mt.desc.tabs': 'The parts sit on the cylinder ends; the cylinder gets tabs that go through the slots. E27 shade rings usually need a 40–42 mm hole – check your socket.',
     'mt.info': (di, d, hole) => `<b>Cylinder</b> inner Ø ${di} mm<br><b>Parts</b> Ø ${d} mm · socket hole Ø ${hole} mm`,
     'mt.from': m => `Cylinder and pattern come from the ${m} mode.`,
@@ -457,6 +467,16 @@ const STR = {
     'mt.flexWarn': 'The shade is borderline for this diameter – it may crack over time. Cut a test strip first or make the pattern softer in Simple/Creative.',
     'mt.flexBad': 'The shade is bent too far for this diameter and will probably crack. Make the pattern softer in Simple/Creative (longer slots, smaller gaps, thinner material) or choose a larger diameter.',
     'lbl.top': 'TOP', 'lbl.bottom': 'BOTTOM',
+    'mt.parts': 'Parts', 'mt.addPart': '+ Add part', 'mt.part.n': i => `Part ${i}`,
+    'mt.partsDesc': 'Each part sits at the top or bottom, optionally moved inward by an offset – add more for long lamps. At the end a part is glued in, sits on tabs of the shade, or is pushed onto the open edge slots (edge interlock, needs open edges at least one thickness deep). With an offset it sits inside the tube (no outer rim): glued in, held by tabs through slots in the wall, or with fingers in the pattern slots.',
+    'mt.kind': 'Type', 'mt.from': 'From', 'mt.from.top': 'Top', 'mt.from.bottom': 'Bottom', 'mt.offset': 'Offset (mm)',
+    'mt.pfix': 'Attachment', 'mt.pf.glue': 'Glued in', 'mt.pf.through': 'Tabs through the wall', 'mt.pf.fingers': 'Fingers in the pattern slots', 'mt.pf.tabs': 'Tabs & slots', 'mt.pf.edge': 'Edge interlock',
+    'mt.marks': 'Engrave part positions on the shade',
+    'mt.partOut': n => `Part ${n} does not fit into the height of the shade.`,
+    'mt.partClash': (a, b) => `Parts ${a} and ${b} overlap.`,
+    'mt.fingersGlue': (n, k, w) => `Part ${n}: ${k} fingers (${w} mm wide) sit in the pattern slots – they keep the part centred, but the slots are longer than the part is thick, so it can slide up and down. Glue it in as well.`,
+    'mt.fingersNone': n => `Part ${n}: no pattern slot runs straight through its height – move it or use another attachment.`,
+    'mt.fingersThin': n => `Part ${n}: the fingers are narrower than 1.5 mm and break easily – wider slots help.`,
     'pl.mountCyl': (i, th, m) => `Cylinder: inner Ø ${i} mm, ${th} mm ${m}`,
     'pl.mountPart': (pos, kind, d) => `${pos}: ${kind}, Ø ${d} mm`,
     'pl.tabs': (n, w, h) => `Tabs: ${n} per edge, ${w} × ${h} mm`, 'pl.mountFix': m => `Attachment: ${m}`,
@@ -465,7 +485,7 @@ const STR = {
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Cut file for the laser cutter',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 100 % in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0 % in the 3D view)' : `3D model bent ${b} % (Bend in the 3D view)`,
     'save.obj': 'Save OBJ', 'save.png': 'Save PNG',
-    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Seamless square mask tile, e.g. for Blender',
+    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Mask texture, e.g. for Blender: a square tile, in Creative a full-height stripe or the whole board',
     'stl.busy': 'Exporting…', 'stl.fail': 'Export failed (the geometry libraries could not be loaded – offline?).',
     'alert.stlTest': '3D and PNG export are available in Simple and Creative mode.',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
@@ -476,7 +496,7 @@ const STR = {
     'joint.tab.d': 'A solid tab of this width is added past the circumference; the other end overlaps it for gluing.',
     'joint.fingers.d': 'Fingers of this depth on the right edge fit into matching notches on the left edge.',
     'joint.border': ' The outer border is always cut.',
-    'kerf': 'Kerf (mm)',
+    'kerf': 'Laser kerf (mm)',
     'sec.shape': 'Shape', 'sec.slot': 'Slots',
     'slotH': 'Slot length (mm)', 'slotW': 'Slot width (mm)', 'gapY': 'Vertical gap (mm)', 'gapX': 'Horizontal gap (mm)',
     'offsetMode': 'Vertical offset', 'off.top': 'Top aligned', 'off.center': 'Centered', 'off.custom': 'Custom', 'offset': 'Offset (mm)',
@@ -510,7 +530,7 @@ const STR = {
     'mod.phase': 'Phase (°)', 'mod.scale': 'Scale (mm)', 'mod.seed': 'Seed',
     'mod.pick': 'Choose image…', 'mod.noImage': 'No image yet', 'mod.angleHint': '0° = left → right · 90° = top → bottom',
     'mod.imgHint': 'Bright = 1, dark = 0. Stretched to the board.',
-    'btn.up': 'Move up', 'btn.down': 'Move down', 'btn.del': 'Remove',
+    'btn.up': 'Move up', 'btn.down': 'Move down', 'btn.del': 'Remove', 'btn.drag': 'Drag to reorder, click to collapse or expand', 'btn.dup': 'Duplicate', 'btn.on': 'Active – untick to switch it off for a moment', 'mod.offTag': '(off)',
 
     'shape.Pill': 'Pill', 'desc.Pill': 'Pill shape: one closed path, a rectangle with semicircular ends. First choice for acrylic – round ends prevent cracks.',
     'shape.Line': 'Line', 'desc.Line': 'Single cut (width = laser kerf), maximum bend per cut. Slot width is ignored.',
@@ -545,6 +565,7 @@ const STR = {
     'fi.minD': 'Min inner Ø', 'fi.strainAt': (d, b) => b >= 100 ? `Max. strain at Ø ${d}` : `Max. strain at Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flat, no bending strain', 'fi.minGood': 'Min inner Ø (good)',
     'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
     'fi.solid': 'In places the slots don’t overlap or are removed – it will barely bend there.',
+    'fi.tabSolid': s => `Around the Lamp tabs the wall stays solid (rigid in the Flex view): it does not bend there and forms flat facets of about ${s} mm.`,
     'fi.counts': (over, rigid) => `${over} slots above the limit · ${rigid} rigid`,
     'fi.useFlex': 'Turn on the Flex heatmap (thermometer, top right) to see where.',
     'fi.lg.ok': 'good', 'fi.lg.warn': 'borderline', 'fi.lg.bad': 'too high', 'fi.lg.rigid': 'rigid',
@@ -588,13 +609,14 @@ const STR = {
     'sec.mount': 'Pendelleuchte (E27)', 'sec.mountInfo': 'Leuchte',
     'mt.top': 'Oberes Teil', 'mt.bottom': 'Unteres Teil', 'mt.spider': 'Spinne + Fassungsloch', 'mt.disc': 'Scheibe + Fassungsloch', 'mt.closed': 'Scheibe', 'mt.ring': 'Ring', 'mt.none': 'Keins',
     'mt.hole': 'Fassungsloch Ø (mm)', 'mt.ringW': 'Ringbreite (mm)', 'mt.spokes': 'Speichen', 'mt.spokeW': 'Speichenbreite (mm)', 'mt.hubW': 'Nabenbreite (mm)', 'mt.clear': 'Spiel (mm)',
-    'mt.fix': 'Befestigung', 'mt.fix.glue': 'Eingeklebt (innen im Zylinder)', 'mt.fix.tabs': 'Zapfen & Schlitze (Teile auf den Enden)', 'mt.fix.edge': 'Randverzahnung (passt in die Randschlitze)',
+    'mt.fix': 'Befestigung an den Enden', 'mt.fix.glue': 'Eingeklebt (innen im Zylinder)', 'mt.fix.tabs': 'Zapfen & Schlitze (Teile auf den Enden)', 'mt.fix.edge': 'Randverzahnung (passt in die Randschlitze)',
     'mt.desc.edge': 'Das Teil wird auf die Zylinderkante gesteckt: Bogenschlitze nehmen die Wandstücke zwischen den offenen Randschlitzen auf, durch die Randschlitze reicht das Teil zu einem Außenrand. Braucht offene Ränder mit Randschlitzen von mindestens Materialstärke Tiefe.',
     'mt.noNotches': p => `Keine passenden Randschlitze an der ${p === 'top' ? 'oberen' : 'unteren'} Kante: „Ränder offen“ einschalten und Randschlitze mindestens materialstark tief machen.`,
     'mt.notches': (top, bottom) => `Randverzahnung: ${top} Schlitze oben, ${bottom} unten.`,
-    'mt.tabCount': 'Zapfen pro Kante', 'mt.tabW': 'Zapfenbreite (mm)', 'mt.rim': 'Rand außen (mm)',
-    'mt.tabsNote': 'Für die Lamp-Halterung bekommen Ober- und Unterkante Zapfen (eingestellt im Lamp-Modus).',
-    'mt.desc': 'Die Teile sitzen innen im Zylinder aus Simple/Creative und werden eingeklebt. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
+    'mt.tabCount': 'Zapfen pro Teil', 'mt.tabW': 'Zapfenbreite (mm)', 'mt.rim': 'Rand außen (mm)',
+    'mt.tabsNote': 'Für die Lamp-Halterung bekommen Ober- und Unterkante Zapfen (eingestellt im Lamp-Modus).', 'mt.lampTabs': 'Lampen-Zapfen mitschneiden',
+    'reset.sec': 'Diesen Abschnitt auf die Standardwerte zurücksetzen', 'reset.secConfirm': n => `„${n}“ auf die Standardwerte zurücksetzen?`,
+    'mt.desc': 'Die Teile werden unten eingestellt – jedes mit eigener Befestigung. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
     'mt.desc.tabs': 'Die Teile liegen auf den Zylinder-Enden; der Zylinder bekommt Zapfen, die durch die Schlitze gehen. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
     'mt.info': (di, d, hole) => `<b>Zylinder</b> innen Ø ${di} mm<br><b>Teile</b> Ø ${d} mm · Fassungsloch Ø ${hole} mm`,
     'mt.from': m => `Zylinder und Muster kommen aus dem Modus ${m}.`,
@@ -603,6 +625,16 @@ const STR = {
     'mt.flexWarn': 'Der Schirm ist bei diesem Durchmesser grenzwertig und kann mit der Zeit reißen. Vorher einen Teststreifen schneiden oder das Muster in Simple/Creative weicher machen.',
     'mt.flexBad': 'Der Schirm wird für diesen Durchmesser zu stark gebogen und reißt wahrscheinlich. Muster in Simple/Creative weicher machen (längere Schlitze, kleinere Stege, dünneres Material) oder einen größeren Durchmesser wählen.',
     'lbl.top': 'OBEN', 'lbl.bottom': 'UNTEN',
+    'mt.parts': 'Teile', 'mt.addPart': '+ Teil hinzufügen', 'mt.part.n': i => `Teil ${i}`,
+    'mt.partsDesc': 'Jedes Teil sitzt oben oder unten, auf Wunsch um einen Abstand nach innen versetzt – für lange Lampen weitere hinzufügen. Am Ende wird ein Teil eingeklebt, sitzt auf Zapfen des Schirms oder wird auf die offenen Randschlitze gesteckt (Randverzahnung, braucht offene Ränder mindestens materialstark tief). Mit Abstand sitzt es innen in der Röhre (ohne Außenrand): eingeklebt, mit Zapfen durch Schlitze in der Wand oder mit Fingern in den Musterschlitzen.',
+    'mt.kind': 'Typ', 'mt.from': 'Von', 'mt.from.top': 'Oben', 'mt.from.bottom': 'Unten', 'mt.offset': 'Abstand (mm)',
+    'mt.pfix': 'Befestigung', 'mt.pf.glue': 'Eingeklebt', 'mt.pf.through': 'Zapfen durch die Wand', 'mt.pf.fingers': 'Finger in die Musterschlitze', 'mt.pf.tabs': 'Zapfen & Schlitze', 'mt.pf.edge': 'Randverzahnung',
+    'mt.marks': 'Teilepositionen auf den Schirm gravieren',
+    'mt.partOut': n => `Teil ${n} passt nicht in die Höhe des Schirms.`,
+    'mt.partClash': (a, b) => `Teile ${a} und ${b} überschneiden sich.`,
+    'mt.fingersGlue': (n, k, w) => `Teil ${n}: ${k} Finger (${w} mm breit) sitzen in den Musterschlitzen – sie zentrieren das Teil, aber die Schlitze sind länger als das Teil dick ist, es kann darin auf und ab rutschen. Zusätzlich einkleben.`,
+    'mt.fingersNone': n => `Teil ${n}: Auf seiner Höhe läuft kein Musterschlitz gerade durch – verschieben oder andere Befestigung wählen.`,
+    'mt.fingersThin': n => `Teil ${n}: Die Finger sind schmaler als 1,5 mm und brechen leicht – breitere Schlitze helfen.`,
     'pl.mountCyl': (i, th, m) => `Zylinder: innen Ø ${i} mm, ${th} mm ${m}`,
     'pl.mountPart': (pos, kind, d) => `${pos}: ${kind}, Ø ${d} mm`,
     'pl.tabs': (n, w, h) => `Zapfen: ${n} pro Kante, ${w} × ${h} mm`, 'pl.mountFix': m => `Befestigung: ${m}`,
@@ -611,7 +643,7 @@ const STR = {
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Schnittdatei für den Laser',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Bend 100 % in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Bend 0 % in der 3D-Ansicht)' : `3D-Modell, ${b} % gebogen (Bend in der 3D-Ansicht)`,
     'save.obj': 'OBJ speichern', 'save.png': 'PNG speichern',
-    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Nahtlose quadratische Masken-Kachel, z. B. für Blender',
+    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Masken-Textur, z. B. für Blender: quadratische Kachel, in Creative ein Streifen über die volle Höhe oder die ganze Platte',
     'stl.busy': 'Exportiere…', 'stl.fail': 'Export fehlgeschlagen (Geometrie-Bibliotheken nicht ladbar – offline?).',
     'alert.stlTest': '3D- und PNG-Export gibt es im Simple- und Creative-Modus.',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
@@ -633,7 +665,7 @@ const STR = {
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
     'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap',
     'bend': 'Biegung', 'explode': 'Explode', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
-    'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
+    'sec.output': 'Ausgabe', 'marginX': 'Seitenrand (mm)', 'order': 'Schnittreihenfolge',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
     'rotate': 'Um 90° gedreht ausgeben', 'paramVisible': 'Parameter-Layer sichtbar',
@@ -656,7 +688,7 @@ const STR = {
     'mod.phase': 'Phase (°)', 'mod.scale': 'Größe (mm)', 'mod.seed': 'Seed',
     'mod.pick': 'Bild wählen…', 'mod.noImage': 'Noch kein Bild', 'mod.angleHint': '0° = links → rechts · 90° = oben → unten',
     'mod.imgHint': 'Hell = 1, dunkel = 0. Auf die Platte gestreckt.',
-    'btn.up': 'Nach oben', 'btn.down': 'Nach unten', 'btn.del': 'Entfernen',
+    'btn.up': 'Nach oben', 'btn.down': 'Nach unten', 'btn.del': 'Entfernen', 'btn.drag': 'Ziehen zum Umsortieren, klicken zum Ein- oder Ausklappen', 'btn.dup': 'Duplizieren', 'btn.on': 'Aktiv – abwählen, um ihn kurz auszuschalten', 'mod.offTag': '(aus)',
 
     'shape.Pill': 'Pille', 'desc.Pill': 'Pillenform: ein geschlossener Pfad, Rechteck mit halbrunden Enden. Für Acryl erste Wahl – runde Enden vermeiden Risse.',
     'shape.Line': 'Linie', 'desc.Line': 'Einfacher Schnitt (Breite = Laserfuge), maximale Biegung pro Schnitt. Schlitzbreite wird ignoriert.',
@@ -691,6 +723,7 @@ const STR = {
     'fi.minD': 'Min-Ø innen', 'fi.strainAt': (d, b) => b >= 100 ? `Max. Dehnung bei Ø ${d}` : `Max. Dehnung bei Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flach, keine Biegedehnung', 'fi.minGood': 'Min-Ø innen (gut)',
     'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
     'fi.solid': 'Stellenweise überlappen die Schlitze nicht oder fehlen – dort biegt es sich kaum.',
+    'fi.tabSolid': s => `Rund um die Lampen-Zapfen bleibt die Wand massiv (starr in der Flex-Ansicht): Dort biegt sie sich nicht und bildet flache Facetten von etwa ${s} mm.`,
     'fi.counts': (over, rigid) => `${over} Schlitze über dem Limit · ${rigid} starr`,
     'fi.useFlex': 'Flex-Heatmap einschalten (Thermometer oben rechts), um zu sehen wo.',
     'fi.lg.ok': 'gut', 'fi.lg.warn': 'grenzwertig', 'fi.lg.bad': 'zu hoch', 'fi.lg.rigid': 'starr',
@@ -873,6 +906,13 @@ fillMaterials();
 // Bands and modulators live outside the form fields; they are saved with the
 // other parameters (localStorage + SVG metadata).
 let creative = { bands: [], mods: [] };
+// Lamp parts: at the top or bottom of the shade, optionally moved inward by an offset
+const PART_KINDS = ['spider', 'disc', 'closed', 'ring'];
+const newPart = (from = 'top') => ({ kind: from === 'top' ? 'spider' : 'ring', from, offset: 0, fix: 'glue' });
+const defaultParts = () => [newPart('top'), newPart('bottom')];
+let lampParts = defaultParts();
+// the card lists: bands and modulators of the Creative design, parts of the lamp
+const listOf = name => name === 'parts' ? lampParts : creative[name];
 const MOD_TARGETS = ['slotW', 'slotH', 'skip', 'shape'];
 const MOD_SOURCES = ['linear', 'radial', 'wave', 'noise', 'image'];
 
@@ -892,8 +932,8 @@ function newMod(p) {
 const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'kerf', 'jointSize',
              'socketHole', 'ringW', 'spokes', 'spokeW', 'hubW', 'mountClear', 'tabCount', 'tabW', 'rim',
              'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
-const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint', 'mountTop', 'mountBottom', 'mountFix'];
-const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible'];
+const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint'];
+const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible', 'lampTabs', 'mountMarks'];
 const MODES = ['pattern', 'creative', 'mount', 'test'];
 // the cylinder the mount mode builds parts for comes from the last Simple/Creative design
 let shellMode = 'pattern';
@@ -909,6 +949,7 @@ function readParams() {
   p.spokes = clamp(Math.round(p.spokes), 2, 8);
   p.testCount = clamp(Math.round(p.testCount), 1, 30);
   p.creative = JSON.parse(JSON.stringify(creative));
+  p.mountParts = JSON.parse(JSON.stringify(lampParts));
   return p;
 }
 function writeParams(p) {
@@ -922,6 +963,10 @@ function writeParams(p) {
   if (p.project != null) $('project').value = p.project;
   if (p.shellMode === 'pattern' || p.shellMode === 'creative') shellMode = p.shellMode;
   if (p.creative) creative = { bands: p.creative.bands || [], mods: (p.creative.mods || []).map(m => ({ ...newMod(p), ...m })) };
+  // parts list; older designs had one top and one bottom part
+  if (Array.isArray(p.mountParts)) lampParts = p.mountParts.map(q => ({ ...newPart(q.from === 'bottom' ? 'bottom' : 'top'), ...q }));
+  else if (p.mountTop || p.mountBottom) lampParts = [['top', p.mountTop], ['bottom', p.mountBottom]]
+    .filter(([, k]) => k && k !== 'none').map(([from, kind]) => ({ ...newPart(from), kind, fix: p.mountFix || 'glue' }));
   syncDiameter();
   renderCreativeUI();
 }
@@ -1150,7 +1195,11 @@ function generate(p, w, h, x0, x1, slotFn) {
   // kerf compensation: shapes are drawn k2 smaller all round so the cut slot has the nominal size
   const k2 = Math.max(0, p.kerf || 0) / 2;
   // slots that would open through the edge under a mount tab are left out, so the tab keeps solid material
-  const spans = tabSpans(p, w), underTab = (x, hw) => spans.some(([a, b]) => x - hw < b && x + hw > a);
+  const spans = tabSpans(p, w), tabEdge = { top: edgeTabs(p, 'top'), bottom: edgeTabs(p, 'bottom') };
+  const underTab = (x, hw, edge) => tabEdge[edge] && spans.some(([a, b]) => x - hw < b && x + hw > a);
+  // slots near a wall slot for a part's tabs are left out too: solid material around it
+  const patches = wallSlots(p, w, h).map(r => ({ x0: r.x0 - 1.5, x1: r.x1 + 1.5, y0: r.y0 - 1.5, y1: r.y1 + 1.5 }));
+  const inPatch = (x, y, hw, hh) => patches.some(r => x - hw < r.x1 && x + hw > r.x0 && y - hh < r.y1 && y + hh > r.y0);
   const slots = [];
   const fixed = { shape: p.shape, hw: p.slotW / 2, hh: p.slotH / 2, skip: false };
   const columns = cols.map((c, k) => {
@@ -1166,12 +1215,15 @@ function generate(p, w, h, x0, x1, slotFn) {
       if (y - hh >= h || y + hh <= 0) continue;
       const rec = { k, x: c.x, y, hw, hh, shape: sp.shape, status: 'cut', els: null };
       if (sp.skip) rec.status = 'skip';
+      else if (inPatch(c.x, y, hw, hh)) rec.status = 'tab';   // solid around a wall slot
       else if (S.line) {
         const top = Math.max(0, y - hh), bot = Math.min(h, y + hh);
-        if (bot - top > eps && !((top <= eps || bot >= h - eps) && underTab(c.x, 0.1))) rec.els = S.draw(c.x, top, bot);
+        if ((top <= eps && underTab(c.x, 0.1, 'top')) || (bot >= h - eps && underTab(c.x, 0.1, 'bottom'))) rec.status = 'tab';
+        else if (bot - top > eps) rec.els = S.draw(c.x, top, bot);
       } else if (y - hh >= -eps && y + hh <= h + eps) {
         rec.els = S.draw(c.x, y, Math.max(0, hw - k2), Math.max(0.05, hh - k2));
-      } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2 && !underTab(c.x, hw)) {
+      } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2) {
+        if (underTab(c.x, hw, y - hh < 0 ? 'top' : 'bottom')) { rec.status = 'tab'; slots.push(rec); continue; }   // solid under a Lamp tab
         const dw = Math.max(0, hw - k2), dh = Math.max(0.05, hh - k2);
         const open = sp.shape === 'Pill' && pillOpen(c.x, y, dw, dh, h);
         rec.els = open ? [open] : clipToBand(S.draw(c.x, y, dw, dh), h);
@@ -1182,7 +1234,7 @@ function generate(p, w, h, x0, x1, slotFn) {
     }
     return out;
   });
-  return { columns, slots, h, ...layout };
+  return { columns, slots, h, spans, patches, ...layout };
 }
 
 // Zigzag through the columns (alternating direction) to keep travel short.
@@ -1291,7 +1343,7 @@ function creativeSlotFn(p, W, H) {
   const bands = creative.bands, ends = [];
   let acc = 0;
   for (const b of bands) ends.push(acc += Math.max(0, +b.height || 0));
-  const mods = creative.mods.map(m => ({ m, fn: modSource(m, W, H, p.seamless) })).filter(o => o.fn);
+  const mods = creative.mods.filter(m => !m.off).map(m => ({ m, fn: modSource(m, W, H, p.seamless) })).filter(o => o.fn);
   const num = v => v === null || v === '' || v === undefined || isNaN(+v) ? null : +v;
   return (x, y) => {
     let shape = baseShape, sw = p.slotW, sh = p.slotH, skip = false;
@@ -1346,7 +1398,7 @@ function flexAnalysis(p, gen) {
   const key = (k, y) => k + ':' + Math.round(y * 1000);
   const byKey = new Map(slots.map(s => [key(s.k, s.y), s]));
   for (const s of slots) { s.kf = 0; s.rigid = false; }
-  let worst = 0, solid = false, links = 0;
+  let worst = 0, solid = false, tabSolid = false, links = 0;
   for (const A of slots) {
     if (A.k >= cols.length - 1 || A.status === 'edge') continue;
     const dx = cols[A.k + 1].x - A.x;
@@ -1358,6 +1410,8 @@ function flexAnalysis(p, gen) {
       links++;
       const bar = dx - (A.hw + B.hw);
       const Lt = A.hh + B.hh - stepY / 2;
+      // the wall under a Lamp tab is solid: no bridge to twist there (drawn as its own rigid zone)
+      if (A.status === 'tab' || B.status === 'tab') { tabSolid = true; continue; }
       if (A.status === 'skip' || B.status === 'skip' || Lt <= 0 || bar <= 0) {
         A.rigid = B.rigid = solid = true;
         continue;
@@ -1369,7 +1423,36 @@ function flexAnalysis(p, gen) {
     }
   }
   if (!worst) return { reason: links ? 'r.overlap' : 'r.noLinks' };
-  return { k: worst, solid };
+  // Zones under the Lamp tabs: fully solid as deep as the shallowest left-out
+  // edge slot (no column has a slot there), then only some columns are solid –
+  // stiffer, not rigid – down to the deepest one.
+  const zones = [];
+  for (const r of gen.patches || []) zones.push({ rect: true, ...r });
+  if (tabSolid) for (const [a, b] of gen.spans || []) for (const top of [true, false]) {
+    let lo = Infinity, hi = 0;
+    for (const s of slots) if (s.status === 'tab' && (s.y < h / 2) === top && s.x + s.hw > a && s.x - s.hw < b) {
+      const d = top ? s.y + s.hh : h - (s.y - s.hh);
+      lo = Math.min(lo, d); hi = Math.max(hi, d);
+    }
+    if (hi > 0) zones.push({ x0: a, x1: b, top, solid: Math.min(lo, h), fadeTo: Math.min(h, hi - lo < 1 ? lo + stepY / 2 : hi) });
+  }
+  return { k: worst, solid, tabSolid, zones };
+}
+// Rigid zones under the Lamp tabs for the Flex view: opaque where the wall is
+// fully solid, fading out where only some columns are (qualitative).
+function tabZonesSvg(flex, h, id) {
+  if (!flex || !flex.zones || !flex.zones.length) return '';
+  let defs = '', rects = '';
+  flex.zones.forEach((z, i) => {
+    if (z.rect) { rects += `<rect x="${f(z.x0)}" y="${f(z.y0)}" width="${f(z.x1 - z.x0)}" height="${f(z.y1 - z.y0)}" fill="${HEAT.rigid}" fill-opacity=".85"/>`; return; }
+    const hz = z.fadeTo, solid = z.solid / hz;
+    const [y1, y2] = z.top ? ['0', '1'] : ['1', '0'];
+    defs += `<linearGradient id="${id}${i}" x1="0" y1="${y1}" x2="0" y2="${y2}">` +
+      `<stop offset="0" stop-color="${HEAT.rigid}" stop-opacity=".85"/><stop offset="${solid.toFixed(3)}" stop-color="${HEAT.rigid}" stop-opacity=".85"/>` +
+      `<stop offset="1" stop-color="${HEAT.rigid}" stop-opacity="0"/></linearGradient>`;
+    rects += `<rect x="${f(z.x0)}" y="${f(z.top ? 0 : h - hz)}" width="${f(z.x1 - z.x0)}" height="${f(hz)}" fill="url(#${id}${i})"/>`;
+  });
+  return `<defs>${defs}</defs>${rects}`;
 }
 function flexStatus(eps, m) {
   const cls = eps <= m.ok ? 'ok' : eps <= m.max ? 'warn' : 'bad';
@@ -1408,7 +1491,16 @@ function fingerRows(H, size) {
 }
 // Lamp mount with tabs & slots: tabs of one material thickness on the top and
 // bottom edges of the cylinder, evenly spread around the circumference.
-const tabHeight = p => p.mountFix === 'tabs' && p.mode !== 'test' ? p.thick : 0;
+// Lamp tabs: always on the lamp's shade, in Simple/Creative only when "Show the Lamp tabs" is on
+// attachment of the part sitting right at the top or bottom end ('none' without one)
+function endFix(p, pos) {
+  const q = (p.mountParts || []).find(x => x.from === pos && !(x.offset > 0));
+  return !q ? 'none' : ['tabs', 'edge'].includes(q.fix) ? q.fix : 'glue';
+}
+const edgeTabs = (p, pos) => p.mode !== 'test' && (p.inLamp || p.mode === 'mount' || p.lampTabs) && endFix(p, pos) === 'tabs' ? p.thick : 0;
+const tabHeight = p => Math.max(edgeTabs(p, 'top'), edgeTabs(p, 'bottom'));
+// the Simple/Creative design the Lamp mode builds its shade from
+const shellOf = p => ({ ...p, mode: p.shellMode || 'pattern', inLamp: true });
 function tabSpans(p, W) {
   if (!tabHeight(p)) return [];
   const n = clamp(Math.round(p.tabCount) || 4, 2, 24), w = Math.max(1, p.tabW || 10);
@@ -1416,9 +1508,9 @@ function tabSpans(p, W) {
 }
 function boardOutline(p, W, H, withJoint = true) {
   const j = withJoint ? p.joint : 'none', d = Math.max(0.5, p.jointSize || 0);
-  const th = tabHeight(p), spans = tabSpans(p, W);
+  const spans = tabSpans(p, W), tTop = edgeTabs(p, 'top'), tBot = edgeTabs(p, 'bottom');
   const pts = [[0, 0]];
-  for (const [a, b] of spans) pts.push([a, 0], [a, -th], [b, -th], [b, 0]);   // tabs on the top edge
+  if (tTop) for (const [a, b] of spans) pts.push([a, 0], [a, -tTop], [b, -tTop], [b, 0]);   // tabs on the top edge
   if (j === 'tab') pts.push([W + d, 0], [W + d, H]);
   else if (j === 'fingers') {
     const ys = fingerRows(H, d), n = ys.length - 1;
@@ -1426,7 +1518,7 @@ function boardOutline(p, W, H, withJoint = true) {
     for (let i = 0; i < n; i++) if (i % 2) pts.push([W, ys[i]], [W + d, ys[i]], [W + d, ys[i + 1]], [W, ys[i + 1]]);
     pts.push([W, H]);
   } else pts.push([W, 0], [W, H]);
-  for (const [a, b] of [...spans].reverse()) pts.push([b, H], [b, H + th], [a, H + th], [a, H]);   // and on the bottom edge
+  if (tBot) for (const [a, b] of [...spans].reverse()) pts.push([b, H], [b, H + tBot], [a, H + tBot], [a, H]);   // and on the bottom edge
   pts.push([0, H]);
   if (j === 'fingers') {
     const ys = fingerRows(H, d), n = ys.length - 1;
@@ -1454,12 +1546,79 @@ const outlinePath = pts => `<path d="M${pts.map(q => `${f(q[0])},${f(q[1])}`).jo
 // Pendant mount: parts that sit inside the cylinder (outer Ø = inner Ø of the
 // cylinder minus clearance) – a spider or disc with the E27 socket hole, or a
 // plain ring that keeps the cylinder round.
-function mountGeometry(p) {
-  const di = midDiameter(p) - p.thick, rm = midDiameter(p) / 2, tabs = p.mountFix === 'tabs', edge = p.mountFix === 'edge';
+function mountGeometry(p, fix = 'glue') {
+  const di = midDiameter(p) - p.thick, rm = midDiameter(p) / 2, tabs = fix === 'tabs', edge = fix === 'edge';
   // glued: inside the cylinder; tabs / edge interlock: reaching past the wall by the rim
   const ro = tabs || edge ? rm + p.thick / 2 + p.rim : (di - p.mountClear) / 2;
   const rh = p.socketHole / 2, ri = (tabs || edge ? rm - p.thick / 2 : ro) - p.ringW, rhub = rh + p.hubW;
-  return { di, rm, ro, rh, ri, rhub, tabs, edge, ok: ro > 0 && rh > 0.5 && ri > rhub + 1 && p.spokeW / 2 < rhub };
+  return { di, rm, ro, rh, ri, rhub, tabs, edge, fix, ok: ro > 0 && rh > 0.5 && ri > rhub + 1 && p.spokeW / 2 < rhub };
+}
+// A part at the very end uses the attachment chosen for the ends; a part moved
+// inward sits inside the tube: glued in, or with tabs through slots in the wall.
+const END_FIX = ['glue', 'tabs', 'edge'], INNER_FIX = ['glue', 'through', 'fingers'];
+const partFix = (p, part) => (part.offset > 0 ? INNER_FIX : END_FIX).includes(part.fix) ? part.fix : 'glue';
+// the lamp's own details (tabs, wall slots) appear on the shade in Lamp mode, elsewhere only when "Cut Lamp tabs" is on
+const lampOnShade = p => p.mode !== 'test' && (p.inLamp || p.mode === 'mount' || p.lampTabs);
+// Slots in the wall for parts held by tabs through the wall, in board
+// coordinates (y down from the top edge): one per tab, at the same angles as
+// the edge tabs, as tall as the material plus the clearance.
+function wallSlots(p, W, H) {
+  if (!lampOnShade(p) || !Array.isArray(p.mountParts)) return [];
+  const n = clamp(Math.round(p.tabCount) || 4, 2, 24), c = p.mountClear, hw = (p.tabW + c) / 2, out = [];
+  for (const part of p.mountParts) {
+    if (!(part.offset > 0) || part.fix !== 'through') continue;
+    const y0 = part.from === 'bottom' ? H - part.offset - p.thick - c / 2 : part.offset - c / 2, y1 = y0 + p.thick + c;
+    if (y0 < 0 || y1 > H) continue;
+    for (let i = 0; i < n; i++) { const x = W * (i + 0.5) / n; out.push({ x0: x - hw, x1: x + hw, y0, y1 }); }
+  }
+  return out;
+}
+// Outline of a part with tabs or fingers: the circle inside the tube plus
+// rectangular tabs {a: angle, L: half width} reaching to the outside of the wall.
+// Board x maps to the angle 1.5π − 2π·x/W, like the edge tabs and slots.
+const xAngle = (x, W) => 1.5 * Math.PI - 2 * Math.PI * x / W;
+function throughTabs(p) {
+  const n = clamp(Math.round(p.tabCount) || 4, 2, 24);
+  return Array.from({ length: n }, (_, i) => ({ a: 1.5 * Math.PI - 2 * Math.PI * (i + 0.5) / n, L: p.tabW / 2 }));
+}
+function tabbedOutline(p, cx, cy, ro, k2, tabs) {
+  if (!tabs.length) return circlePath(cx, cy, ro + k2);
+  const rm = midDiameter(p) / 2, rt = rm + p.thick / 2 + k2, R = ro + k2;
+  const list = tabs.map(tb => {
+    const L = Math.min(tb.L + k2, R * 0.9), a = ((tb.a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    return { a, L, inner: Math.sqrt(R * R - L * L), d: Math.asin(L / R) };
+  }).sort((u, v) => u.a - v.a);
+  const P = (tb, r, side) => [cx + r * Math.cos(tb.a) - side * tb.L * Math.sin(tb.a), cy + r * Math.sin(tb.a) + side * tb.L * Math.cos(tb.a)];
+  const q = v => `${f(v[0])},${f(v[1])}`;
+  let d0 = `M${q(P(list[0], list[0].inner, -1))}`;
+  list.forEach((tb, i) => {
+    const nx = list[(i + 1) % list.length], next = nx.a + (i + 1 === list.length ? 2 * Math.PI : 0);
+    d0 += ` L${q(P(tb, rt, -1))} L${q(P(tb, rt, 1))} L${q(P(tb, tb.inner, 1))}`;
+    const span = next - tb.a - tb.d - nx.d;
+    d0 += ` A${f(R)},${f(R)} 0 ${span > Math.PI ? 1 : 0} 1 ${q(P(nx, nx.inner, -1))}`;
+  });
+  return `<path d="${d0} Z"/>`;
+}
+// Straight part of a pattern slot (half width and y range), where a finger can sit.
+function slotStraight(r) {
+  if (r.shape === 'Pill' && r.hh >= r.hw) return { hw: r.hw, y0: r.y - r.hh + r.hw, y1: r.y + r.hh - r.hw };
+  if (r.shape === 'Rectangle') return { hw: r.hw, y0: r.y - r.hh, y1: r.y + r.hh };
+  if (r.shape === 'Bone') { const n = r.hw * NECK_RATIO, sq = Math.sqrt(r.hw * r.hw - n * n); return { hw: n, y0: r.y - r.hh + r.hw + sq, y1: r.y + r.hh - r.hw - sq }; }
+  return null;
+}
+// Fingers of a part with an offset into the pattern slots it crosses: every
+// slot whose straight part covers the part's height (plus clearance) takes one.
+function slotFingers(p, part, shell) {
+  const H = shell.h, W = shell.bw ?? shell.w, c = p.mountClear, out = [];
+  const y0 = part.from === 'bottom' ? H - part.offset - p.thick : part.offset, y1 = y0 + p.thick;
+  for (const r of shell.recs) {
+    if (r.wall || r.status !== 'cut' || !r.els || !r.els.length) continue;
+    const st = slotStraight(r);
+    if (!st || st.y0 > y0 - c / 2 || st.y1 < y1 + c / 2) continue;
+    const L = st.hw - c / 2;
+    if (L > 0.1) out.push({ a: xAngle(r.x, W), L });
+  }
+  return out;
 }
 // Open edge slots of the cylinder at its top or bottom edge, as x ranges of
 // their opening (nominal, after the kerf). Only slots at least one material
@@ -1533,8 +1692,8 @@ function spiderWindows(cx, cy, ri, rhub, w, n) {
   }
   return out;
 }
-function mountPartEls(p, kind, cx, cy, k2, notches, W) {
-  const g = mountGeometry(p), holes = [];
+function mountPartEls(p, kind, cx, cy, k2, notches, W, fix = 'glue', fingers = []) {
+  const g = mountGeometry(p, fix), holes = [];
   if (kind === 'ring') holes.push(circlePath(cx, cy, g.ri - k2));
   else if (kind !== 'closed') {
     holes.push(circlePath(cx, cy, g.rh - k2));
@@ -1542,39 +1701,48 @@ function mountPartEls(p, kind, cx, cy, k2, notches, W) {
   }
   if (g.tabs) holes.push(...tabSlots(p, cx, cy, k2));
   if (g.edge) holes.push(...edgeSlots(p, notches || [], W, cx, cy, k2));
-  return { outer: [circlePath(cx, cy, g.ro + k2)], holes };
+  const tabs = fix === 'through' ? throughTabs(p) : fix === 'fingers' ? fingers : [];
+  return { outer: [tabs.length ? tabbedOutline(p, cx, cy, g.ro, k2, tabs) : circlePath(cx, cy, g.ro + k2)], holes };
 }
 function buildMountDoc(p) {
   const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
   const g = mountGeometry(p), k2 = Math.max(0, p.kerf || 0) / 2, gap = 6;
-  doc.shell = buildDoc({ ...p, mode: p.shellMode || 'pattern' });
+  doc.shell = buildDoc(shellOf(p));
   const W = doc.shell.bw ?? doc.shell.w;
   doc.mount = { g, parts: [], notches: {} };
-  if (g.edge) for (const pos of ['top', 'bottom']) doc.mount.notches[pos] = edgeNotches(p, doc.shell, pos);
+  const parts = (p.mountParts || []).map((part, i) => ({ ...part, i, fix: partFix(p, part) }));
+  for (const pos of ['top', 'bottom']) if (parts.some(q => q.fix === 'edge' && q.from === pos)) doc.mount.notches[pos] = edgeNotches(p, doc.shell, pos);
   // the complete cut set: the flat shade on top (its outline is always cut here) …
   const sh = doc.shell, pad = sh.padY || 0, move = `translate(0,${f(pad)})`;
   if (sh.cuts.length) doc.cuts.push(`<g transform="${move}">${sh.cuts.join('')}</g>`);
   const shellOutline = sh.borders.length ? sh.borders : [outlinePath(offsetOutline(sh.outline, k2))];
   doc.borders.push(`<g transform="${move}">${shellOutline.join('')}</g>`);
+  if (sh.labels.length) doc.labels.push(`<g transform="${move}">${sh.labels.join('')}</g>`);   // position marks
   doc.boards.push({ outline: sh.outline.map(([px, py]) => [px, py + pad]) });
   // … and the mount parts below it
-  const y0 = sh.h + 2 * pad + 10;
-  let x = 0;
-  if (g.ro > 0) for (const [pos, kind] of [['top', p.mountTop], ['bottom', p.mountBottom]]) {
-    if (kind === 'none') continue;
-    const cx = x + g.ro + k2, cy = y0 + g.ro + k2, els = mountPartEls(p, kind, cx, cy, k2, doc.mount.notches[pos], W);
+  // … and the parts below it, in rows as wide as the shade
+  let x = 0, y0 = sh.h + 2 * pad + 10, rowH = 0, wMax = 0;
+  for (const part of parts) {
+    const gp = mountGeometry(p, part.fix);
+    if (!(gp.ro > 0)) continue;
+    const fingers = part.fix === 'fingers' ? slotFingers(p, part, sh) : [];
+    const rx = (part.fix === 'through' || fingers.length ? gp.rm + p.thick / 2 : gp.ro) + k2;   // tabs and fingers reach to the outside of the wall
+    if (x > 0 && x + 2 * rx > Math.max(sh.w, 2 * rx)) { x = 0; y0 += rowH + gap; rowH = 0; }
+    const cx = x + rx, cy = y0 + rx, kind = part.kind;
+    const els = mountPartEls(p, kind, cx, cy, k2, doc.mount.notches[part.from], W, part.fix, fingers);
     doc.cuts.push(...els.holes);
     doc.borders.push(...els.outer);
-    doc.boards.push({ circle: [cx, cy, g.ro] });
+    doc.boards.push({ path: els.outer[0] });   // the real outline, so tabs and fingers show
     // engraved label in the solid ring band (or between hole and edge on a disc)
-    const ly = kind === 'closed' ? cy + g.ro / 2 : kind === 'disc' ? cy + (g.rh + g.ro) / 2 : cy + g.ro - p.ringW / 2;
-    const fs = clamp((kind === 'closed' ? g.ro : kind === 'disc' ? g.ro - g.rh : p.ringW) * 0.45, 1.5, 4);
-    doc.labels.push(`<text x="${f(cx)}" y="${f(ly)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}">${esc(t('lbl.' + pos))}</text>`);
-    doc.mount.parts.push({ pos, kind, cx, cy, els });
-    x += 2 * (g.ro + k2) + gap;
+    const ly = kind === 'closed' ? cy + gp.ro / 2 : kind === 'disc' ? cy + (gp.rh + gp.ro) / 2 : cy + gp.ro - p.ringW / 2;
+    const fs = clamp((kind === 'closed' ? gp.ro : kind === 'disc' ? gp.ro - gp.rh : p.ringW) * 0.45, 1.5, 4);
+    const label = `${part.i + 1} ${t('lbl.' + part.from)}${part.offset > 0 ? ' ' + fmt(part.offset) : ''}`;
+    doc.labels.push(`<text x="${f(cx)}" y="${f(ly)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}">${esc(label)}</text>`);
+    doc.mount.parts.push({ pos: part.from, offset: part.offset || 0, fix: part.fix, n: part.i + 1, kind, cx, cy, ro: gp.ro, els, fingers });
+    x += 2 * rx + gap; rowH = Math.max(rowH, 2 * rx); wMax = Math.max(wMax, x - gap);
   }
   doc.count = sh.count + doc.mount.parts.reduce((n, q) => n + q.els.outer.length + q.els.holes.length, 0) + 1;
-  doc.w = Math.max(sh.w, x - gap); doc.h = y0 + 2 * (g.ro + k2); doc.rotate = p.rotate;
+  doc.w = Math.max(sh.w, wMax); doc.h = y0 + rowH; doc.rotate = p.rotate;
   return doc;
 }
 
@@ -1642,6 +1810,19 @@ function buildDoc(p) {
     doc.recs = gen.columns.flat();
     doc.flex = flexAnalysis(p, gen);
   }
+  // slots in the wall for parts held by tabs through it (also in the 3D solid and the heatmap, as rigid)
+  const k2w = Math.max(0, p.kerf || 0) / 2;
+  for (const r of wallSlots(p, w, h)) {
+    const el = `<path d="M${f(r.x0 + k2w)},${f(r.y0 + k2w)} H${f(r.x1 - k2w)} V${f(r.y1 - k2w)} H${f(r.x0 + k2w)} Z"/>`;
+    doc.cuts.push(el);
+    doc.recs.push({ wall: true, rigid: true, x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2, hw: (r.x1 - r.x0) / 2, hh: (r.y1 - r.y0) / 2, els: [el], kf: 0 });
+  }
+  // engraved lines where glued-in parts with an offset sit (their outer face), for the lamp's cut set
+  if (p.mountMarks && (p.inLamp || p.mode === 'mount')) for (const part of p.mountParts || []) {
+    if (!(part.offset > 0) || part.fix === 'through' || part.offset >= h) continue;
+    const y = part.from === 'bottom' ? h - part.offset : part.offset;
+    doc.labels.push(`<path class="marks" d="M0,${f(y)} H${f(w)}" fill="none" stroke="#000000" stroke-width="0.2" stroke-dasharray="2 3"/>`);
+  }
   doc.count = doc.cuts.length;
   // with a seam joint the outline is part of the joint, so it is always cut
   if (p.border || p.joint === 'tab' || p.joint === 'fingers') doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
@@ -1657,8 +1838,10 @@ function flexSummary(p, doc, bendPct = view3d.bend) {
   const eps = doc.flex.k / dMid * 100;
   const dMin = doc.flex.k / (mat.ok / 100);  // mid-plane diameter at the "ok" limit
   const over = doc.recs.filter(r => r.kf / dMid * 100 > mat.max).length;
-  const rigid = doc.recs.filter(r => r.rigid).length;
-  return { eps, dMin, dMinInner: dMin - th, status: flexStatus(eps, mat), over, rigid };
+  const rigid = doc.recs.filter(r => r.rigid && !r.wall).length;
+  // a solid wall piece under a Lamp tab stays flat: its chord deviates from the circle by w²/(8R)
+  const facet = doc.flex.tabSolid && isFinite(dMid) ? p.tabW * p.tabW / (4 * dMid) : 0;
+  return { eps, dMin, dMinInner: dMin - th, status: flexStatus(eps, mat), over, rigid, facet };
 }
 
 const shapeName = k => t('shape.' + k);
@@ -1682,13 +1865,13 @@ function paramLines(p, doc, bendPct = view3d.bend) {
     if (p.project) L.push(t('pl.project', p.project));
     L.push(t('pl.mode', t('mode.mount')));
     L.push(t('pl.mountCyl', fmt(+g.di.toFixed(2)), fmt(p.thick), matOf(p).name));
-    for (const prt of doc.mount.parts) L.push(t('pl.mountPart', t('mt.' + (prt.pos === 'top' ? 'top' : 'bottom')), t('mt.' + prt.kind), fmt(+(2 * g.ro).toFixed(2))));
+    for (const prt of doc.mount.parts) L.push(t('pl.mountPart', `${prt.n} ${t('mt.from.' + prt.pos)}${prt.offset ? ` +${fmt(prt.offset)} mm` : ''}`,
+      `${t('mt.' + prt.kind)} (${t('mt.pf.' + prt.fix)})`, fmt(+(2 * prt.ro).toFixed(2))));
     L.push(t('pl.mountDims', fmt(p.socketHole), fmt(p.ringW), p.spokes, fmt(p.spokeW), fmt(p.hubW), fmt(p.mountClear)));
-    L.push(t('pl.mountFix', t('mt.fix.' + p.mountFix)));
-    if (g.tabs) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
+    if (doc.mount.parts.some(q => q.fix === 'tabs' || q.fix === 'through')) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
     if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
     // the shade's own parameters (its mode line first), without its footer
-    L.push(...paramLines({ ...p, mode: p.shellMode || 'pattern', project: '' }, doc.shell, 100).slice(0, -1));
+    L.push(...paramLines({ ...shellOf(p), project: '' }, doc.shell, 100).slice(0, -1));
     L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
     return L;
   }
@@ -1717,7 +1900,7 @@ function paramLines(p, doc, bendPct = view3d.bend) {
       i === c.bands.length - 1 ? t('band.rest') : `${fmt(+b.height || 0)} mm`,
       b.slotW == null || b.slotW === '' ? fmt(p.slotW) : fmt(+b.slotW),
       b.slotH == null || b.slotH === '' ? fmt(p.slotH) : fmt(+b.slotH))));
-    c.mods.forEach((m, i) => L.push(t('pl.mod', i + 1, modText(m))));
+    c.mods.forEach((m, i) => L.push(t('pl.mod', i + 1, modText(m)) + (m.off ? ' ' + t('mod.offTag') : '')));
   }
   L.push(t('pl.rotated', p.rotate));
   L.push(t('pl.edges', fmt(p.marginX), p.openEdges, p.mode === 'test' || p.border));
@@ -1745,9 +1928,10 @@ const matTag = p => customMaterials[p.material] ? slug(customMaterials[p.materia
 function fileName(p, doc) {
   if (p.mode === 'mount') {
     const proj = slug(p.project || ''), g = doc.mount.g;
-    const parts = ['kerflamp', matTag(p), `D${fmt(+g.di.toFixed(1))}x${fmt(p.thick)}mm`, `top-${p.mountTop}`, `bottom-${p.mountBottom}`, `hole${fmt(p.socketHole)}`];
-    if (g.tabs) parts.push(`tabs${clamp(Math.round(p.tabCount), 2, 24)}x${fmt(p.tabW)}`);
-    if (g.edge) parts.push('edge');
+    const parts = ['kerflamp', matTag(p), `D${fmt(+g.di.toFixed(1))}x${fmt(p.thick)}mm`,
+      ...doc.mount.parts.map(q => `${q.pos[0]}${q.offset ? fmt(q.offset) : ''}-${q.kind}${q.fix === 'glue' ? '' : '-' + q.fix}`), `hole${fmt(p.socketHole)}`];
+    if (doc.mount.parts.some(q => q.fix === 'tabs' || q.fix === 'through')) parts.push(`tabs${clamp(Math.round(p.tabCount), 2, 24)}x${fmt(p.tabW)}`);
+    if (doc.mount.parts.some(q => q.fix === 'edge')) parts.push('edge');
     if (p.kerf) parts.push(`kerf${fmt(p.kerf)}`);
     if (proj) parts.unshift(proj);
     return parts.join('_') + '.svg';
@@ -1832,8 +2016,11 @@ function buildSVG(p, doc) {
 const opt = (v, label, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(label)}</option>`;
 const numField = (list, i, key, label, val, extra = '') =>
   `<label>${esc(label)}<input type="number" data-list="${list}" data-i="${i}" data-k="${key}" value="${val ?? ''}" ${extra}></label>`;
-const cardHead = (list, i, n, title) =>
-  `<div class="card-head"><span>${esc(title)}</span>` +
+const cardHead = (list, i, n, title, item) =>
+  `<div class="card-head" data-list="${list}" data-i="${i}" title="${esc(t('btn.drag'))}"><i class="grip" aria-hidden="true">⠿</i>` +
+  `<i class="fold" aria-hidden="true">${item.collapsed ? '▸' : '▾'}</i><span>${esc(title)}</span>` +
+  (list === 'mods' ? `<label class="onoff" title="${esc(t('btn.on'))}"><input type="checkbox" data-list="mods" data-i="${i}" data-k="on"${item.off ? '' : ' checked'}></label>` : '') +
+  `<button data-act="dup" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.dup'))}" title="${esc(t('btn.dup'))}">⧉</button>` +
   `<button data-act="up" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.up'))}"${i === 0 ? ' disabled' : ''}>↑</button>` +
   `<button data-act="down" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.down'))}"${i === n - 1 ? ' disabled' : ''}>↓</button>` +
   `<button data-act="del" data-list="${list}" data-i="${i}" aria-label="${esc(t('btn.del'))}">✕</button></div>`;
@@ -1843,7 +2030,10 @@ function renderCreativeUI() {
   const shapeOpts = cur => SLOT_SHAPES.map(k => opt(k, shapeName(k), cur)).join('');
   $('bandList').innerHTML = creative.bands.map((b, i, all) => {
     const last = i === all.length - 1;
-    return `<div class="card">${cardHead('bands', i, all.length, t('band.n', i + 1))}<div class="grid2">` +
+    const head = cardHead('bands', i, all.length, b.collapsed
+      ? `${t('band.n', i + 1)} · ${shapeName(b.shape)} · ${last ? t('band.rest') : fmt(+b.height || 0) + ' mm'}` : t('band.n', i + 1), b);
+    if (b.collapsed) return `<div class="card collapsed">${head}</div>`;
+    return `<div class="card">${head}<div class="grid2">` +
       `<label>${esc(t('band.shape'))}<select data-list="bands" data-i="${i}" data-k="shape">${shapeOpts(b.shape)}</select></label>` +
       (last ? `<label>${esc(t('band.height'))}<input type="text" value="${esc(t('band.rest'))}" disabled></label>`
             : numField('bands', i, 'height', t('band.height'), b.height, 'min="0" step="1"')) +
@@ -1852,8 +2042,12 @@ function renderCreativeUI() {
       `</div></div>`;
   }).join('');
 
+  renderPartsUI();
   $('modList').innerHTML = creative.mods.map((m, i, all) => {
-    let h = `<div class="card">${cardHead('mods', i, all.length, `${t('mod.n', i + 1)} · ${t('tg.' + m.target)}`)}<div class="grid2">`;
+    const head = cardHead('mods', i, all.length, `${t('mod.n', i + 1)} · ${m.collapsed ? modText(m) : t('tg.' + m.target)}`, m);
+    const cls = 'card' + (m.collapsed ? ' collapsed' : '') + (m.off ? ' off' : '');
+    if (m.collapsed) return `<div class="${cls}">${head}</div>`;
+    let h = `<div class="${cls}">${head}<div class="grid2">`;
     h += `<label>${esc(t('mod.target'))}<select data-list="mods" data-i="${i}" data-k="target" data-rebuild>${MOD_TARGETS.map(k => opt(k, t('tg.' + k), m.target)).join('')}</select></label>`;
     h += `<label>${esc(t('mod.source'))}<select data-list="mods" data-i="${i}" data-k="source" data-rebuild>${MOD_SOURCES.map(k => opt(k, t('src.' + k), m.source)).join('')}</select></label>`;
     if (m.target === 'slotW' || m.target === 'slotH') {
@@ -1887,25 +2081,51 @@ function renderCreativeUI() {
   }).join('');
 }
 
+// at the end: glued, tabs & slots, edge interlock; with an offset: glued, tabs through the wall, fingers
+const fixOptions = q => (q.offset > 0 ? INNER_FIX : END_FIX).map(k => opt(k, t('mt.pf.' + k), partFix({}, q))).join('');
+function renderPartsUI() {
+  const kinds = cur => PART_KINDS.map(k => opt(k, t('mt.' + k), cur)).join('');
+  $('partList').innerHTML = lampParts.map((q, i, all) => {
+    const title = `${t('mt.part.n', i + 1)} · ${t('mt.from.' + q.from)}${q.offset > 0 ? ` +${fmt(q.offset)} mm` : ''} · ${t('mt.' + q.kind)}`;
+    const head = cardHead('parts', i, all.length, title, q);
+    if (q.collapsed) return `<div class="card collapsed">${head}</div>`;
+    return `<div class="card">${head}<div class="grid2">` +
+      `<label>${esc(t('mt.kind'))}<select data-list="parts" data-i="${i}" data-k="kind">${kinds(q.kind)}</select></label>` +
+      `<label>${esc(t('mt.from'))}<select data-list="parts" data-i="${i}" data-k="from">${opt('top', t('mt.from.top'), q.from)}${opt('bottom', t('mt.from.bottom'), q.from)}</select></label>` +
+      numField('parts', i, 'offset', t('mt.offset'), q.offset, 'min="0" step="1"') +
+      `<label>${esc(t('mt.pfix'))}<select data-list="parts" data-i="${i}" data-k="fix">${fixOptions(q)}</select></label>` +
+      `</div></div>`;
+  }).join('');
+}
 function creativeInput(e) {
   const el = e.target, list = el.dataset.list;
   if (!list || !el.dataset.k) return;
-  const item = creative[list][+el.dataset.i], k = el.dataset.k;
+  const item = listOf(list)[+el.dataset.i], k = el.dataset.k;
+  if (k === 'on') { item.off = !el.checked; renderCreativeUI(); render(); return; }
   if (el.type === 'checkbox') item[k] = el.checked;
   else if (el.type === 'number') item[k] = el.value === '' ? null : parseFloat(el.value);
   else item[k] = el.value;
   // waves along the height barely show between the rows; start them across the circumference
   if (k === 'source' && item.source === 'wave' && item.angle === 90) item.angle = 0;
   if (el.hasAttribute('data-rebuild')) renderCreativeUI();
+  // the attachment of a part only applies with an offset
+  if (list === 'parts' && k === 'offset') {
+    // the choice of attachments depends on the offset: remember the choice for each side of it
+    const inner = item.offset > 0, was = inner ? 'endFix' : 'innerFix', now = inner ? 'innerFix' : 'endFix';
+    if (!(inner ? INNER_FIX : END_FIX).includes(item.fix)) { item[was] = item.fix; item.fix = item[now] || 'glue'; }
+    const sel = el.closest('.card')?.querySelector('[data-k="fix"]');
+    if (sel) sel.innerHTML = fixOptions(item);
+  }
   render();
 }
 let imgTarget = null;
 function creativeClick(e) {
   const b = e.target.closest('button[data-act]');
   if (!b) return;
-  const list = creative[b.dataset.list], i = +b.dataset.i;
+  const list = listOf(b.dataset.list), i = +b.dataset.i;
   if (b.dataset.act === 'img') { imgTarget = list[i]; $('imgFile').click(); return; }
   if (b.dataset.act === 'del') list.splice(i, 1);
+  if (b.dataset.act === 'dup') list.splice(i + 1, 0, JSON.parse(JSON.stringify(list[i])));
   if (b.dataset.act === 'up' && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
   if (b.dataset.act === 'down' && i < list.length - 1) [list[i + 1], list[i]] = [list[i], list[i + 1]];
   renderCreativeUI();
@@ -1941,7 +2161,7 @@ if (viewMode !== '3d') { legacyView = viewMode; viewMode = '2d'; }   // cut / li
 document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
-  const boards = doc.boards.map(b => b.circle ? `<circle cx="${f(b.circle[0])}" cy="${f(b.circle[1])}" r="${f(b.circle[2])}"/>` : b.outline ? outlinePath(b.outline) : `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
+  const boards = doc.boards.map(b => b.path ? b.path : b.circle ? `<circle cx="${f(b.circle[0])}" cy="${f(b.circle[1])}" r="${f(b.circle[2])}"/>` : b.outline ? outlinePath(b.outline) : `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
   if (vm === 'light') {
     const all = doc.cuts.join('');
     return `<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.4"/></filter></defs>` +
@@ -1952,6 +2172,7 @@ function previewInner(p, doc, vm) {
   if (vm === 'flex') {
     const dMid = bendDiameter(p), mat = matOf(p);
     return `<g class="boards" fill="var(--board)" stroke="var(--muted)" stroke-width="1">${boards}</g>` +
+      tabZonesSvg(doc.flex, doc.h, 'tz') +
       `<g stroke="#00000066" stroke-width="0.15">${doc.recs.map(r => `<g fill="${heatColor(r, dMid, mat)}">${r.els.join('')}</g>`).join('')}</g>`;
   }
   return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' || p.mode === 'mount' || (p.joint && p.joint !== 'none') ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
@@ -1973,10 +2194,12 @@ function render() {
   if (document.activeElement !== $('matName')) $('matName').value = mat.custom ? mat.name : '';
   $('matHint').textContent = mat.custom ? t('mat.hintCustom', t('mat.' + mat.base)) : t('mat.hintPreset');
   $('jointSize').disabled = p.joint === 'none';
-  $('tabsNote').hidden = !tabHeight(p) || !['pattern', 'creative'].includes(p.mode);
-  document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = p.mountFix !== 'tabs'; });
-  document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = p.mountFix === 'glue'; });
-  $('mountDesc').textContent = t(p.mountFix === 'glue' ? 'mt.desc' : 'mt.desc.' + p.mountFix);
+  const fixes = p.mountParts.map(q => partFix(p, q)), anyTabs = fixes.some(x => x === 'tabs' || x === 'through');
+  $('tabsNote').hidden = !anyTabs || !['pattern', 'creative'].includes(p.mode);
+  $('marksRow').hidden = p.mode !== 'mount' || !p.mountParts.some((q, i) => q.offset > 0 && fixes[i] !== 'through');
+  document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = !anyTabs; });
+  document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = !fixes.some(x => x === 'tabs' || x === 'edge'); });
+  $('mountDesc').textContent = t('mt.desc');
   $('jointDesc').textContent = p.joint === 'none' ? '' : t('joint.' + p.joint + '.d') + (p.border ? '' : t('joint.border'));
   $('testTo').disabled = p.testCount === 1;
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
@@ -2126,8 +2349,8 @@ function buildMountParts(p, doc) {
   if (!doc.mount) return;
   const sd = doc.shell, W = sd.bw ?? sd.w, H = sd.h, th = p.thick, R = W / (2 * Math.PI);
   for (const prt of doc.mount.parts) {
-    const onEnds = doc.mount.g.tabs, tris = extrudeParts(prt.els.outer, prt.els.holes, th), cyUp = -prt.cy;
-    const y0 = prt.pos === 'top' ? (onEnds ? H / 2 : H / 2 - th) : (onEnds ? -H / 2 - th : -H / 2);
+    const onEnds = prt.fix === 'tabs', tris = extrudeParts(prt.els.outer, prt.els.holes, th), cyUp = -prt.cy, o = prt.offset || 0;
+    const y0 = prt.pos === 'top' ? (onEnds ? H / 2 : H / 2 - o - th) : (onEnds ? -H / 2 - th : -H / 2 + o);
     const pos = new Float32Array(tris.length);
     // part plane (x, y up) → horizontal: x stays, y → −z around the cylinder axis, thickness → height
     for (let k = 0; k < tris.length; k += 3) {
@@ -2271,7 +2494,7 @@ function buildHeat(p, doc) {
     const W = doc.bw ?? doc.w, H = doc.h, s = Math.min(6, 2048 / W, 2048 / H);
     const dMid = bendDiameter(p), mat = matOf(p), halo = Math.max(0.6, p.gapX);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
-      `<rect width="${W}" height="${H}" fill="#d9d4ca"/>` +
+      `<rect width="${W}" height="${H}" fill="#d9d4ca"/>` + tabZonesSvg(doc.flex, H, 'tz3') +
       doc.recs.map(r => { const c = heatColor(r, dMid, mat); return `<g fill="${c}" stroke="${c}" stroke-width="${halo}" stroke-linejoin="round">${r.els.join('')}</g>`; }).join('') +
       `</svg>`;
     const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
@@ -2355,7 +2578,7 @@ function withSlots(p, slotH, gapY) {
   return q;
 }
 function fitSummary(q) {
-  const mount = q.mode === 'mount', s = mount ? { ...q, mode: q.shellMode || 'pattern' } : q;
+  const mount = q.mode === 'mount', s = mount ? shellOf(q) : q;
   const saved = creative;
   creative = q.creative;   // the generator reads the global creative settings
   try { return flexSummary(s, buildDoc(s), mount ? 100 : view3d.bend); } finally { creative = saved; }
@@ -2429,18 +2652,32 @@ function renderInfo(p, doc) {
     const g = doc.mount.g;
     let html = `<p style="margin:0">${t('mt.info', g.di.toFixed(1), (2 * g.ro).toFixed(1), fmt(p.socketHole))}</p>`;
     if (!g.ok) html += `<p class="bad">${esc(t('mt.bad'))}</p>`;
+    // parts that leave the shade or overlap each other (height bands measured from the top)
+    const H = doc.shell.h, band = q => q.fix === 'tabs' ? (q.pos === 'top' ? [-p.thick, 0] : [H, H + p.thick])
+      : q.pos === 'top' ? [q.offset, q.offset + p.thick] : [H - q.offset - p.thick, H - q.offset];
+    const bands = doc.mount.parts.map(q => ({ n: q.n, b: band(q), outside: q.fix === 'tabs' }));
+    for (const q of bands) if (!q.outside && (q.b[0] < -1e-6 || q.b[1] > H + 1e-6)) html += `<p class="bad">${esc(t('mt.partOut', q.n))}</p>`;
+    for (let a = 0; a < bands.length; a++) for (let b = a + 1; b < bands.length; b++)
+      if (bands[a].b[0] < bands[b].b[1] - 1e-6 && bands[b].b[0] < bands[a].b[1] - 1e-6) html += `<p class="bad">${esc(t('mt.partClash', bands[a].n, bands[b].n))}</p>`;
+    for (const q of doc.mount.parts) if (q.fix === 'fingers') {
+      if (!q.fingers.length) { html += `<p class="bad">${esc(t('mt.fingersNone', q.n))}</p>`; continue; }
+      const w = Math.min(...q.fingers.map(fg => 2 * fg.L));
+      html += `<p class="warn">${esc(t('mt.fingersGlue', q.n, q.fingers.length, fmt(+w.toFixed(1))))}</p>`;
+      if (w < 1.5) html += `<p class="warn">${esc(t('mt.fingersThin', q.n))}</p>`;
+    }
     // the shade is always a closed cylinder here: rate it at Bend 100 %
-    const sp = { ...p, mode: p.shellMode || 'pattern' }, fs = flexSummary(sp, doc.shell, 100), mat = matOf(p);
+    const sp = shellOf(p), fs = flexSummary(sp, doc.shell, 100), mat = matOf(p);
     if (fs.eps != null) {
       html += `<div class="stats" style="margin-top:8px">` +
         `<div><span>${esc(t('fi.strainAt', (midDiameter(p) - p.thick).toFixed(1), 100))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
         `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(mat.name)} ≤ ${mat.ok} %</em></div></div>`;
       if (fs.status[0] !== 'ok') html += `<p class="${fs.status[0]}">${esc(t(fs.status[0] === 'bad' ? 'mt.flexBad' : 'mt.flexWarn'))}</p>`;
       html += fixHtml(p, fs);
+      if (fs.facet) html += `<p class="warn">${esc(t('fi.tabSolid', fs.facet.toFixed(1)))}</p>`;
     } else if (fs.text) html += `<p class="warn">${esc(fs.text)}</p>`;
     if (mat.plastic) html += `<p class="warn">${esc(t('mt.led'))}</p>`;
-    if (g.edge) {
-      const used = doc.mount.parts.map(q => q.pos), nt = doc.mount.notches;
+    if (doc.mount.parts.some(q => q.fix === 'edge')) {
+      const used = [...new Set(doc.mount.parts.filter(q => q.fix === 'edge').map(q => q.pos))], nt = doc.mount.notches;
       for (const pos of used) if (!nt[pos].length) html += `<p class="bad">${esc(t('mt.noNotches', pos))}</p>`;
       html += `<p>${esc(t('mt.notches', nt.top?.length ?? 0, nt.bottom?.length ?? 0))}</p>`;
     }
@@ -2476,6 +2713,7 @@ function renderInfo(p, doc) {
       }
       if (fs.status[0] !== 'ok') html += `<p>${esc(t('fi.softer'))}</p>`;
       if (doc.flex.solid && p.mode !== 'creative') html += `<p class="warn">${esc(t('fi.solid'))}</p>`;
+      if (fs.facet) html += `<p class="warn">${esc(t('fi.tabSolid', fs.facet.toFixed(1)))}</p>`;
     }
     if (view3d.overlay === 'flex') html += `<div class="legend">${['ok', 'warn', 'bad', 'rigid'].map(k => `<span><i style="background:${HEAT[k]}"></i>${esc(t('fi.lg.' + k))}</span>`).join('')}</div>`;
   }
@@ -2594,12 +2832,140 @@ document.querySelectorAll('input[name=view]').forEach(el => el.addEventListener(
   try { localStorage.setItem('kerf-view', viewMode); } catch (e) {}
   render();
 }));
-for (const id of ['bandList', 'modList']) {
+// Drag a band or modulator by its header to reorder it (pointer events: mouse,
+// pen and touch). The card is lifted and follows the pointer, a placeholder
+// marks where it will land, the other cards slide aside, and the list scrolls
+// near its edges. The ↑/↓ buttons stay for the keyboard.
+function cardPointerDown(e) {
+  const head = e.target.closest('.card-head');
+  if (!head || e.target.closest('button, input, label') || e.button > 0) return;
+  e.preventDefault();
+  const x0 = e.clientX, y0 = e.clientY;
+  const move = ev => {
+    if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+    stop();
+    startCardDrag(head, e, ev.clientY);
+  };
+  const up = () => {   // a click without moving: collapse or expand the card
+    stop();
+    const item = listOf(head.dataset.list)[+head.dataset.i];
+    item.collapsed = !item.collapsed;
+    renderCreativeUI();
+  };
+  const stop = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', stop); };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', stop);
+}
+function startCardDrag(head, e, yNow) {
+  const card = head.closest('.card'), box = card.parentElement, list = head.dataset.list, from = +head.dataset.i;
+  const scroller = box.closest('.panel'), r = card.getBoundingClientRect(), offY = e.clientY - r.top;
+  const ph = document.createElement('div');
+  ph.className = 'card-ph';
+  ph.style.height = r.height + 'px';
+  box.insertBefore(ph, card);
+  Object.assign(card.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px' });
+  card.classList.add('dragging');
+  document.body.classList.add('card-drag');
+  let y = yNow, raf = 0, done = false;
+  // slide the other cards from their old to their new place
+  const slide = change => {
+    const others = [...box.children].filter(c => c !== card && c !== ph);
+    const before = new Map(others.map(c => [c, c.getBoundingClientRect().top]));
+    change();
+    for (const c of others) {
+      const d = before.get(c) - c.getBoundingClientRect().top;
+      if (!d) continue;
+      c.style.transition = 'none';
+      c.style.transform = `translateY(${d}px)`;
+      c.offsetHeight;   // apply before animating back
+      c.style.transition = 'transform .15s ease-out';
+      c.style.transform = '';
+    }
+  };
+  const place = () => {
+    card.style.top = (y - offY) + 'px';
+    // the pointer passes a card's middle: the placeholder moves past it (positions without the placeholder)
+    const cy = y, others = [...box.children].filter(c => c !== card && c !== ph);
+    let top = box.getBoundingClientRect().top, k = 0;
+    for (const c of others) {
+      const h = c.offsetHeight, t0 = top + 8;
+      if (cy > t0 + h / 2) k++;
+      top = t0 + h;
+    }
+    if ([...box.children].filter(c => c !== card).indexOf(ph) !== k) slide(() => box.insertBefore(ph, others[k] || null));
+  };
+  const frame = () => {
+    if (done) return;
+    // auto-scroll near the edges of the panel
+    const sr = scroller.getBoundingClientRect(), edge = 48;
+    if (y < sr.top + edge) scroller.scrollTop -= Math.ceil((sr.top + edge - y) / 4);
+    else if (y > sr.bottom - edge) scroller.scrollTop += Math.ceil((y - sr.bottom + edge) / 4);
+    place();
+    raf = requestAnimationFrame(frame);
+  };
+  const move = ev => { y = ev.clientY; };
+  const end = ev => {
+    done = true;
+    cancelAnimationFrame(raf);
+    if (ev.type === 'pointerup' && ev.clientY) { y = ev.clientY; place(); }   // a quick drag may end before the next frame
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', end);
+    window.removeEventListener('pointercancel', end);
+    const to = [...box.children].filter(c => c !== card).indexOf(ph);
+    // let the card settle into the placeholder, then rebuild the list
+    card.classList.add('settle');
+    card.style.top = ph.getBoundingClientRect().top + 'px';
+    setTimeout(() => {
+      document.body.classList.remove('card-drag');
+      const arr = listOf(list);
+      if (to >= 0 && to !== from) arr.splice(to, 0, arr.splice(from, 1)[0]);
+      renderCreativeUI();
+      if (to !== from) render();
+    }, 170);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
+  raf = requestAnimationFrame(frame);
+}
+// ↺ on every section: back to the values in the page markup (bands and
+// modulators: none). Material fields and creative cards are left alone.
+function resetSection(det) {
+  const name = [...det.querySelector('summary').querySelectorAll('span')].find(sp => !sp.hidden)?.textContent || '';
+  if (!confirm(t('reset.secConfirm', name))) return;
+  for (const el of det.querySelectorAll('input, select')) {
+    if (el.dataset.list || el.hasAttribute('data-nomain') || el.id === 'diameter') continue;
+    if (el.type === 'checkbox') el.checked = el.defaultChecked;
+    else if (el.tagName === 'SELECT') el.value = ([...el.options].find(o => o.defaultSelected) || el.options[0]).value;
+    else el.value = el.defaultValue;
+  }
+  if (det.contains($('bandList'))) creative.bands = [];
+  if (det.contains($('modList'))) creative.mods = [];
+  if (det.contains($('partList'))) lampParts = defaultParts();
+  syncDiameter();
+  renderCreativeUI();
+  render();
+}
+for (const det of document.querySelectorAll('#design details.sec')) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'reset'; b.textContent = '↺';
+  b.dataset.i18nTitle = 'reset.sec'; b.dataset.i18nAria = 'reset.sec';
+  b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); resetSection(det); });
+  det.querySelector('summary').append(b);
+}
+for (const id of ['bandList', 'modList', 'partList']) {
   $(id).addEventListener('input', creativeInput);
   $(id).addEventListener('click', creativeClick);
+  $(id).addEventListener('pointerdown', cardPointerDown);
 }
 $('addBand').onclick = () => { creative.bands.push(newBand(readParams())); renderCreativeUI(); render(); };
 $('addMod').onclick = () => { creative.mods.push(newMod(readParams())); renderCreativeUI(); render(); };
+$('addPart').onclick = () => {
+  // a new part goes between the others: from the top, a third of the way down
+  lampParts.push({ ...newPart('top'), kind: 'ring', offset: Math.round(readParams().boardH / 3) });
+  renderCreativeUI(); render();
+};
 $('imgFile').onchange = e => { const file = e.target.files[0]; e.target.value = ''; if (file) loadImage(file); };
 
 // ---------------------------------------------------------------- export
@@ -2628,8 +2994,8 @@ async function exportAs(fmt) {
   try {
     await new Promise(r => setTimeout(r, 20));   // let the button repaint
     if (fmt === 'png') {
-      const tile = await buildTile(p);
-      download(await pngWithParams(tile.blob, paramsJSON(p)), `${base}_tile_${fmt3(tile.w)}x${fmt3(tile.h)}mm.png`);
+      const tile = p.mode === 'creative' ? await buildCreativeTexture(p, doc) : await buildTile(p);
+      download(await pngWithParams(tile.blob, paramsJSON(p)), `${base}_${tile.kind || 'tile'}_${fmt3(tile.w)}x${fmt3(tile.h)}mm.png`);
     } else {
       await ensureGeoLibs();
       const mount = p.mode === 'mount', bend = mount ? 100 : view3d.bend;
@@ -2663,6 +3029,47 @@ $('saveMenu').addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (!e.target.closest('.savegroup')) toggleSaveMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('saveMenu').hidden) { toggleSaveMenu(false); $('saveMenuBtn').focus(); } });
+
+// Creative texture: bands and modulators are not periodic, so the square tile
+// would lose them. When the design only changes from top to bottom, a stripe
+// of two columns over the full height repeats around the cylinder; otherwise
+// the whole board is the texture (seamless around when "Seamless" is on).
+function variesAcross(p) {
+  return p.creative.mods.some(m => {
+    if (m.off) return false;
+    if (m.source === 'linear' || m.source === 'wave') return Math.abs(Math.cos((m.angle || 0) * Math.PI / 180)) > 1e-6;
+    return true;   // radial, noise, image
+  });
+}
+function buildCreativeTexture(p, doc) {
+  const H = doc.h, cols = doc.gen?.cols || [];
+  let x0 = 0, w = doc.bw ?? doc.w, kind = 'texture';
+  if (!variesAcross(p) && cols.length >= 4) {
+    const k = 2 * Math.floor(cols.length / 4), step = cols[k + 1].x - cols[k].x;   // the true pitch (Seamless adjusts it)
+    x0 = cols[k].x - step / 2; w = 2 * step; kind = 'stripe';
+  }
+  const cuts = doc.recs.flatMap(r => r.els || []);
+  return rasterMask(cuts, x0, 0, w, H, Math.min(20, 4096 / Math.max(w, H))).then(r => ({ ...r, w, h: H, kind }));
+}
+// white = material, black = hole, at s px per mm
+function rasterMask(cuts, x0, y0, w, h, s) {
+  const W = Math.max(1, Math.round(w * s)), Hp = Math.max(1, Math.round(h * s));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${Hp}" viewBox="${f(x0)} ${f(y0)} ${f(w)} ${f(h)}" preserveAspectRatio="none">` +
+    `<rect x="${f(x0)}" y="${f(y0)}" width="${f(w)}" height="${f(h)}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="${KERF}">${cuts.join('')}</g></svg>`;
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    const im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = Hp;
+      cv.getContext('2d').drawImage(im, 0, 0, W, Hp);
+      cv.toBlob(blob => blob ? resolve({ blob }) : reject(new Error('png')), 'image/png');
+    };
+    im.onerror = reject;
+    im.src = url;
+  });
+}
 
 // Texture: a seamless tile of the base pattern (bands and modulators are left
 // out – they are not periodic). The pattern repeats every 2 columns across and
@@ -2918,8 +3325,8 @@ function buildAssembly(p, doc) {
   const sd = doc.shell, H = sd.h, th = p.thick;
   const shell = buildMesh(p, sd, 1), parts = [];
   for (const prt of doc.mount.parts) {
-    const onEnds = doc.mount.g.tabs, tris = extrudeParts(prt.els.outer, prt.els.holes, th);
-    const z0 = prt.pos === 'top' ? (onEnds ? H : H - th) : (onEnds ? -th : 0);
+    const onEnds = prt.fix === 'tabs', tris = extrudeParts(prt.els.outer, prt.els.holes, th), o = prt.offset || 0;
+    const z0 = prt.pos === 'top' ? (onEnds ? H : H - o - th) : (onEnds ? -th : o);
     // part plane → horizontal, mirrored in y like the 3D view so slots meet the tabs; swap b/c to keep normals outward
     const v = k => [tris[k] - prt.cx, -(tris[k + 1] + prt.cy), z0 + tris[k + 2]];
     for (let k = 0; k < tris.length; k += 9) parts.push(...v(k), ...v(k + 6), ...v(k + 3));
