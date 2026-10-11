@@ -78,6 +78,20 @@
   label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
   label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
   .rows { display: flex; flex-direction: column; gap: 6px; }
+  .pnginfo { margin-top: 8px; }
+  .pnginfo .tex { height: 84px; margin-top: 6px; border: 1px solid var(--line); border-radius: 4px; background-color: #fff; image-rendering: auto; }
+  .cutprev { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+  .cutprev .cprow { display: flex; align-items: center; gap: 6px; width: 58%; }
+  .cutprev input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .cutprev button { padding: 2px 7px; font-size: 11px; line-height: 1.4; }
+  #cutCount { font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
+  #stage.cutprev .cuts > * { stroke: var(--muted); stroke-opacity: .25; }
+  #stage.cutprev .cuts > .done { stroke: var(--cut); stroke-opacity: 1; }
+  #stage.cutprev .cuts > .now { stroke: var(--accent); stroke-opacity: 1; stroke-width: 3.5; }
+  #stage.cutprev .boards { stroke-opacity: .25; }
+  #stage.cutprev .boards.done { stroke: var(--cut); stroke-opacity: 1; }
+  #stage.cutprev .boards.now { stroke: var(--accent); stroke-opacity: 1; stroke-width: 3; }
+  #stage .travel { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; vector-effect: non-scaling-stroke; }
   label.inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
   label.inline > input, label.inline > select { width: 58%; flex: 0 0 58%; min-width: 0; }
   input[type=number], input[type=text], select {
@@ -291,6 +305,7 @@
         <option value="none" data-i18n="joint.none"></option>
         <option value="tab" data-i18n="joint.tab"></option>
         <option value="fingers" data-i18n="joint.fingers"></option>
+        <option value="pattern" data-i18n="joint.pattern"></option>
       </select></label>
       <label><span data-i18n="jointSize"></span><input type="number" id="jointSize" value="10" min="1" step="0.5"></label>
     </div>
@@ -420,10 +435,15 @@
     <h2 data-i18n="sec.output"></h2>
     <div class="rows">
       <label class="inline"><span data-i18n="kerf"></span><input type="number" id="kerf" value="0" min="0" max="1" step="0.01"></label>
-      <label class="inline" data-modes="pattern creative test"><span data-i18n="order"></span><select id="order">
+      <label class="inline" data-modes="pattern creative test mount"><span data-i18n="order"></span><select id="order">
         <option value="zigzag" data-i18n="ord.zigzag"></option>
         <option value="skip" data-i18n="ord.skip"></option>
+        <option value="spread" data-i18n="ord.spread"></option>
       </select></label>
+      <div class="cutprev inline" data-modes="pattern creative test mount">
+        <span data-i18n="cp.label"></span>
+        <span class="cprow"><button type="button" id="cutPlay" data-i18n-aria="cp.play">▶</button><input type="range" id="cutStep" min="0" max="1" value="1" step="1" data-nomain><span id="cutCount"></span></span>
+      </div>
     </div>
     <div class="checks">
       <label class="check" data-modes="pattern creative"><input type="checkbox" id="border" checked> <span data-i18n="border"></span></label>
@@ -442,6 +462,7 @@
   <section>
     <h2 data-i18n="sec.file"></h2>
     <div class="info" id="info"></div>
+    <div class="info pnginfo" id="pngInfo" hidden></div>
   </section>
 
   <footer class="credit">
@@ -503,16 +524,18 @@ const STR = {
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Cut file for the laser cutter',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 100 % in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0 % in the 3D view)' : `3D model bent ${b} % (Bend in the 3D view)`,
     'save.obj': 'Save OBJ', 'save.png': 'Save PNG',
-    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Mask texture, e.g. for Blender: a square tile, in Creative a full-height stripe or the whole board',
+    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Mask texture, e.g. for Blender',
     'stl.busy': 'Exporting…', 'stl.fail': 'Export failed (the geometry libraries could not be loaded – offline?).',
     'alert.stlTest': '3D and PNG export are available in Simple and Creative mode.',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
     'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
     'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
     'seamless': 'Seamless: fit column count to circumference',
-    'joint': 'Seam joint', 'joint.none': 'None', 'joint.tab': 'Glue tab', 'joint.fingers': 'Finger joint', 'jointSize': 'Size (mm)',
+    'joint': 'Seam joint', 'joint.none': 'None', 'joint.tab': 'Glue tab', 'joint.fingers': 'Finger joint', 'joint.pattern': 'Pattern join', 'jointSize': 'Size (mm)',
     'joint.tab.d': 'A solid tab of this width is added past the circumference; the other end overlaps it for gluing.',
     'joint.fingers.d': 'Fingers of this depth on the right edge fit into matching notches on the left edge.',
+    'joint.pattern.d': 'The seam runs through the pattern: both ends get fingers one column wide and one row high that interlock, so the pattern continues across the seam. Glue the fingers. Needs Seamless; side margins are ignored.',
+    'joint.pattern.off': 'Pattern join needs Seamless (and at least four columns) – turn it on.',
     'joint.border': ' The outer border is always cut.',
     'kerf': 'Laser kerf (mm)',
     'sec.shape': 'Shape', 'sec.slot': 'Slots',
@@ -526,7 +549,12 @@ const STR = {
     'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex heatmap',
     'bend': 'Bend', 'explode': 'Explode', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
-    'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
+    'png.title': 'PNG texture', 'png.hint': 'White = material, black = hole. The preview shows how it repeats.',
+    'png.tile': (w, h) => `Seamless square tile of the pattern: ${w} × ${h} mm, 2048 × 2048 px – repeats in both directions.`,
+    'png.stripe': (w, h) => `The design only changes from top to bottom: a stripe two columns wide over the full height, ${w} × ${h} mm – repeat it around the cylinder.`,
+    'png.board': (w, h, seam) => `The design also changes across the board: the whole board, ${w} × ${h} mm${seam ? ', seamless around' : ' – turn on Seamless for a seamless repeat'}.`,
+    'png.na': 'PNG textures are available in Simple and Creative mode.',
+    'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first', 'ord.spread': 'Spread out', 'cp.label': 'Cut preview', 'cp.play': 'Play the cut order',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
     'rotate': 'Rotate output by 90°', 'paramVisible': 'Parameter layer visible',
     'sec.flex': 'Bendability', 'sec.file': 'File', 'credit.link': 'Source on GitHub (MIT)', 'reset': 'Reset settings', 'reset.confirm': 'Reset all settings to the defaults?',
@@ -540,7 +568,8 @@ const STR = {
     'sec.mods': 'Modulators',
     'mods.desc': 'Each modulator maps a source (gradient, waves, noise, image) onto a slot property. They are applied from top to bottom.',
     'mods.add': '+ Add modulator', 'mod.n': i => `Modulator ${i}`,
-    'mod.target': 'Changes', 'tg.slotW': 'Slot width', 'tg.slotH': 'Slot length', 'tg.skip': 'Remove slots', 'tg.shape': 'Swap shape',
+    'mod.shiftHint': 'Moves each slot up or down by this many mm. Slots in one column always keep the minimum gap, so a slot is pushed along when its neighbour moves into it.',
+    'mod.target': 'Changes', 'tg.slotW': 'Slot width', 'tg.slotH': 'Slot length', 'tg.shiftY': 'Vertical shift', 'tg.skip': 'Remove slots', 'tg.shape': 'Swap shape',
     'mod.source': 'Source', 'src.linear': 'Linear gradient', 'src.radial': 'Radial', 'src.wave': 'Waves', 'src.noise': 'Noise', 'src.image': 'Image',
     'mod.from': 'From (mm)', 'mod.to': 'To (mm)', 'mod.strength': 'Strength (%)', 'mod.threshold': 'Threshold (%)',
     'mod.shapeB': 'New shape', 'mod.invert': 'Invert', 'mod.angle': 'Angle (°)', 'mod.mirror': 'Mirror (center ↔ edges)',
@@ -667,16 +696,18 @@ const STR = {
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Schnittdatei für den Laser',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Bend 100 % in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Bend 0 % in der 3D-Ansicht)' : `3D-Modell, ${b} % gebogen (Bend in der 3D-Ansicht)`,
     'save.obj': 'OBJ speichern', 'save.png': 'PNG speichern',
-    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Masken-Textur, z. B. für Blender: quadratische Kachel, in Creative ein Streifen über die volle Höhe oder die ganze Platte',
+    'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Masken-Textur, z. B. für Blender',
     'stl.busy': 'Exportiere…', 'stl.fail': 'Export fehlgeschlagen (Geometrie-Bibliotheken nicht ladbar – offline?).',
     'alert.stlTest': '3D- und PNG-Export gibt es im Simple- und Creative-Modus.',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
     'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
     'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
     'seamless': 'Nahtlos: Spaltenzahl an Umfang anpassen',
-    'joint': 'Naht-Verbindung', 'joint.none': 'Keine', 'joint.tab': 'Klebelasche', 'joint.fingers': 'Fingerzinken', 'jointSize': 'Größe (mm)',
+    'joint': 'Naht-Verbindung', 'joint.none': 'Keine', 'joint.tab': 'Klebelasche', 'joint.fingers': 'Fingerzinken', 'joint.pattern': 'Muster-Verzahnung', 'jointSize': 'Größe (mm)',
     'joint.tab.d': 'Eine volle Lasche dieser Breite wird hinter dem Umfang angesetzt; das andere Ende überlappt sie zum Verkleben.',
     'joint.fingers.d': 'Zinken dieser Tiefe an der rechten Kante greifen in passende Aussparungen an der linken Kante.',
+    'joint.pattern.d': 'Die Naht läuft durch das Muster: Beide Enden bekommen Finger, eine Spalte breit und eine Reihe hoch, die ineinandergreifen – das Muster läuft über die Naht weiter. Die Finger verkleben. Braucht Seamless; Seitenränder entfallen.',
+    'joint.pattern.off': 'Muster-Verzahnung braucht Seamless (und mindestens vier Spalten) – bitte einschalten.',
     'joint.border': ' Die Außenkontur wird immer geschnitten.',
     'kerf': 'Laserfuge (mm)',
     'sec.shape': 'Form', 'sec.slot': 'Schlitz',
@@ -690,7 +721,12 @@ const STR = {
     'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap',
     'bend': 'Biegung', 'explode': 'Explode', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Seitenrand (mm)', 'order': 'Schnittreihenfolge',
-    'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
+    'png.title': 'PNG-Textur', 'png.hint': 'Weiß = Material, schwarz = Loch. Die Vorschau zeigt die Wiederholung.',
+    'png.tile': (w, h) => `Nahtlose quadratische Kachel des Musters: ${w} × ${h} mm, 2048 × 2048 px – wiederholt sich in beide Richtungen.`,
+    'png.stripe': (w, h) => `Der Entwurf ändert sich nur von oben nach unten: ein Streifen, zwei Spalten breit über die volle Höhe, ${w} × ${h} mm – rundherum wiederholen.`,
+    'png.board': (w, h, seam) => `Der Entwurf ändert sich auch quer: die ganze Platte, ${w} × ${h} mm${seam ? ', rundherum nahtlos' : ' – für nahtlose Wiederholung Seamless einschalten'}.`,
+    'png.na': 'PNG-Texturen gibt es im Simple- und Creative-Modus.',
+    'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst', 'ord.spread': 'Verteilt', 'cp.label': 'Schnitt-Vorschau', 'cp.play': 'Schnittreihenfolge abspielen',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
     'rotate': 'Um 90° gedreht ausgeben', 'paramVisible': 'Parameter-Layer sichtbar',
     'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei', 'credit.link': 'Quellcode auf GitHub (MIT)', 'reset': 'Einstellungen zurücksetzen', 'reset.confirm': 'Alle Einstellungen auf Standard zurücksetzen?',
@@ -704,7 +740,8 @@ const STR = {
     'sec.mods': 'Modulatoren',
     'mods.desc': 'Jeder Modulator legt eine Quelle (Verlauf, Wellen, Rauschen, Bild) auf eine Schlitz-Eigenschaft. Sie wirken von oben nach unten.',
     'mods.add': '+ Modulator hinzufügen', 'mod.n': i => `Modulator ${i}`,
-    'mod.target': 'Ändert', 'tg.slotW': 'Schlitzbreite', 'tg.slotH': 'Schlitzlänge', 'tg.skip': 'Schlitze weglassen', 'tg.shape': 'Form tauschen',
+    'mod.shiftHint': 'Verschiebt jeden Schlitz um so viele mm nach oben oder unten. Schlitze in einer Spalte behalten immer den Mindestabstand – rückt ein Nachbar heran, wird der Schlitz mitgeschoben.',
+    'mod.target': 'Ändert', 'tg.slotW': 'Schlitzbreite', 'tg.slotH': 'Schlitzlänge', 'tg.shiftY': 'Vertikal versetzen', 'tg.skip': 'Schlitze weglassen', 'tg.shape': 'Form tauschen',
     'mod.source': 'Quelle', 'src.linear': 'Linearer Verlauf', 'src.radial': 'Radial', 'src.wave': 'Wellen', 'src.noise': 'Rauschen', 'src.image': 'Bild',
     'mod.from': 'Von (mm)', 'mod.to': 'Bis (mm)', 'mod.strength': 'Stärke (%)', 'mod.threshold': 'Schwelle (%)',
     'mod.shapeB': 'Neue Form', 'mod.invert': 'Umkehren', 'mod.angle': 'Winkel (°)', 'mod.mirror': 'Spiegeln (Mitte ↔ Ränder)',
@@ -943,7 +980,7 @@ const defaultParts = () => [newPart('top'), newPart('bottom')];
 let lampParts = defaultParts();
 // the card lists: bands and modulators of the Creative design, parts of the lamp
 const listOf = name => name === 'parts' ? lampParts : creative[name];
-const MOD_TARGETS = ['slotW', 'slotH', 'skip', 'shape'];
+const MOD_TARGETS = ['slotW', 'slotH', 'shiftY', 'skip', 'shape'];
 const MOD_SOURCES = ['linear', 'radial', 'wave', 'noise', 'image'];
 
 function newBand(p) {
@@ -1243,11 +1280,16 @@ function generate(p, w, h, x0, x1, slotFn) {
       return out;
     }
     const base = mod((k % 2 ? 0 : stepY / 2) + offset, stepY);
-    for (let y = base - stepY; y < h + stepY; y += stepY) {
-      const sp = slotFn ? slotFn(c.x, y) : fixed;
+    let prevBot = -Infinity;   // lower end of the previous slot in this column
+    for (let yn = base - stepY; yn < h + stepY; yn += stepY) {
+      const sp = slotFn ? slotFn(c.x, yn) : fixed;
       const S = SHAPES[sp.shape], hh = sp.hh, hw = S.line ? 0 : sp.hw;
+      // a vertical shift moves the slot off its grid row; it never comes closer than MIN_GAP to the slot above
+      let y = yn + (sp.dy || 0);
+      if (!sp.skip && y - hh < prevBot + MIN_GAP - 1e-9) y = prevBot + MIN_GAP + hh;
+      if (!sp.skip) prevBot = y + hh;
       if (y - hh >= h || y + hh <= 0) continue;
-      const rec = { k, x: c.x, y, hw, hh, shape: sp.shape, status: 'cut', els: null };
+      const rec = { k, x: c.x, y, yn, hw, hh, shape: sp.shape, status: 'cut', els: null };
       if (sp.skip) rec.status = 'skip';
       else if (inPatch(c.x, y, hw, hh)) rec.status = 'tab';   // solid around a wall slot
       else if (S.line) {
@@ -1273,7 +1315,9 @@ function generate(p, w, h, x0, x1, slotFn) {
 
 // Zigzag through the columns (alternating direction) to keep travel short.
 // "skip" cuts every other column first so heat can spread before the neighbour is cut.
+// "spread" jumps across the whole field (see spreadCuts).
 function orderCuts(columns, mode) {
+  if (mode === 'spread') return spreadCuts(columns.flat());
   const idx = columns.map((_, i) => i);
   const seq = mode === 'skip' ? [...idx.filter(i => i % 2 === 0), ...idx.filter(i => i % 2)] : idx;
   const out = [];
@@ -1282,6 +1326,35 @@ function orderCuts(columns, mode) {
     if (n % 2) col.reverse();
     for (const c of col) out.push(...c.els);
   });
+  return out;
+}
+
+// Spread: each next cut is as far as possible from the last few, so every spot
+// can cool down before the laser comes back near it – more travel, less local
+// heat (acrylic warps less). Candidates are sampled with a fixed seed, so the
+// order is stable and fast even for thousands of slots.
+function spreadCuts(recs) {
+  const left = recs.filter(r => r.els && r.els.length);
+  if (left.length < 3) return left.flatMap(r => r.els);
+  let seed = 20261011;
+  const rnd = () => (seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) / 4294967296;
+  const out = [], recent = [];
+  let cur = left.splice(0, 1)[0];
+  for (;;) {
+    out.push(...cur.els);
+    recent.push(cur);
+    if (recent.length > 8) recent.shift();
+    if (!left.length) break;
+    const tries = Math.min(left.length, 48);
+    let best = 0, bestD = -1;
+    for (let t = 0; t < tries; t++) {
+      const i = tries === left.length ? t : Math.floor(rnd() * left.length), c = left[i];
+      let d = Infinity;
+      for (const r of recent) { const dd = (c.x - r.x) ** 2 + (c.y - r.y) ** 2; if (dd < d) d = dd; }
+      if (d > bestD) { bestD = d; best = i; }
+    }
+    cur = left[best]; left[best] = left[left.length - 1]; left.pop();
+  }
   return out;
 }
 
@@ -1435,7 +1508,7 @@ function creativeSlotFn(p, W, H) {
   const mods = creative.mods.filter(m => !m.off).map(m => ({ m, fn: modSource(m, W, H, p.seamless) })).filter(o => o.fn);
   const num = v => v === null || v === '' || v === undefined || isNaN(+v) ? null : +v;
   return (x, y) => {
-    let shape = baseShape, sw = p.slotW, sh = p.slotH, skip = false;
+    let shape = baseShape, sw = p.slotW, sh = p.slotH, skip = false, dy = 0;
     if (bands.length) {
       let i = ends.findIndex(e => y < e);
       if (i < 0) i = bands.length - 1;
@@ -1453,10 +1526,12 @@ function creativeSlotFn(p, W, H) {
       else if (m.target === 'shape') { if (v > m.threshold / 100 && SHAPES[m.shapeB]) shape = m.shapeB; }
       else {
         const mapped = m.from + (m.to - m.from) * v, s = clamp(m.strength / 100, 0, 1);
-        if (m.target === 'slotW') sw += (mapped - sw) * s; else sh += (mapped - sh) * s;
+        if (m.target === 'slotW') sw += (mapped - sw) * s;
+        else if (m.target === 'shiftY') dy += mapped * s;
+        else sh += (mapped - sh) * s;
       }
     }
-    return { shape, hw: clamp(sw / 2, 0, maxHw), hh: clamp(sh / 2, 0.25, maxHh), skip };
+    return { shape, hw: clamp(sw / 2, 0, maxHw), hh: clamp(sh / 2, 0.25, maxHh), skip, dy };
   };
 }
 
@@ -1487,20 +1562,21 @@ function flexAnalysis(p, gen) {
   const { cols, slots, stepY, h } = gen;
   if (cols.length < 2) return { reason: 'r.cols' };
   const key = (k, y) => k + ':' + Math.round(y * 1000);
-  const byKey = new Map(slots.map(s => [key(s.k, s.y), s]));
+  const byKey = new Map(slots.map(s => [key(s.k, s.yn ?? s.y), s]));
   for (const s of slots) { s.kf = 0; s.rigid = false; }
   let worst = 0, solid = false, tabSolid = false, links = 0;
   for (const A of slots) {
     if (A.k >= cols.length - 1 || A.status === 'edge') continue;
     const dx = cols[A.k + 1].x - A.x;
     for (const dy of [-stepY / 2, stepY / 2]) {
-      const yb = A.y + dy;
+      const yb = (A.yn ?? A.y) + dy;   // neighbours by grid row; a vertical shift only moves them
       if (yb < 0 || yb > h) continue;
       const B = byKey.get(key(A.k + 1, yb));
       if (!B || B.status === 'edge') continue;
       links++;
       const bar = dx - (A.hw + B.hw);
-      const Lt = A.hh + B.hh - stepY / 2;
+      // free length of the bridge: how far the two slots overlap (their real, possibly shifted positions)
+      const Lt = Math.min(A.y + A.hh, B.y + B.hh) - Math.max(A.y - A.hh, B.y - B.hh);
       // the wall under a Lamp tab is solid: no bridge to twist there (drawn as its own rigid zone)
       if (A.status === 'tab' || B.status === 'tab') { tabSolid = true; continue; }
       if (A.status === 'skip' || B.status === 'skip' || Lt <= 0 || bar <= 0) {
@@ -1618,6 +1694,65 @@ function boardOutline(p, W, H, withJoint = true) {
   // drop repeated points (e.g. a tab starting right at a corner)
   return pts.filter((q, i) => { const r = pts[(i + 1) % pts.length]; return q[0] !== r[0] || q[1] !== r[1]; });
 }
+// Move an SVG element (as a string) by dx along x – for slots that move to
+// the other end of the board in a pattern join. Paths use absolute commands.
+// per absolute path command: numbers per set, indices of x and of y values
+const PATH_XY = { M: [2, [0], [1]], L: [2, [0], [1]], T: [2, [0], [1]], H: [1, [0], []], V: [1, [], [0]], C: [6, [0, 2, 4], [1, 3, 5]], S: [4, [0, 2], [1, 3]], Q: [4, [0, 2], [1, 3]], A: [7, [5], [6]] };
+function shiftPath(d, dx, dy = 0) {
+  let out = '', cmd = '', idx = 0;
+  for (const tk of d.match(/[A-Za-z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) || []) {
+    if (/[A-Za-z]/.test(tk)) { cmd = tk; idx = 0; out += (out ? ' ' : '') + tk; continue; }
+    const spec = PATH_XY[cmd], j = spec ? idx % spec[0] : -1;
+    let v = +tk;
+    if (spec && spec[1].includes(j)) v = f(v + dx);
+    else if (spec && spec[2].includes(j)) v = f(v + dy);
+    out += (idx ? ' ' : '') + v; idx++;
+  }
+  return out;
+}
+function shiftEl(el, dx, dy = 0) {
+  return el
+    .replace(/\sd="([^"]*)"/, (m, d) => ` d="${shiftPath(d, dx, dy)}"`)
+    .replace(/\s(x1|x2|cx|x|y1|y2|cy|y)="(-?[\d.e+-]+)"/g, (m, k, v) => ` ${k}="${f(+v + (k[0] === 'x' || k === 'cx' ? dx : dy))}"`)
+    .replace(/\spoints="([^"]*)"/, (m, pts) => ` points="${pts.trim().split(/\s+/).map(q => { const [x, y] = q.split(','); return `${f(+x + dx)},${f(+y + dy)}`; }).join(' ')}"`);
+}
+// Pattern join: the seam runs through the pattern instead of straight down.
+// It follows the middle of the bars beside the first slot column and changes
+// sides once per row (between two slots of that column), so no slot is cut:
+// both ends get fingers one column wide and one row high that interlock when
+// the board is rolled up. The first column's slots in the rows that end up on
+// the far side move there (x + W). Returns the outline, or null.
+function patternJoin(p, gen, W, H) {
+  if (p.joint !== 'pattern' || !p.seamless || !gen || gen.cols.length < 4) return null;
+  const s = gen.cols[1].x - gen.cols[0].x, x0 = gen.cols[0].x, stepY = gen.stepY;
+  const any = gen.slots.find(r => r.k === 0);
+  if (!any || !(stepY > 0)) return null;
+  const y0 = any.yn ?? any.y, row = y => Math.round((y - y0) / stepY);
+  const far = y => ((row(y) % 2) + 2) % 2 === 1;
+  const moved = [];
+  gen.columns[0] = gen.columns[0].filter(r => {
+    if (!far(r.yn ?? r.y)) return true;
+    r.x += W; r.els = r.els.map(e => shiftEl(e, W)); moved.push(r);
+    return false;
+  });
+  gen.columns.push(moved);   // cut last, at the far end
+  for (const r of gen.slots) if (r.k === 0 && r.status !== 'cut' && far(r.yn ?? r.y)) r.x += W;
+  const L = y => far(y) ? x0 + s / 2 : x0 - s / 2;
+  const cross = [];
+  for (let m = Math.floor(-y0 / stepY) - 1; ; m++) { const yc = y0 + (m + 0.5) * stepY; if (yc >= H - 1e-6) break; if (yc > 1e-6) cross.push(yc); }
+  const tTop = edgeTabs(p, 'top'), tBot = edgeTabs(p, 'bottom'), spans = tabSpans(p, W);
+  const a0 = L(0), aH = L(H);
+  const pts = [[a0, 0]];
+  if (tTop) for (const [a, b] of spans) if (a > a0 && b < a0 + W) pts.push([a, 0], [a, -tTop], [b, -tTop], [b, 0]);
+  pts.push([a0 + W, 0]);
+  for (const yc of cross) pts.push([L(yc - 1e-6) + W, yc], [L(yc + 1e-6) + W, yc]);
+  pts.push([aH + W, H]);
+  if (tBot) for (const [a, b] of [...spans].reverse()) if (a > aH && b < aH + W) pts.push([b, H], [b, H + tBot], [a, H + tBot], [a, H]);
+  pts.push([aH, H]);
+  for (const yc of [...cross].reverse()) pts.push([L(yc + 1e-6), yc], [L(yc - 1e-6), yc]);
+  return pts.filter((q, i) => { const r = pts[(i + 1) % pts.length]; return q[0] !== r[0] || q[1] !== r[1]; });
+}
+
 // Offset a rectilinear polygon outward by k (kerf compensation of the outline).
 function offsetOutline(pts, k) {
   if (!k) return pts;
@@ -1806,7 +1941,7 @@ function buildMountDoc(p) {
   for (const pos of ['top', 'bottom']) if (parts.some(q => q.fix === 'edge' && q.from === pos)) doc.mount.notches[pos] = edgeNotches(p, doc.shell, pos);
   // the complete cut set: the flat shade on top (its outline is always cut here) …
   const sh = doc.shell, pad = sh.padY || 0, move = `translate(0,${f(pad)})`;
-  if (sh.cuts.length) doc.cuts.push(`<g transform="${move}">${sh.cuts.join('')}</g>`);
+  doc.cuts.push(...(pad ? sh.cuts.map(e => shiftEl(e, 0, pad)) : sh.cuts));   // one by one, so the cut order and its preview reach into the shade
   const shellOutline = sh.borders.length ? sh.borders : [outlinePath(offsetOutline(sh.outline, k2))];
   doc.borders.push(`<g transform="${move}">${shellOutline.join('')}</g>`);
   if (sh.labels.length) doc.labels.push(`<g transform="${move}">${sh.labels.join('')}</g>`);   // position marks
@@ -1846,6 +1981,7 @@ function buildDoc(p) {
   if (p.mode === 'test') {
     const short = TEST_SHORT[p.testParam];
     const w = p.testW, h = p.testH, n = p.testCount;
+    const spreadAll = [];
     for (let i = 0; i < n; i++) {
       const v = n === 1 ? p.testFrom : +(p.testFrom + (p.testTo - p.testFrom) * i / (n - 1)).toFixed(3);
       const q = { ...p, [p.testParam]: v, seamless: false };
@@ -1858,9 +1994,10 @@ function buildDoc(p) {
       doc.rows.push({ v, eps, dMin, reason: fl.reason });
       doc.boards.push({ x: 0, y: y0, w, h });
       if (gen) {
-        const cuts = orderCuts(gen.columns, p.order);
-        doc.count += cuts.length;
-        doc.cuts.push(`<g transform="translate(0,${f(y0)})">${cuts.join('')}</g>`);
+        // the cuts one by one at the strip's place, so the order and its preview cover every strip
+        const cols = gen.columns.map(col => col.map(r => ({ ...r, y: r.y + y0, els: r.els.map(e => shiftEl(e, 0, y0)) })));
+        if (p.order === 'spread') spreadAll.push(...cols.flat());   // spread over all strips together, below
+        else doc.cuts.push(...orderCuts(cols, p.order));
       }
       doc.borders.push(outlinePath(offsetOutline([[0, y0], [w, y0], [w, y0 + h], [0, y0 + h]], (p.kerf || 0) / 2)));
       // line 1 (large): varied value; then smaller: all slot values, project
@@ -1883,6 +2020,8 @@ function buildDoc(p) {
         doc.labels.push(`<text transform="translate(${x},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle" font-size="${fs}">${esc(str)}</text>`);
       });
     }
+    if (spreadAll.length) doc.cuts.push(...spreadCuts(spreadAll));
+    doc.count = doc.cuts.length;
     doc.w = w;
     doc.h = n * h + (n - 1) * TEST_SPACING;
     doc.rotate = p.rotate;
@@ -1892,15 +2031,19 @@ function buildDoc(p) {
   const w = p.boardW, h = p.boardH;
   const slotFn = p.mode === 'creative' ? creativeSlotFn(p, w, h) : null;
   // finger notches cut into the left edge: keep the pattern clear of them
-  const left = p.joint === 'fingers' ? Math.max(p.marginX, (p.jointSize || 0) + p.gapX) : p.marginX;
-  const gen = generate(p, w, h, left, w - p.marginX, slotFn);
+  // a pattern join needs the pattern to repeat exactly around: no side margins
+  const pj = p.joint === 'pattern' && p.seamless;
+  const left = p.joint === 'fingers' ? Math.max(p.marginX, (p.jointSize || 0) + p.gapX) : pj ? 0 : p.marginX;
+  const gen = generate(p, w, h, left, pj ? w : w - p.marginX, slotFn);
   doc.gen = gen;
   doc.outline = boardOutline(p, w, h);
   doc.boards.push({ x: 0, y: 0, w, h, outline: doc.outline });
   if (gen) {
+    doc.flex = flexAnalysis(p, gen);   // before the seam moves slots
+    const joined = patternJoin(p, gen, w, h);
+    if (joined) doc.outline = doc.boards[0].outline = joined;
     doc.cuts = orderCuts(gen.columns, p.order);
     doc.recs = gen.columns.flat();
-    doc.flex = flexAnalysis(p, gen);
   }
   // slots in the wall for parts held by tabs through it (also in the 3D solid and the heatmap, as rigid)
   const k2w = Math.max(0, p.kerf || 0) / 2;
@@ -1917,7 +2060,7 @@ function buildDoc(p) {
   }
   doc.count = doc.cuts.length;
   // with a seam joint the outline is part of the joint, so it is always cut
-  if (p.border || p.joint === 'tab' || p.joint === 'fingers') doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
+  if (p.border || p.joint === 'tab' || p.joint === 'fingers' || p.joint === 'pattern') doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
   doc.bw = w;   // circumference; doc.w also covers a tab or fingers past it
   doc.padY = tabHeight(p);   // mount tabs stick out above and below the board
   doc.w = Math.max(...doc.outline.map(q => q[0])); doc.h = h; doc.rotate = p.rotate;
@@ -1997,7 +2140,7 @@ function paramLines(p, doc, bendPct = view3d.bend) {
   }
   L.push(t('pl.rotated', p.rotate));
   L.push(t('pl.edges', fmt(p.marginX), p.openEdges, p.mode === 'test' || p.border));
-  if (p.mode !== 'test' && p.joint && p.joint !== 'none') L.push(t('pl.joint', t('joint.' + p.joint), `, ${fmt(p.jointSize)} mm`));
+  if (p.mode !== 'test' && p.joint && p.joint !== 'none') L.push(t('pl.joint', t('joint.' + p.joint), p.joint === 'pattern' ? '' : `, ${fmt(p.jointSize)} mm`));
   if (tabHeight(p)) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
   if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
   L.push(t('pl.order', t('ord.' + p.order)));
@@ -2085,17 +2228,18 @@ function buildSVG(p, doc) {
   out.push(`  <title>${esc(p.project || fileName(p, doc))}</title>`);
   out.push(`  <desc>${esc(lines.join(' | '))}</desc>`);
   out.push(`  <metadata id="kerf-params">${esc(paramsJSON(p))}</metadata>`);
+  // laser order: engrave first, then the inner cuts, the outer contour last (the part stays in place until then)
+  if (doc.labels.length) {
+    out.push(`  <g id="engrave" inkscape:groupmode="layer" inkscape:label="${t('layer.engrave')}" fill="#000000" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="3"${tr}>`);
+    for (const l of doc.labels) out.push('    ' + l);
+    out.push('  </g>');
+  }
   out.push(`  <g id="cuts" inkscape:groupmode="layer" inkscape:label="${t('layer.cuts')}" stroke="#ff0000" stroke-width="0.1" fill="none"${tr}>`);
   for (const c of doc.cuts) out.push('    ' + c);
   out.push('  </g>');
   if (doc.borders.length) {
     out.push(`  <g id="border" inkscape:groupmode="layer" inkscape:label="${t('layer.border')}" stroke="#ff0000" stroke-width="0.1" fill="none"${tr}>`);
     for (const b of doc.borders) out.push('    ' + b);
-    out.push('  </g>');
-  }
-  if (doc.labels.length) {
-    out.push(`  <g id="engrave" inkscape:groupmode="layer" inkscape:label="${t('layer.engrave')}" fill="#000000" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="3"${tr}>`);
-    for (const l of doc.labels) out.push('    ' + l);
     out.push('  </g>');
   }
   out.push(`  <g id="parameter" inkscape:groupmode="layer" inkscape:label="${t('layer.params')}" fill="#0000ff" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="${fs}"${paramVisible ? '' : ' style="display:none"'}>`);
@@ -2150,9 +2294,10 @@ function renderCreativeUI() {
     let h = `<div class="${cls}">${head}<div class="grid2">`;
     h += `<label>${esc(t('mod.target'))}<select data-list="mods" data-i="${i}" data-k="target" data-rebuild>${MOD_TARGETS.map(k => opt(k, t('tg.' + k), m.target)).join('')}</select></label>`;
     h += `<label>${esc(t('mod.source'))}<select data-list="mods" data-i="${i}" data-k="source" data-rebuild>${MOD_SOURCES.map(k => opt(k, t('src.' + k), m.source)).join('')}</select></label>`;
-    if (m.target === 'slotW' || m.target === 'slotH') {
+    if (m.target === 'slotW' || m.target === 'slotH' || m.target === 'shiftY') {
       h += numField('mods', i, 'from', t('mod.from'), m.from, 'step="0.1"') + numField('mods', i, 'to', t('mod.to'), m.to, 'step="0.1"');
       h += `<div class="span2">${sliderField('mods', i, 'strength', t('mod.strength'), m.strength, 0, 100, 1)}</div>`;
+      if (m.target === 'shiftY') h += `<div class="desc span2">${esc(t('mod.shiftHint'))}</div>`;
     } else {
       if (m.target === 'shape') h += `<label>${esc(t('mod.shapeB'))}<select data-list="mods" data-i="${i}" data-k="shapeB">${shapeOpts(m.shapeB)}</select></label>`;
       h += `<div class="span2">${sliderField('mods', i, 'threshold', t('mod.threshold'), m.threshold, 0, 100, 1)}</div>`;
@@ -2394,6 +2539,8 @@ function creativeInput(e) {
   if (twin) twin.value = el.value;
   // waves along the height barely show between the rows; start them across the circumference
   if (k === 'source' && item.source === 'wave' && item.angle === 90) item.angle = 0;
+  // a shift goes both ways: start at ± the vertical gap
+  if (k === 'target' && item.target === 'shiftY') { const g = parseFloat($('gapY').value) || 2; item.from = -g; item.to = g; }
   if (el.hasAttribute('data-rebuild')) renderCreativeUI();
   // keep the image preview and levels in step
   if (list === 'mods' && item.source === 'image') drawImageWidgets(el.closest('.card'), item);
@@ -2491,14 +2638,15 @@ function render() {
   if (document.activeElement !== $('matMax')) $('matMax').value = mat.max;
   if (document.activeElement !== $('matName')) $('matName').value = mat.custom ? mat.name : '';
   $('matHint').textContent = mat.custom ? t('mat.hintCustom', t('mat.' + mat.base)) : t('mat.hintPreset');
-  $('jointSize').disabled = p.joint === 'none';
+  $('jointSize').disabled = p.joint === 'none' || p.joint === 'pattern';
   const fixes = p.mountParts.map(q => partFix(p, q)), anyTabs = fixes.some(x => x === 'tabs' || x === 'through');
   $('tabsNote').hidden = !anyTabs || !['pattern', 'creative'].includes(p.mode);
   $('marksRow').hidden = p.mode !== 'mount' || !p.mountParts.some((q, i) => q.offset > 0 && fixes[i] !== 'through');
   document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = !anyTabs; });
   document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = !fixes.some(x => x === 'tabs' || x === 'edge'); });
   $('mountDesc').textContent = t('mt.desc');
-  $('jointDesc').textContent = p.joint === 'none' ? '' : t('joint.' + p.joint + '.d') + (p.border ? '' : t('joint.border'));
+  $('jointDesc').textContent = p.joint === 'none' ? '' : p.joint === 'pattern' && !p.seamless ? t('joint.pattern.off')
+    : t('joint.' + p.joint + '.d') + (p.border ? '' : t('joint.border'));
   $('testTo').disabled = p.testCount === 1;
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
   const dm = midDiameter(p);
@@ -2530,11 +2678,77 @@ function render() {
   $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
   $('hint').textContent = t(is3d ? 'hint3d' : 'hint');
   renderInfo(p, doc);
-  if (is3d) { show3d(p, doc); return; }
+  if (is3d) { show3d(p, doc); updatePngInfo(); return; }
   const [W, H] = outerSize(doc);
   stage.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}"><g${rotTransform(doc)}>${previewInner(p, doc, vm)}</g></svg>`;
   layout();
+  applyCutPreview();
+  updatePngInfo();
 }
+
+// ---------------------------------------------------------------- cut preview
+// Step through the cuts in the order they are written to the SVG: done in the
+// cut colour, the current one highlighted with the travel from the previous one.
+let cutStep = null, cutPlaying = 0;
+function applyCutPreview() {
+  // the inner cuts in file order, then the outer contour as the last step
+  const g = stage.querySelector('g.cuts'), outer = last?.doc?.borders?.length ? stage.querySelector('g.boards') : null;
+  const nIn = g ? g.children.length : 0, n = nIn + (outer ? 1 : 0);
+  if (cutStep != null) cutStep = clamp(cutStep, 0, n);
+  $('cutStep').max = Math.max(1, n);
+  $('cutStep').value = cutStep ?? n;
+  $('cutCount').textContent = cutStep == null ? String(n) : `${cutStep} / ${n}`;
+  $('cutPlay').textContent = cutPlaying ? '❚❚' : '▶';
+  stage.classList.toggle('cutprev', cutStep != null && n > 0);
+  stage.querySelector('.travel')?.remove();
+  if (!g) return;
+  const kids = g.children, cls = i => cutStep == null ? '' : i < cutStep - 1 ? 'done' : i === cutStep - 1 ? 'now' : '';
+  for (let i = 0; i < nIn; i++) kids[i].setAttribute('class', cls(i));
+  if (outer) outer.setAttribute('class', ('boards ' + cls(nIn)).trim());
+  if (cutStep >= 2 && cutStep <= nIn) {
+    const a = kids[cutStep - 2].getBBox(), b = kids[cutStep - 1].getBBox();
+    const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    ln.setAttribute('class', 'travel');
+    ln.setAttribute('x1', a.x + a.width / 2); ln.setAttribute('y1', a.y + a.height / 2);
+    ln.setAttribute('x2', b.x + b.width / 2); ln.setAttribute('y2', b.y + b.height / 2);
+    g.parentNode.appendChild(ln);
+  }
+}
+// the preview works on the 2D cut view: switch there when it is used
+function cutPreviewView() {
+  if (viewMode === '2d' && !view3d.overlay) return;
+  viewMode = '2d';
+  document.querySelector('input[name=view][value="2d"]').checked = true;
+  try { localStorage.setItem('kerf-view', viewMode); } catch (e) {}
+  view3d.overlay = null;
+  $('lampOn').checked = $('flexOn').checked = false;
+  save3d();
+  render();
+}
+$('cutStep').addEventListener('input', () => {
+  cutPlaying = 0;
+  cutPreviewView();
+  cutStep = +$('cutStep').value;   // at the end the outer contour stays highlighted
+  applyCutPreview();
+});
+$('cutPlay').onclick = () => {
+  if (cutPlaying) { cutPlaying = 0; applyCutPreview(); return; }
+  cutPreviewView();
+  const n = +$('cutStep').max;
+  if (cutStep == null || cutStep >= n) cutStep = 0;
+  const per = clamp(6000 / n, 8, 120), token = cutPlaying = performance.now();
+  let t0 = null, s0 = cutStep;
+  const tick = now => {
+    if (cutPlaying !== token) return;
+    if (t0 == null) t0 = now;
+    cutStep = Math.min(n, s0 + Math.floor((now - t0) / per));
+    if (cutStep >= n) { cutStep = null; cutPlaying = 0; applyCutPreview(); return; }
+    applyCutPreview();
+    requestAnimationFrame(tick);
+  };
+  applyCutPreview();
+  requestAnimationFrame(tick);
+};
 
 // ---------------------------------------------------------------- 3D preview
 // three.js is loaded on first use (the seam joint is not modelled – 3D uses
@@ -3274,6 +3488,40 @@ $('imgFile').onchange = e => { const file = e.target.files[0]; e.target.value = 
 // ---------------------------------------------------------------- export
 let saveFormat = 'svg';
 try { const f = localStorage.getItem('kerf-save'); if (['stl', 'obj', 'png'].includes(f)) saveFormat = f; } catch (e) {}
+// With PNG chosen: which texture the export makes, and a small preview of how it repeats.
+let pngTimer = 0, pngUrl = null, pngToken = 0;
+function updatePngInfo() {
+  const box = $('pngInfo');
+  box.hidden = saveFormat !== 'png' || !last;
+  if (box.hidden) return;
+  const { p, doc } = last;
+  if (p.mode !== 'pattern' && p.mode !== 'creative') { box.innerHTML = `<b>${esc(t('png.title'))}</b><br>${esc(t('png.na'))}`; return; }
+  let text, kind, w, h;
+  if (p.mode === 'pattern') { ({ w, h } = tileSize(p)); kind = 'tile'; text = t('png.tile', fmt3(w), fmt3(h)); }
+  else {
+    const a = creativeTextureArea(p, doc); ({ w, h } = a); kind = a.kind;
+    text = kind === 'stripe' ? t('png.stripe', fmt3(w), fmt3(h)) : t('png.board', fmt3(w), fmt3(h), p.seamless);
+  }
+  if (box.dataset.text !== text) box.innerHTML = `<b>${esc(t('png.title'))}</b><br>${esc(text)}<div class="tex" id="pngTex"></div><div class="fine" style="margin-top:4px">${esc(t('png.hint'))}</div>`;
+  box.dataset.text = text;
+  clearTimeout(pngTimer);
+  const token = ++pngToken;
+  pngTimer = setTimeout(async () => {
+    try {
+      const r = p.mode === 'pattern' ? await buildTile(p, 256) : await buildCreativeTexture(p, doc, 600);
+      if (token !== pngToken) return;
+      if (pngUrl) URL.revokeObjectURL(pngUrl);
+      pngUrl = URL.createObjectURL(r.blob);
+      const el = $('pngTex');
+      if (!el) return;
+      const bh = 84, tw = bh * w / h;   // one repeat at the box height
+      el.style.backgroundImage = `url(${pngUrl})`;
+      el.style.backgroundSize = kind === 'texture' ? 'contain' : `${tw}px ${bh}px`;
+      el.style.backgroundRepeat = kind === 'tile' ? 'repeat' : kind === 'stripe' ? 'repeat-x' : 'no-repeat';
+      el.style.backgroundPosition = kind === 'texture' ? 'center' : 'left top';
+    } catch (e) { /* the preview is optional */ }
+  }, 250);
+}
 function updateSaveLabel() {
   $('saveBtn').textContent = t(saveFormat === 'svg' ? 'save' : 'save.' + saveFormat);
   const d = t('fmt.stl.d', typeof view3d === 'object' ? view3d.bend : 100);
@@ -3328,6 +3576,7 @@ $('saveMenu').addEventListener('click', e => {
   try { localStorage.setItem('kerf-save', saveFormat); } catch (err) {}
   toggleSaveMenu(false);
   updateSaveLabel();   // choosing only switches the format; the main button saves
+  updatePngInfo();
   $('saveBtn').focus();
 });
 document.addEventListener('click', e => { if (!e.target.closest('.savegroup')) toggleSaveMenu(false); });
@@ -3344,15 +3593,19 @@ function variesAcross(p) {
     return true;   // radial, noise, image
   });
 }
-function buildCreativeTexture(p, doc) {
+// which part of a Creative design becomes the texture: a stripe or the whole board
+function creativeTextureArea(p, doc) {
   const H = doc.h, cols = doc.gen?.cols || [];
-  let x0 = 0, w = doc.bw ?? doc.w, kind = 'texture';
   if (!variesAcross(p) && cols.length >= 4) {
     const k = 2 * Math.floor(cols.length / 4), step = cols[k + 1].x - cols[k].x;   // the true pitch (Seamless adjusts it)
-    x0 = cols[k].x - step / 2; w = 2 * step; kind = 'stripe';
+    return { x0: cols[k].x - step / 2, w: 2 * step, h: H, kind: 'stripe' };
   }
-  const cuts = doc.recs.flatMap(r => r.els || []);
-  return rasterMask(cuts, x0, 0, w, H, Math.min(20, 4096 / Math.max(w, H))).then(r => ({ ...r, w, h: H, kind }));
+  return { x0: 0, w: doc.bw ?? doc.w, h: H, kind: 'texture' };
+}
+function buildCreativeTexture(p, doc, maxPx = 4096) {
+  const a = creativeTextureArea(p, doc);
+  const bw = doc.bw ?? doc.w, cuts = doc.recs.flatMap(r => (r.els || []).map(e => r.x >= bw ? shiftEl(e, -bw) : e));
+  return rasterMask(cuts, a.x0, 0, a.w, a.h, Math.min(20, maxPx / Math.max(a.w, a.h))).then(r => ({ ...r, w: a.w, h: a.h, kind: a.kind }));
 }
 // white = material, black = hole, at s px per mm
 function rasterMask(cuts, x0, y0, w, h, s) {
@@ -3379,7 +3632,7 @@ function rasterMask(cuts, x0, y0, w, h, s) {
 // every row pitch down; the tile uses the whole multiples that come closest to
 // a square and is stretched slightly onto the square image.
 const fmt3 = v => String(+v.toFixed(2));
-function buildTile(p) {
+function tileSize(p) {
   const stepX = (SHAPES[p.shape].line ? 0 : p.slotW) + p.gapX, stepY = p.slotH + p.gapY;
   let best = null;
   for (let m = 1; m <= 40; m++) for (let k = 1; k <= 40; k++) {
@@ -3388,12 +3641,14 @@ function buildTile(p) {
     if (!best || err < best.err - 1e-9) best = { w, h, err };
     if (err < 0.01) break;
   }
-  const { w, h } = best;
+  return best || { w: 2 * stepX, h: stepY };
+}
+function buildTile(p, N = 2048) {
+  const { w, h } = tileSize(p);
   const q = { ...p, mode: 'pattern', shape: SHAPES[p.shape].meander ? 'Pill' : p.shape, seamless: false,
               openEdges: true, offsetMode: 'top', offset: 0, marginX: 0, boardW: w + 1e-6, boardH: h };
   const gen = generate(q, q.boardW, h, 0, q.boardW);
   const cuts = gen ? gen.columns.flat().flatMap(r => r.els) : [];
-  const N = 2048;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">` +
     `<rect width="${w}" height="${h}" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="${KERF}">${cuts.join('')}</g></svg>`;
   return new Promise((resolve, reject) => {
@@ -3580,7 +3835,7 @@ function buildSolid(p, doc, withJoint = false) {
   const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, S = STL_SCALE;
   const holes = slotPolygons(doc);
   const HS = Math.round(H * S);
-  const outline = (doc.outline ? (withJoint ? doc.outline : boardOutline(p, W, H, false)) : [[0, 0], [W, 0], [W, H], [0, H]])
+  const outline = (doc.outline ? (withJoint || p.joint === 'pattern' ? doc.outline : boardOutline(p, W, H, false)) : [[0, 0], [W, 0], [W, H], [0, H]])
     .map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round((H - y) * S) }));
   const minY = Math.min(...outline.map(q => q.Y)), maxY = Math.max(...outline.map(q => q.Y));
   const minX = Math.min(...outline.map(q => q.X)), maxX = Math.max(...outline.map(q => q.X));
@@ -3588,9 +3843,21 @@ function buildSolid(p, doc, withJoint = false) {
   const tris = [];   // flat triangles: 9 numbers each, (x mm, y mm up, z 0…th)
   const P = (q, z) => [q.X / S - W / 2, q.Y / S, z];
   const tri = (a, b, c) => tris.push(...a, ...b, ...c);
-  // inner strip seams are nudged by 13 µm so they rarely land exactly on a slot vertex
-  // (column centres often sit on the 2 mm grid); remaining T-junctions are split below
-  const seamX = k => k === 0 ? minX : k === n ? maxX : minX + Math.round((maxX - minX) * k / n) + 13;
+  // inner strip seams keep clear of every slot and outline vertex (≥ 10 µm), so a
+  // seam never runs right beside a slot wall; remaining T-junctions are split below
+  const vx = [...outline.map(q => q.X), ...holes.flatMap(h => h.p.map(q => q.X))].sort((a, b) => a - b);
+  const near = x => {   // is a vertex within 10 µm of x? (binary search)
+    let lo = 0, hi = vx.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (vx[m] < x - 10) lo = m + 1; else hi = m; }
+    return lo < vx.length && vx[lo] <= x + 10;
+  };
+  const seamX = k => {
+    if (k === 0) return minX;
+    if (k === n) return maxX;
+    let x = minX + Math.round((maxX - minX) * k / n) + 13;
+    for (let t = 0; t < 40 && near(x); t++) x += 23;
+    return x;
+  };
   for (let i = 0; i < n; i++) {
     const X0 = seamX(i), X1 = seamX(i + 1);
     // this strip of the board outline …

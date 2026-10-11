@@ -49,7 +49,7 @@ Everything from Simple, plus per-slot variation on the same grid, so the shade s
 - **Bands** – horizontal zones from top to bottom, each with its own shape and optional slot size (mix pill, dogbone, S-slot …).
 - **Modulators** – a source drives a slot property:
   - sources: linear gradient (any angle, optionally mirrored), radial, waves, noise, or a greyscale **image**;
-  - targets: slot width, slot length, remove slots, swap the shape;
+  - targets: slot width, slot length, **vertical shift** (moves each slot up or down – with noise the bridges get an irregular, organic rhythm; slots in a column always keep the minimum gap), remove slots, swap the shape;
   - they stack from top to bottom with adjustable strength.
 - Drag a band or modulator by its header to reorder it (or use ↑ / ↓); click the header to collapse or expand it.
 - ⧉ duplicates a band or modulator; the checkbox in a modulator's header switches it off for a moment without deleting it.
@@ -91,10 +91,12 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
 
 - **Cylinder sizing:** enter the inner, mid-plane or outer diameter; the width (circumference) is calculated on the material's mid-plane.
 - **Seamless:** adjusts the horizontal gap so an even number of columns fills the circumference – the pattern continues across the glue seam.
-- **Seam joint:** a glue tab past the circumference, or finger joints (fingers on one edge, matching notches on the other).
+- **Seam joint:** a glue tab past the circumference, finger joints (fingers on one edge, matching notches on the other), or a **pattern join**: the seam runs through the pattern – along the middle of the bars beside the first slot column, switching sides once per row – so both ends get fingers one column wide and one row high that interlock and the pattern continues across the seam (glue the fingers; needs *Seamless*, side margins are ignored).
 - **Open edges:** slots run out through the top and bottom edges, so no continuous solid strip is left.
 - **Kerf compensation:** slots are drawn smaller and the outline larger by half the laser kerf, so the cut part has the nominal size.
-- **Cut order:** zigzag, or every other column first (less heat build-up – useful for acrylic).
+- **Cut order:** zigzag, every other column first, or **spread out** – each next cut as far as possible from the last few, so no spot heats up (acrylic warps less; more travel). The SVG lists the cuts in this order; laser software that optimises the path itself (e.g. LightBurn's *Optimize Cut Path*) has to be told to keep the file order.
+- **Cut preview** (under the cut order, in every mode): a slider and ▶ play button step through the cuts in that order – done cuts in red, the current one highlighted with the jump from the previous one; the outer contour comes last.
+- The SVG lists the layers in laser order: engrave first, then the inner cuts, the outer contour last – so the part stays in place until it is finished.
 - Side margins, optional outer border, 90° rotated output.
 
 ## Preview
