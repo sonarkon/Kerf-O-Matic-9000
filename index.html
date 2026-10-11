@@ -237,6 +237,12 @@
       </select></label>
     </div>
     <div class="desc" id="diaSummary" data-modes="pattern creative mount"></div>
+    <div class="grid2" style="margin-top:8px">
+      <label class="span2" id="matNameRow"><span data-i18n="mat.name"></span><input type="text" id="matName" maxlength="40" data-nomain></label>
+      <label><span data-i18n="mat.ok"></span><input type="number" id="matOk" min="0.05" step="0.05" data-nomain></label>
+      <label><span data-i18n="mat.max"></span><input type="number" id="matMax" min="0.05" step="0.05" data-nomain></label>
+    </div>
+    <div class="desc"><span id="matHint"></span> <a href="#" id="matDup" data-i18n="mat.dup"></a> <a href="#" id="matDel" data-i18n="mat.del"></a></div>
     <div class="checks" data-modes="pattern creative">
       <label class="check"><input type="checkbox" id="seamless"> <span data-i18n="seamless"></span></label>
     </div>
@@ -447,6 +453,8 @@ const STR = {
     'mt.from': m => `Cylinder and pattern come from the ${m} mode.`,
     'mt.bad': 'Ring, hub and socket hole do not fit into the part – make the ring or hub narrower or the hole smaller.',
     'mt.led': 'Use LED bulbs: acrylic softens at about 80 °C.',
+    'mt.flexWarn': 'The shade is borderline for this diameter – it may crack over time. Cut a test strip first or make the pattern softer in Simple/Creative.',
+    'mt.flexBad': 'The shade is bent too far for this diameter and will probably crack. Make the pattern softer in Simple/Creative (longer slots, smaller gaps, thinner material) or choose a larger diameter.',
     'lbl.top': 'TOP', 'lbl.bottom': 'BOTTOM',
     'pl.mountCyl': (i, th, m) => `Cylinder: inner Ø ${i} mm, ${th} mm ${m}`,
     'pl.mountPart': (pos, kind, d) => `${pos}: ${kind}, Ø ${d} mm`,
@@ -515,9 +523,14 @@ const STR = {
     'shape.Wave': 'S-slot', 'desc.Wave': 'Constant-width S-shaped slot with round ends, made of exact arcs. Slot width = overall width, the cut itself is 40 % of it.',
     'shape.Cross': 'Cross', 'desc.Cross': '+ shape, bends in two directions',
 
-    'mat.pmma': 'Acrylic (PMMA)', 'mat.petg': 'PETG', 'mat.plywood': 'Plywood', 'mat.mdf': 'MDF',
+    'mat.pmma': 'Acrylic (PMMA)', 'mat.plywood': 'Plywood', 'mat.mdf': 'MDF',
+    'mat.name': 'Material name', 'mat.ok': 'Good up to ε (%)', 'mat.max': 'Max ε (%)',
+    'mat.dup': 'Duplicate to edit', 'mat.del': 'Delete', 'mat.own': 'own',
+    'mat.hintPreset': 'Strain limits are guide values derived from material data (strain at break, crazing) – not tested on hinges; sources in the README.',
+    'mat.hintCustom': b => `Own material based on ${b} – calibrate the limits with test strips.`,
+    'mat.delConfirm': n => `Delete the material “${n}”?`,
     'note.pmma': 'Cast acrylic (GS) tolerates more than extruded (XT). Bending with a heat gun/oven (~90 °C) greatly reduces the residual stress.',
-    'note.petg': 'Much tougher than acrylic, ideal for living hinges.',
+    'note.plywood': 'Slots across the grain of the face veneer bend better; glue and plywood quality matter a lot.',
 
     'r.meander': 'No estimate for meander (different bending mechanism).',
     'r.thick': 'Thickness missing.', 'r.cols': 'Too few columns.',
@@ -581,6 +594,8 @@ const STR = {
     'mt.from': m => `Zylinder und Muster kommen aus dem Modus ${m}.`,
     'mt.bad': 'Ring, Nabe und Fassungsloch passen nicht ins Teil – Ring oder Nabe schmaler oder Loch kleiner machen.',
     'mt.led': 'LED-Leuchtmittel verwenden: Acryl wird ab etwa 80 °C weich.',
+    'mt.flexWarn': 'Der Schirm ist bei diesem Durchmesser grenzwertig und kann mit der Zeit reißen. Vorher einen Teststreifen schneiden oder das Muster in Simple/Creative weicher machen.',
+    'mt.flexBad': 'Der Schirm wird für diesen Durchmesser zu stark gebogen und reißt wahrscheinlich. Muster in Simple/Creative weicher machen (längere Schlitze, kleinere Stege, dünneres Material) oder einen größeren Durchmesser wählen.',
     'lbl.top': 'OBEN', 'lbl.bottom': 'UNTEN',
     'pl.mountCyl': (i, th, m) => `Zylinder: innen Ø ${i} mm, ${th} mm ${m}`,
     'pl.mountPart': (pos, kind, d) => `${pos}: ${kind}, Ø ${d} mm`,
@@ -649,9 +664,14 @@ const STR = {
     'shape.Wave': 'S-Schlitz', 'desc.Wave': 'Gleich breiter, S-förmiger Schlitz mit runden Enden aus exakten Kreisbögen. Schlitzbreite = Gesamtbreite, der Schnitt selbst ist 40 % davon.',
     'shape.Cross': 'Kreuz', 'desc.Cross': '+-Form, biegt in zwei Richtungen',
 
-    'mat.pmma': 'Acryl (PMMA)', 'mat.petg': 'PETG', 'mat.plywood': 'Sperrholz', 'mat.mdf': 'MDF',
+    'mat.pmma': 'Acryl (PMMA)', 'mat.plywood': 'Sperrholz', 'mat.mdf': 'MDF',
+    'mat.name': 'Materialname', 'mat.ok': 'Gut bis ε (%)', 'mat.max': 'Max ε (%)',
+    'mat.dup': 'Zum Bearbeiten duplizieren', 'mat.del': 'Löschen', 'mat.own': 'eigen',
+    'mat.hintPreset': 'Die Dehnungsgrenzen sind Richtwerte aus Materialdaten (Bruchdehnung, Rissbildung) – nicht an Hinges geprüft; Quellen in der README.',
+    'mat.hintCustom': b => `Eigenes Material auf Basis von ${b} – Grenzen mit Teststreifen kalibrieren.`,
+    'mat.delConfirm': n => `Material „${n}“ löschen?`,
     'note.pmma': 'Gegossenes Acryl (GS) verträgt mehr als extrudiertes (XT). Mit Heißluft/Ofen (~90 °C) gebogen sinkt die Dauerspannung stark.',
-    'note.petg': 'Deutlich zäher als Acryl, ideal für Living Hinges.',
+    'note.plywood': 'Schlitze quer zur Faser des Deckfurniers biegen sich besser; Leim und Plattenqualität machen viel aus.',
 
     'r.meander': 'Für Mäander gibt es keine Abschätzung (anderes Biegeprinzip).',
     'r.thick': 'Materialstärke fehlt.', 'r.cols': 'Zu wenige Spalten.',
@@ -711,7 +731,7 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
   for (const o of $('shape').options) o.textContent = t('shape.' + o.value);
-  for (const o of $('material').options) o.textContent = t('mat.' + o.value);
+  fillMaterials();
   renderCreativeUI();
   updateSaveLabel();
 }
@@ -806,11 +826,28 @@ const SLOT_SHAPES = Object.keys(SHAPES).filter(k => !SHAPES[k].meander);
 // Allowed tensile strain ε (%) for the flex estimate: "ok" = permanent bend
 // without stress cracks/creep, "max" = short-term limit. Rough guide values.
 const MATERIALS = {
-  pmma:    { ok: 0.8, max: 1.5 },
-  petg:    { ok: 2,   max: 4 },
-  plywood: { ok: 0.8, max: 1.5 },
-  mdf:     { ok: 0.5, max: 1.0 }
+  pmma:    { ok: 0.8, max: 1.5, color: 0xf3efe6, opacity: 0.6, plastic: true },
+  plywood: { ok: 0.5, max: 0.8, color: 0xd8b98a, opacity: 1 },
+  mdf:     { ok: 0.5, max: 1.0, color: 0xa98563, opacity: 1 }
 };
+// Own materials: { id: { name, base, ok, max } }, kept in the browser and saved
+// with every design (materialDef), so a loaded file brings its material along.
+let customMaterials = {};
+try { customMaterials = JSON.parse(localStorage.getItem('kerf-materials')) || {}; } catch (e) {}
+const saveMaterials = () => { try { localStorage.setItem('kerf-materials', JSON.stringify(customMaterials)); } catch (e) {} };
+function matOf(p) {
+  const c = customMaterials[p.material];
+  if (c) return { ...(MATERIALS[c.base] || MATERIALS.pmma), ok: c.ok, max: c.max, name: c.name, base: c.base, custom: true };
+  const key = MATERIALS[p.material] ? p.material : 'pmma';
+  return { ...MATERIALS[key], name: t('mat.' + key), base: key };
+}
+function fillMaterials() {
+  const sel = $('material'), cur = sel.value;
+  sel.innerHTML = '';
+  for (const k of Object.keys(MATERIALS)) sel.add(new Option(t('mat.' + k), k));
+  for (const [id, c] of Object.entries(customMaterials)) sel.add(new Option(c.name, id));
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
 
 // short codes for engraved test-strip labels (language independent)
 // engraved labels, in this order: length, width, gap V, gap H
@@ -819,7 +856,7 @@ const TEST_SHORT = { slotH: 'L ', slotW: 'W ', gapY: 'Gap V ', gapX: 'Gap H ' };
 const TEST_FILE = { gapX: 'gapH', slotH: 'L', gapY: 'gapV', slotW: 'W' };
 
 for (const k of Object.keys(SHAPES)) $('shape').add(new Option(k, k));
-for (const k of Object.keys(MATERIALS)) $('material').add(new Option(k, k));
+fillMaterials();
 
 // ---------------------------------------------------------------- creative state
 // Bands and modulators live outside the form fields; they are saved with the
@@ -857,6 +894,7 @@ function readParams() {
   for (const k of CHK) p[k] = $(k).checked;
   p.project = $('project').value.trim();
   p.shellMode = shellMode;
+  if (customMaterials[p.material]) p.materialDef = { ...customMaterials[p.material] };
   p.spokes = clamp(Math.round(p.spokes), 2, 8);
   p.testCount = clamp(Math.round(p.testCount), 1, 30);
   p.creative = JSON.parse(JSON.stringify(creative));
@@ -864,6 +902,8 @@ function readParams() {
 }
 function writeParams(p) {
   p = migrate(p);
+  // a design with its own material brings the definition along
+  if (p.materialDef && p.material && !MATERIALS[p.material]) { customMaterials[p.material] = { ...p.materialDef }; saveMaterials(); fillMaterials(); }
   if (MODES.includes(p.mode)) document.querySelector(`input[name=mode][value="${p.mode}"]`).checked = true;
   for (const k of NUM) if (p[k] != null) $(k).value = p[k];
   for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
@@ -878,6 +918,8 @@ function writeParams(p) {
 // It becomes a linear modulator (the column grid stays fixed, so a changing
 // horizontal gap is expressed as a changing slot width).
 function migrate(p) {
+  // PETG was a built-in material earlier (it does not laser-cut well): such designs load as acrylic
+  if (p.material === 'petg') p = { ...p, material: 'pmma' };
   if (!p.gradParam || p.gradParam === 'off' || p.creative) return p;
   const m = { ...newMod(p), source: 'linear', angle: 0, mirror: p.gradProfile === 'center' };
   if (p.gradParam === 'slotH') Object.assign(m, { target: 'slotH', from: p.slotH, to: p.gradEnd });
@@ -1528,7 +1570,7 @@ function buildMountDoc(p) {
 function buildDoc(p) {
   if (p.mode === 'mount') return buildMountDoc(p);
   const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
-  const mat = MATERIALS[p.material], dMid = midDiameter(p);
+  const mat = matOf(p), dMid = midDiameter(p);
 
   if (p.mode === 'test') {
     const short = TEST_SHORT[p.testParam];
@@ -1598,8 +1640,8 @@ function buildDoc(p) {
   return doc;
 }
 
-function flexSummary(p, doc) {
-  const mat = MATERIALS[p.material], dMid = bendDiameter(p), th = p.thick;
+function flexSummary(p, doc, bendPct = view3d.bend) {
+  const mat = matOf(p), dMid = bendPct > 0 ? midDiameter(p) / (bendPct / 100) : Infinity, th = p.thick;
   if (!doc.flex || doc.flex.reason) return { text: doc.flex ? t(doc.flex.reason) : '' };
   const eps = doc.flex.k / dMid * 100;
   const dMin = doc.flex.k / (mat.ok / 100);  // mid-plane diameter at the "ok" limit
@@ -1623,19 +1665,19 @@ function modText(m) {
   return `${t('tg.' + m.target)} ← ${t('src.' + m.source)} (${src})${m.invert ? ' inv' : ''}: ${tgt}`;
 }
 
-function paramLines(p, doc) {
+function paramLines(p, doc, bendPct = view3d.bend) {
   if (p.mode === 'mount') {
     const g = doc.mount.g, L = [];
     if (p.project) L.push(t('pl.project', p.project));
     L.push(t('pl.mode', t('mode.mount')));
-    L.push(t('pl.mountCyl', fmt(+g.di.toFixed(2)), fmt(p.thick), t('mat.' + p.material)));
+    L.push(t('pl.mountCyl', fmt(+g.di.toFixed(2)), fmt(p.thick), matOf(p).name));
     for (const prt of doc.mount.parts) L.push(t('pl.mountPart', t('mt.' + (prt.pos === 'top' ? 'top' : 'bottom')), t('mt.' + prt.kind), fmt(+(2 * g.ro).toFixed(2))));
     L.push(t('pl.mountDims', fmt(p.socketHole), fmt(p.ringW), p.spokes, fmt(p.spokeW), fmt(p.hubW), fmt(p.mountClear)));
     L.push(t('pl.mountFix', t('mt.fix.' + p.mountFix)));
     if (g.tabs) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
     if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
     // the shade's own parameters (its mode line first), without its footer
-    L.push(...paramLines({ ...p, mode: p.shellMode || 'pattern', project: '' }, doc.shell).slice(0, -1));
+    L.push(...paramLines({ ...p, mode: p.shellMode || 'pattern', project: '' }, doc.shell, 100).slice(0, -1));
     L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
     return L;
   }
@@ -1650,7 +1692,7 @@ function paramLines(p, doc) {
     L.push(t('pl.board', fmt(p.boardW), fmt(p.boardH)));
     L.push(t('pl.dia', (dm - th).toFixed(2), dm.toFixed(2), (dm + th).toFixed(2)));
   }
-  L.push(t('pl.material', t('mat.' + p.material), fmt(th)));
+  L.push(t('pl.material', matOf(p).name, fmt(th)) + ` (ε ${matOf(p).ok}/${matOf(p).max} %)`);
   L.push(t('pl.shape', shapeName(p.shape)));
   L.push(t('pl.slot', fmt(p.slotW), fmt(p.slotH)));
   const seam = p.mode !== 'test' && doc.gen?.seamGap != null;
@@ -1673,8 +1715,8 @@ function paramLines(p, doc) {
   if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
   L.push(t('pl.order', t('ord.' + p.order)));
   if (p.mode !== 'test') {
-    const fs = flexSummary(p, doc);
-    if (fs.eps != null) L.push(t('pl.flex', fs.eps.toFixed(2), fs.status[1], Math.round(fs.dMinInner), view3d.bend));
+    const fs = flexSummary(p, doc, bendPct);
+    if (fs.eps != null) L.push(t('pl.flex', fs.eps.toFixed(2), fs.status[1], Math.round(fs.dMinInner), bendPct));
   }
   L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
   return L;
@@ -1687,17 +1729,19 @@ function slug(s) {
     .normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
+// own materials appear in file names by their (slugged) name
+const matTag = p => customMaterials[p.material] ? slug(customMaterials[p.material].name) || 'material' : p.material;
 function fileName(p, doc) {
   if (p.mode === 'mount') {
     const proj = slug(p.project || ''), g = doc.mount.g;
-    const parts = ['kerflamp', p.material, `D${fmt(+g.di.toFixed(1))}x${fmt(p.thick)}mm`, `top-${p.mountTop}`, `bottom-${p.mountBottom}`, `hole${fmt(p.socketHole)}`];
+    const parts = ['kerflamp', matTag(p), `D${fmt(+g.di.toFixed(1))}x${fmt(p.thick)}mm`, `top-${p.mountTop}`, `bottom-${p.mountBottom}`, `hole${fmt(p.socketHole)}`];
     if (g.tabs) parts.push(`tabs${clamp(Math.round(p.tabCount), 2, 24)}x${fmt(p.tabW)}`);
     if (g.edge) parts.push('edge');
     if (p.kerf) parts.push(`kerf${fmt(p.kerf)}`);
     if (proj) parts.unshift(proj);
     return parts.join('_') + '.svg';
   }
-  const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', p.shape.toLowerCase(), p.material];
+  const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', p.shape.toLowerCase(), matTag(p)];
   const proj = slug(p.project || '');
   if (proj) parts.unshift(proj);
   if (p.mode === 'test') {
@@ -1895,7 +1939,7 @@ function previewInner(p, doc, vm) {
       `<g fill="#ffe7b0" stroke="#ffe7b0" stroke-width="0.2">${all}</g>`;
   }
   if (vm === 'flex') {
-    const dMid = bendDiameter(p), mat = MATERIALS[p.material];
+    const dMid = bendDiameter(p), mat = matOf(p);
     return `<g class="boards" fill="var(--board)" stroke="var(--muted)" stroke-width="1">${boards}</g>` +
       `<g stroke="#00000066" stroke-width="0.15">${doc.recs.map(r => `<g fill="${heatColor(r, dMid, mat)}">${r.els.join('')}</g>`).join('')}</g>`;
   }
@@ -1910,6 +1954,13 @@ function render() {
   $('shapeDesc').textContent = t('desc.' + p.shape);
   $('meanderNote').hidden = !(p.mode === 'creative' && SHAPES[p.shape].meander);
   $('offset').disabled = p.offsetMode !== 'custom';
+  const mat = matOf(p);
+  $('matNameRow').hidden = !mat.custom; $('matDel').hidden = !mat.custom; $('matDup').hidden = mat.custom;
+  $('matOk').disabled = $('matMax').disabled = !mat.custom;
+  if (document.activeElement !== $('matOk')) $('matOk').value = mat.ok;
+  if (document.activeElement !== $('matMax')) $('matMax').value = mat.max;
+  if (document.activeElement !== $('matName')) $('matName').value = mat.custom ? mat.name : '';
+  $('matHint').textContent = mat.custom ? t('mat.hintCustom', t('mat.' + mat.base)) : t('mat.hintPreset');
   $('jointSize').disabled = p.joint === 'none';
   $('tabsNote').hidden = !tabHeight(p) || !['pattern', 'creative'].includes(p.mode);
   document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = p.mountFix !== 'tabs'; });
@@ -1961,9 +2012,8 @@ function render() {
 // the vertical axis (bend 100 % = closed cylinder). Bending is radial, so
 // both surfaces and the slot walls stay aligned like in the real part.
 const THREE_BASE = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
-const MAT_COLORS = { pmma: 0xf3efe6, petg: 0xe6ecef, plywood: 0xd8b98a, mdf: 0xa98563 };
-// plastics are shown semi-transparent (the far side shows through), wood is opaque
-const MAT_OPACITY = { pmma: 0.6, petg: 0.7 };
+
+
 const SEG_X = 360;   // segments around the circumference
 let three = null, threeLoading = null, buildToken = 0, buildTimer = null;
 let view3d = { bend: 100, overlay: null, explode: 0 };
@@ -2116,11 +2166,11 @@ function bendParts(W, bend) {
 }
 function styleMaterial(m, p, lampOn, flexOn) {
   // the heatmap is shown on an opaque, white-lit surface so the colours read true
-  const op = flexOn ? 1 : MAT_OPACITY[p.material] ?? 1;
+  const op = flexOn ? 1 : matOf(p).opacity;   // plastics semi-transparent, wood opaque
   if (m.transparent !== op < 1) m.needsUpdate = true;
   const map = flexOn ? three.heatTex : null;
   if (m.map !== map) { m.map = map; m.needsUpdate = true; }
-  m.color.setHex(flexOn ? 0xffffff : MAT_COLORS[p.material] || 0xeeeeee);
+  m.color.setHex(flexOn ? 0xffffff : matOf(p).color);
   m.transparent = op < 1;
   m.opacity = op;
   m.depthWrite = op >= 1;
@@ -2208,7 +2258,7 @@ function setTexture(mat, key, canvas) {
 function buildHeat(p, doc) {
   return new Promise(resolve => {
     const W = doc.bw ?? doc.w, H = doc.h, s = Math.min(6, 2048 / W, 2048 / H);
-    const dMid = bendDiameter(p), mat = MATERIALS[p.material], halo = Math.max(0.6, p.gapX);
+    const dMid = bendDiameter(p), mat = matOf(p), halo = Math.max(0.6, p.gapX);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(W * s)}" height="${Math.round(H * s)}" viewBox="0 0 ${W} ${H}">` +
       `<rect width="${W}" height="${H}" fill="#d9d4ca"/>` +
       doc.recs.map(r => { const c = heatColor(r, dMid, mat); return `<g fill="${c}" stroke="${c}" stroke-width="${halo}" stroke-linejoin="round">${r.els.join('')}</g>`; }).join('') +
@@ -2287,18 +2337,26 @@ function renderInfo(p, doc) {
     const g = doc.mount.g;
     let html = `<p style="margin:0">${t('mt.info', g.di.toFixed(1), (2 * g.ro).toFixed(1), fmt(p.socketHole))}</p>`;
     if (!g.ok) html += `<p class="bad">${esc(t('mt.bad'))}</p>`;
+    // the shade is always a closed cylinder here: rate it at Bend 100 %
+    const sp = { ...p, mode: p.shellMode || 'pattern' }, fs = flexSummary(sp, doc.shell, 100), mat = matOf(p);
+    if (fs.eps != null) {
+      html += `<div class="stats" style="margin-top:8px">` +
+        `<div><span>${esc(t('fi.strainAt', (midDiameter(p) - p.thick).toFixed(1), 100))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
+        `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(mat.name)} ≤ ${mat.ok} %</em></div></div>`;
+      if (fs.status[0] !== 'ok') html += `<p class="${fs.status[0]}">${esc(t(fs.status[0] === 'bad' ? 'mt.flexBad' : 'mt.flexWarn'))}</p>`;
+    } else if (fs.text) html += `<p class="warn">${esc(fs.text)}</p>`;
+    if (mat.plastic) html += `<p class="warn">${esc(t('mt.led'))}</p>`;
     if (g.edge) {
       const used = doc.mount.parts.map(q => q.pos), nt = doc.mount.notches;
       for (const pos of used) if (!nt[pos].length) html += `<p class="bad">${esc(t('mt.noNotches', pos))}</p>`;
       html += `<p>${esc(t('mt.notches', nt.top?.length ?? 0, nt.bottom?.length ?? 0))}</p>`;
     }
     html += `<p>${esc(t('mt.from', t('mode.' + (p.shellMode || 'pattern'))))}</p>`;
-    if (p.material === 'pmma' || p.material === 'petg') html += `<p class="warn">${esc(t('mt.led'))}</p>`;
     $('flexInfo').innerHTML = html;
     $('info').innerHTML = `<b>${t('info.cuts')}:</b> ${doc.count}<br><code>${esc(fileName(p, doc))}</code>`;
     return;
   }
-  const mat = MATERIALS[p.material], dm = midDiameter(p), matName = t('mat.' + p.material);
+  const mat = matOf(p), dm = midDiameter(p), matName = mat.name;
   let html = '';
   if (p.mode === 'test') {
     html += t('fi.perStrip', esc(matName), fmt(p.thick), mat.ok) + '<table>';
@@ -2327,7 +2385,7 @@ function renderInfo(p, doc) {
     }
     if (view3d.overlay === 'flex') html += `<div class="legend">${['ok', 'warn', 'bad', 'rigid'].map(k => `<span><i style="background:${HEAT[k]}"></i>${esc(t('fi.lg.' + k))}</span>`).join('')}</div>`;
   }
-  const note = STR[lang]['note.' + p.material];
+  const note = STR[lang]['note.' + mat.base];
   if (note) html += `<p>${esc(note)}</p>`;
   html += `<p class="fine">${esc(t('fi.rough'))}</p>`;
   $('flexInfo').innerHTML = html;
@@ -2398,7 +2456,39 @@ $('thick').addEventListener('input', syncDiameter);
 $('diaRef').addEventListener('input', syncDiameter);
 $('diameter').addEventListener('input', diameterChanged);
 // band/modulator cards are rebuilt dynamically and handled by creativeInput()
-document.querySelectorAll('.panel input, .panel select, #project').forEach(el => el.addEventListener('input', render));
+document.querySelectorAll('.panel input:not([data-nomain]), .panel select, #project').forEach(el => el.addEventListener('input', render));
+// own materials: edit name and limits, duplicate a material, delete an own one
+function editMaterial() {
+  const c = customMaterials[$('material').value];
+  if (!c) return;
+  c.name = $('matName').value.trim() || c.name;
+  const ok = parseFloat($('matOk').value), max = parseFloat($('matMax').value);
+  if (ok > 0) c.ok = ok;
+  if (max > 0) c.max = Math.max(max, c.ok);
+  saveMaterials();
+  const o = [...$('material').options].find(x => x.value === $('material').value);
+  if (o) o.textContent = c.name;
+  render();
+}
+for (const id of ['matName', 'matOk', 'matMax']) $(id).addEventListener('input', editMaterial);
+$('matDup').onclick = e => {
+  e.preventDefault();
+  const p = readParams(), m = matOf(p), id = 'c_' + Date.now().toString(36);
+  customMaterials[id] = { name: `${m.name} (${t('mat.own')})`, base: m.base, ok: m.ok, max: m.max };
+  saveMaterials(); fillMaterials();
+  $('material').value = id;
+  render();
+  $('matName').focus(); $('matName').select();
+};
+$('matDel').onclick = e => {
+  e.preventDefault();
+  const id = $('material').value, c = customMaterials[id];
+  if (!c || !confirm(t('mat.delConfirm', c.name))) return;
+  delete customMaterials[id];
+  saveMaterials(); fillMaterials();
+  $('material').value = c.base in MATERIALS ? c.base : 'pmma';
+  render();
+};
 $('slotW').addEventListener('input', renderCreativeUI);
 $('slotH').addEventListener('input', renderCreativeUI);
 document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', () => {

@@ -12,7 +12,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, made for **cy
 - [Modes](#modes) – Simple · Creative · Test Pattern · Lamp
 - [Board and cylinder](#board-and-cylinder)
 - [Preview](#preview)
-- [Bendability estimate](#bendability-estimate)
+- [Bendability estimate](#bendability-estimate) · [Material limits](#material-limits)
 - [Export and files](#export-and-files)
 - [Tips for acrylic](#tips-for-acrylic)
 - [Run locally](#run-locally) · [Credits](#credits) · [License](#license)
@@ -92,15 +92,37 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
   - **Explode** (Lamp, 3D) – lifts the lamp parts off the shade.
   - **Lamp** – glowing slots on a dark background, in 2D and 3D.
   - **Flex** – strain heatmap per slot: good / borderline / too high / rigid.
-- **3D** shows the extruded part with its real thickness – the same closed solid as the STL/OBJ export. Acrylic and PETG are semi-transparent, wood is opaque. Drag to orbit, right-drag to pan, wheel to zoom. three.js is loaded only when 3D is opened.
+- **3D** shows the extruded part with its real thickness – the same closed solid as the STL/OBJ export. Acrylic is semi-transparent, wood is opaque. Drag to orbit, right-drag to pan, wheel to zoom. three.js is loaded only when 3D is opened.
 
 ![3D preview: closed cylinder with the light on](kerf-o-matic-3d.jpg)
 
 ## Bendability estimate
 
-Strain in the twisting bridges between the slot columns, computed for every slot-to-slot link and scaled with **Bend** (100 % = closed cylinder, 50 % = half the curvature). The panel shows the maximum strain and the smallest inner diameter that stays “good” for the chosen material (acrylic, PETG, plywood, MDF).
+Strain in the twisting bridges between the slot columns, computed for every slot-to-slot link and scaled with **Bend** (100 % = closed cylinder, 50 % = half the curvature). The panel shows the maximum strain and the smallest inner diameter that stays “good” for the chosen material.
 
 It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
+
+### Material limits
+
+Each material has two strain limits: up to **good** the hinge should bend reliably, up to **max** it is borderline, and above that it will probably crack. The limits are shown under *Material*.
+
+| Material | Good ≤ | Max | Reference point |
+|---|---|---|---|
+| Acrylic (PMMA) | 0.8 % | 1.5 % | breaks at about 4–6 % (cast, datasheets¹); craze tests bend it to 0.5–1 %² |
+| Plywood | 0.5 % | 0.8 % | breaks at about 0.75–0.8 % (bending strength ÷ stiffness³) |
+| MDF | 0.5 % | 1.0 % | breaks at about 1.1 % (bending strength ÷ stiffness³) |
+
+**These are estimates, not tested hinge values.** They are derived from published material data: the limits stay below the strain at break and, for acrylic, near the strain where crazing (fine cracks) becomes a concern. No source gives allowable strains for laser-cut hinges directly, and the data come from bending tests, while the bridges of a hinge twist. Grade (cast vs. extruded acrylic), plywood quality and glue, grain direction (slots across the face grain bend better), temperature and the laser settings all change the real limit. In practice wood is also more forgiving than acrylic, which is brittle and sensitive to notches.
+
+Sources:
+1. Cast PMMA datasheets: [APSO PMMA GS](https://www.apsoparts.com/media/downloads/asset//std.lang.all/0_/en/PMMA-GS_00_007-00_EN.pdf) (4 %, ISO 527), [Polycast](https://modernplastics.com//wp-content/uploads/2015/03/Polycast-Perfume-Resistant.pdf) (6 %, ASTM D638)
+2. Solvent-crazing test at 0.5 / 1.0 % outer-fibre strain: [J-STAGE](https://www.jstage.jst.go.jp/browse/koron1944/23/257/_contents)
+3. Modulus of rupture and elasticity of wood-based panels: [Journal of Wood Science](https://jwoodscience.springeropen.com/articles/10.1007/s10086-017-1632-5/tables/4)
+4. Torsion design of lattice hinges (acrylic data from MatWeb, 60 % of the torsional yield stress for repeated bending): [DefProc](http://marksabino.com/defproc/blog/2011/laser-cut-lattice-living-hinges/)
+
+**Own materials:** *Duplicate to edit* copies the selected material; you can then rename it and set your own limits – ideally calibrated with a few [test strips](#test-pattern): bend each strip to a known diameter and note where it starts to crack. Own materials are kept in the browser and saved with every design, so a loaded SVG/OBJ/PNG brings its material along.
+
+PETG is not offered: it melts and smears under a CO₂ laser instead of cutting cleanly.
 
 ## Export and files
 
@@ -128,7 +150,7 @@ The **Save** button exports in the format chosen from its menu:
 - Cast acrylic (GS) tolerates more bending than extruded (XT).
 - Bending with a heat gun or in an oven (~90 °C) greatly reduces the residual stress.
 - Round slot ends (pill, dogbone) are less prone to cracking than pointed ones.
-- Use **LED bulbs** in acrylic lamps – acrylic softens at about 80 °C.
+- Use **LED bulbs** in acrylic lamps – acrylic softens at about 80 °C (Lamp mode shows this next to the bendability values).
 - Cut a few test strips first; the bendability estimate is only a guide.
 
 ## Run locally
