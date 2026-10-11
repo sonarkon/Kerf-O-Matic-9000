@@ -198,6 +198,7 @@
     <label><input type="radio" name="mode" value="pattern" checked> <span data-i18n="mode.pattern"></span></label>
     <label><input type="radio" name="mode" value="creative"> <span data-i18n="mode.creative"></span></label>
     <label><input type="radio" name="mode" value="test"> <span data-i18n="mode.test"></span></label>
+    <label><input type="radio" name="mode" value="mount"> <span data-i18n="mode.mount"></span></label>
   </div>
   <div class="actions">
     <select id="lang" aria-label="Language / Sprache">
@@ -222,20 +223,20 @@
 
 <aside id="design" class="panel">
   <details class="sec" open>
-    <summary><span data-i18n="sec.board" data-modes="pattern creative"></span><span data-i18n="material" data-modes="test"></span></summary>
+    <summary><span data-i18n="sec.board" data-modes="pattern creative mount"></span><span data-i18n="material" data-modes="test"></span></summary>
     <div class="grid2">
-      <label data-modes="pattern creative"><span data-i18n="boardW"></span><input type="number" id="boardW" value="150" min="1" step="0.5"></label>
-      <label data-modes="pattern creative"><span data-i18n="boardH"></span><input type="number" id="boardH" value="100" min="1" step="0.5"></label>
+      <label data-modes="pattern creative mount"><span data-i18n="boardW"></span><input type="number" id="boardW" value="150" min="1" step="0.5"></label>
+      <label data-modes="pattern creative mount"><span data-i18n="boardH"></span><input type="number" id="boardH" value="100" min="1" step="0.5"></label>
       <label><span data-i18n="thick"></span><input type="number" id="thick" value="3" min="0.1" step="0.1"></label>
       <label><span data-i18n="material"></span><select id="material"></select></label>
-      <label data-modes="pattern creative"><span data-i18n="diameter"></span><input type="number" id="diameter" min="0.1" step="0.5"></label>
-      <label data-modes="pattern creative"><span data-i18n="diaRef"></span><select id="diaRef">
+      <label data-modes="pattern creative mount"><span data-i18n="diameter"></span><input type="number" id="diameter" min="0.1" step="0.5"></label>
+      <label data-modes="pattern creative mount"><span data-i18n="diaRef"></span><select id="diaRef">
         <option value="inner" data-i18n="ref.inner"></option>
         <option value="mid" data-i18n="ref.mid"></option>
         <option value="outer" data-i18n="ref.outer"></option>
       </select></label>
     </div>
-    <div class="desc" id="diaSummary" data-modes="pattern creative"></div>
+    <div class="desc" id="diaSummary" data-modes="pattern creative mount"></div>
     <div class="checks" data-modes="pattern creative">
       <label class="check"><input type="checkbox" id="seamless"> <span data-i18n="seamless"></span></label>
     </div>
@@ -248,16 +249,17 @@
       <label><span data-i18n="jointSize"></span><input type="number" id="jointSize" value="10" min="1" step="0.5"></label>
     </div>
     <div class="desc" id="jointDesc" data-modes="pattern creative"></div>
+    <div class="desc warn" id="tabsNote" data-modes="pattern creative" data-i18n="mt.tabsNote"></div>
   </details>
 
-  <details class="sec" open>
+  <details class="sec" open data-modes="pattern creative test">
     <summary data-i18n="sec.shape"></summary>
     <select id="shape"></select>
     <div class="desc" id="shapeDesc"></div>
     <div class="desc warn" id="meanderNote" hidden data-i18n="cr.meanderNote"></div>
   </details>
 
-  <details class="sec" open>
+  <details class="sec" open data-modes="pattern creative test">
     <summary data-i18n="sec.slot"></summary>
     <div class="grid2">
       <label><span data-i18n="slotH"></span><input type="number" id="slotH" value="20" min="0.1" step="0.5"></label>
@@ -288,6 +290,40 @@
     <button class="add" id="addMod" data-i18n="mods.add"></button>
   </details>
 
+  <details class="sec" open data-modes="mount">
+    <summary data-i18n="sec.mount"></summary>
+    <div class="grid2">
+      <label><span data-i18n="mt.top"></span><select id="mountTop">
+        <option value="spider" data-i18n="mt.spider"></option>
+        <option value="disc" data-i18n="mt.disc"></option>
+        <option value="closed" data-i18n="mt.closed"></option>
+        <option value="ring" data-i18n="mt.ring"></option>
+        <option value="none" data-i18n="mt.none"></option>
+      </select></label>
+      <label><span data-i18n="mt.bottom"></span><select id="mountBottom">
+        <option value="ring" data-i18n="mt.ring"></option>
+        <option value="spider" data-i18n="mt.spider"></option>
+        <option value="disc" data-i18n="mt.disc"></option>
+        <option value="closed" data-i18n="mt.closed"></option>
+        <option value="none" data-i18n="mt.none"></option>
+      </select></label>
+      <label><span data-i18n="mt.hole"></span><input type="number" id="socketHole" value="40" min="5" step="0.5"></label>
+      <label><span data-i18n="mt.ringW"></span><input type="number" id="ringW" value="8" min="2" step="0.5"></label>
+      <label><span data-i18n="mt.spokes"></span><input type="number" id="spokes" value="3" min="2" max="8" step="1"></label>
+      <label><span data-i18n="mt.spokeW"></span><input type="number" id="spokeW" value="6" min="2" step="0.5"></label>
+      <label><span data-i18n="mt.hubW"></span><input type="number" id="hubW" value="6" min="2" step="0.5"></label>
+      <label><span data-i18n="mt.clear"></span><input type="number" id="mountClear" value="0.3" min="0" step="0.1"></label>
+      <label class="span2"><span data-i18n="mt.fix"></span><select id="mountFix">
+        <option value="glue" data-i18n="mt.fix.glue"></option>
+        <option value="tabs" data-i18n="mt.fix.tabs"></option>
+      </select></label>
+      <label data-tabs><span data-i18n="mt.tabCount"></span><input type="number" id="tabCount" value="4" min="2" max="24" step="1"></label>
+      <label data-tabs><span data-i18n="mt.tabW"></span><input type="number" id="tabW" value="10" min="2" step="0.5"></label>
+      <label data-tabs><span data-i18n="mt.rim"></span><input type="number" id="rim" value="4" min="1" step="0.5"></label>
+    </div>
+    <div class="desc" id="mountDesc"></div>
+  </details>
+
   <details class="sec" open data-modes="test">
     <summary data-i18n="sec.test"></summary>
     <div class="grid2">
@@ -311,7 +347,7 @@
 <main id="view">
   <div id="stage"></div>
   <div class="topbar">
-  <div class="viewbar" data-modes="pattern creative">
+  <div class="viewbar" data-modes="pattern creative mount">
     <div class="seg viewseg" role="radiogroup" data-i18n-aria="view.aria">
       <label><input type="radio" name="view" value="2d" checked> <span data-i18n="view.2d"></span></label>
       <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
@@ -325,7 +361,7 @@
         <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/>
       </svg>
     </label>
-    <label class="iconbtn flex" data-i18n-title="flexOverlay">
+    <label class="iconbtn flex" id="flexCtl" data-i18n-title="flexOverlay">
       <input type="checkbox" id="flexOn" data-i18n-aria="flexOverlay">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 14.76V4a2 2 0 1 0-4 0v10.76a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>
@@ -347,23 +383,23 @@
   <section>
     <h2 data-i18n="sec.output"></h2>
     <div class="grid2">
-      <label><span data-i18n="marginX"></span><input type="number" id="marginX" value="0" min="0" step="0.5"></label>
+      <label data-modes="pattern creative test"><span data-i18n="marginX"></span><input type="number" id="marginX" value="0" min="0" step="0.5"></label>
       <label><span data-i18n="kerf"></span><input type="number" id="kerf" value="0" min="0" max="1" step="0.01"></label>
-      <label><span data-i18n="order"></span><select id="order">
+      <label data-modes="pattern creative test"><span data-i18n="order"></span><select id="order">
         <option value="zigzag" data-i18n="ord.zigzag"></option>
         <option value="skip" data-i18n="ord.skip"></option>
       </select></label>
     </div>
     <div class="checks">
-      <label class="check"><input type="checkbox" id="openEdges"> <span data-i18n="openEdges"></span></label>
-      <label class="check"><input type="checkbox" id="border" checked> <span data-i18n="border"></span></label>
+      <label class="check" data-modes="pattern creative test"><input type="checkbox" id="openEdges"> <span data-i18n="openEdges"></span></label>
+      <label class="check" data-modes="pattern creative"><input type="checkbox" id="border" checked> <span data-i18n="border"></span></label>
       <label class="check"><input type="checkbox" id="rotate"> <span data-i18n="rotate"></span></label>
       <label class="check"><input type="checkbox" id="paramVisible" checked> <span data-i18n="paramVisible"></span></label>
     </div>
   </section>
 
   <section>
-    <h2 data-i18n="sec.flex"></h2>
+    <h2 id="flexHead" data-i18n="sec.flex"></h2>
     <div class="info" id="flexInfo"></div>
   </section>
 
@@ -392,8 +428,26 @@ const STR = {
   en: {
     'title': 'Kerf-O-Matic 9000',
     'project': 'Project name', 'project.ph': 'Project name (optional)',
-    'mode.aria': 'Mode', 'mode.pattern': 'Simple', 'mode.creative': 'Creative', 'mode.test': 'Test Pattern',
-    'load': 'Load', 'save': 'Save SVG', 'save.stl': 'Save STL', 'save.more': 'More export formats',
+    'mode.aria': 'Mode', 'mode.pattern': 'Simple', 'mode.creative': 'Creative', 'mode.test': 'Test Pattern', 'mode.mount': 'Lamp',
+    'load': 'Load',
+    'sec.mount': 'Pendant lamp (E27)', 'sec.mountInfo': 'Lamp',
+    'mt.top': 'Top part', 'mt.bottom': 'Bottom part', 'mt.spider': 'Spider + socket hole', 'mt.disc': 'Disc + socket hole', 'mt.closed': 'Disc', 'mt.ring': 'Ring', 'mt.none': 'None',
+    'mt.hole': 'Socket hole Ø (mm)', 'mt.ringW': 'Ring width (mm)', 'mt.spokes': 'Spokes', 'mt.spokeW': 'Spoke width (mm)', 'mt.hubW': 'Hub width (mm)', 'mt.clear': 'Fit clearance (mm)',
+    'mt.fix': 'Attachment', 'mt.fix.glue': 'Glued in (inside the cylinder)', 'mt.fix.tabs': 'Tabs & slots (parts on the ends)',
+    'mt.tabCount': 'Tabs per edge', 'mt.tabW': 'Tab width (mm)', 'mt.rim': 'Rim outside (mm)',
+    'mt.tabsNote': 'Tabs for the Lamp mount are added to the top and bottom edges (set in Lamp mode).',
+    'mt.desc': 'The parts sit inside the cylinder from Simple/Creative and are glued in. E27 shade rings usually need a 40–42 mm hole – check your socket.',
+    'mt.desc.tabs': 'The parts sit on the cylinder ends; the cylinder gets tabs that go through the slots. E27 shade rings usually need a 40–42 mm hole – check your socket.',
+    'mt.info': (di, d, hole) => `<b>Cylinder</b> inner Ø ${di} mm<br><b>Parts</b> Ø ${d} mm · socket hole Ø ${hole} mm`,
+    'mt.from': m => `Cylinder and pattern come from the ${m} mode.`,
+    'mt.bad': 'Ring, hub and socket hole do not fit into the part – make the ring or hub narrower or the hole smaller.',
+    'mt.led': 'Use LED bulbs: acrylic softens at about 80 °C.',
+    'lbl.top': 'TOP', 'lbl.bottom': 'BOTTOM',
+    'pl.mountCyl': (i, th, m) => `Cylinder: inner Ø ${i} mm, ${th} mm ${m}`,
+    'pl.mountPart': (pos, kind, d) => `${pos}: ${kind}, Ø ${d} mm`,
+    'pl.tabs': (n, w, h) => `Tabs: ${n} per edge, ${w} × ${h} mm`, 'pl.mountFix': m => `Attachment: ${m}`,
+    'pl.mountDims': (hole, rw, n, sw, hw, cl) => `Socket hole Ø ${hole} mm · ring ${rw} mm · ${n} spokes × ${sw} mm · hub ${hw} mm · clearance ${cl} mm`,
+    'alert.pngMount': 'PNG export is available in Simple and Creative mode.', 'save': 'Save SVG', 'save.stl': 'Save STL', 'save.more': 'More export formats',
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Cut file for the laser cutter',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 100 % in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0 % in the 3D view)' : `3D model bent ${b} % (Bend in the 3D view)`,
     'save.obj': 'Save OBJ', 'save.png': 'Save PNG',
@@ -505,8 +559,26 @@ const STR = {
   de: {
     'title': 'Kerf-O-Matic 9000',
     'project': 'Projektname', 'project.ph': 'Projektname (optional)',
-    'mode.aria': 'Modus', 'mode.pattern': 'Simple', 'mode.creative': 'Creative', 'mode.test': 'Test Pattern',
-    'load': 'Laden', 'save': 'SVG speichern', 'save.stl': 'STL speichern', 'save.more': 'Weitere Exportformate',
+    'mode.aria': 'Modus', 'mode.pattern': 'Simple', 'mode.creative': 'Creative', 'mode.test': 'Test Pattern', 'mode.mount': 'Lamp',
+    'load': 'Laden',
+    'sec.mount': 'Pendelleuchte (E27)', 'sec.mountInfo': 'Leuchte',
+    'mt.top': 'Oberes Teil', 'mt.bottom': 'Unteres Teil', 'mt.spider': 'Spinne + Fassungsloch', 'mt.disc': 'Scheibe + Fassungsloch', 'mt.closed': 'Scheibe', 'mt.ring': 'Ring', 'mt.none': 'Keins',
+    'mt.hole': 'Fassungsloch Ø (mm)', 'mt.ringW': 'Ringbreite (mm)', 'mt.spokes': 'Speichen', 'mt.spokeW': 'Speichenbreite (mm)', 'mt.hubW': 'Nabenbreite (mm)', 'mt.clear': 'Spiel (mm)',
+    'mt.fix': 'Befestigung', 'mt.fix.glue': 'Eingeklebt (innen im Zylinder)', 'mt.fix.tabs': 'Zapfen & Schlitze (Teile auf den Enden)',
+    'mt.tabCount': 'Zapfen pro Kante', 'mt.tabW': 'Zapfenbreite (mm)', 'mt.rim': 'Rand außen (mm)',
+    'mt.tabsNote': 'Für die Lamp-Halterung bekommen Ober- und Unterkante Zapfen (eingestellt im Lamp-Modus).',
+    'mt.desc': 'Die Teile sitzen innen im Zylinder aus Simple/Creative und werden eingeklebt. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
+    'mt.desc.tabs': 'Die Teile liegen auf den Zylinder-Enden; der Zylinder bekommt Zapfen, die durch die Schlitze gehen. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
+    'mt.info': (di, d, hole) => `<b>Zylinder</b> innen Ø ${di} mm<br><b>Teile</b> Ø ${d} mm · Fassungsloch Ø ${hole} mm`,
+    'mt.from': m => `Zylinder und Muster kommen aus dem Modus ${m}.`,
+    'mt.bad': 'Ring, Nabe und Fassungsloch passen nicht ins Teil – Ring oder Nabe schmaler oder Loch kleiner machen.',
+    'mt.led': 'LED-Leuchtmittel verwenden: Acryl wird ab etwa 80 °C weich.',
+    'lbl.top': 'OBEN', 'lbl.bottom': 'UNTEN',
+    'pl.mountCyl': (i, th, m) => `Zylinder: innen Ø ${i} mm, ${th} mm ${m}`,
+    'pl.mountPart': (pos, kind, d) => `${pos}: ${kind}, Ø ${d} mm`,
+    'pl.tabs': (n, w, h) => `Zapfen: ${n} pro Kante, ${w} × ${h} mm`, 'pl.mountFix': m => `Befestigung: ${m}`,
+    'pl.mountDims': (hole, rw, n, sw, hw, cl) => `Fassungsloch Ø ${hole} mm · Ring ${rw} mm · ${n} Speichen × ${sw} mm · Nabe ${hw} mm · Spiel ${cl} mm`,
+    'alert.pngMount': 'PNG-Export gibt es im Simple- und Creative-Modus.', 'save': 'SVG speichern', 'save.stl': 'STL speichern', 'save.more': 'Weitere Exportformate',
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Schnittdatei für den Laser',
     'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Bend 100 % in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Bend 0 % in der 3D-Ansicht)' : `3D-Modell, ${b} % gebogen (Bend in der 3D-Ansicht)`,
     'save.obj': 'OBJ speichern', 'save.png': 'PNG speichern',
@@ -762,10 +834,13 @@ function newMod(p) {
 
 // ---------------------------------------------------------------- params
 const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'kerf', 'jointSize',
+             'socketHole', 'ringW', 'spokes', 'spokeW', 'hubW', 'mountClear', 'tabCount', 'tabW', 'rim',
              'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
-const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint'];
+const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint', 'mountTop', 'mountBottom', 'mountFix'];
 const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible'];
-const MODES = ['pattern', 'creative', 'test'];
+const MODES = ['pattern', 'creative', 'mount', 'test'];
+// the cylinder the mount mode builds parts for comes from the last Simple/Creative design
+let shellMode = 'pattern';
 
 function readParams() {
   const p = { mode: document.querySelector('input[name=mode]:checked').value };
@@ -773,6 +848,8 @@ function readParams() {
   for (const k of SEL) p[k] = $(k).value;
   for (const k of CHK) p[k] = $(k).checked;
   p.project = $('project').value.trim();
+  p.shellMode = shellMode;
+  p.spokes = clamp(Math.round(p.spokes), 2, 8);
   p.testCount = clamp(Math.round(p.testCount), 1, 30);
   p.creative = JSON.parse(JSON.stringify(creative));
   return p;
@@ -784,6 +861,7 @@ function writeParams(p) {
   for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
   for (const k of CHK) if (p[k] != null) $(k).checked = !!p[k];
   if (p.project != null) $('project').value = p.project;
+  if (p.shellMode === 'pattern' || p.shellMode === 'creative') shellMode = p.shellMode;
   if (p.creative) creative = { bands: p.creative.bands || [], mods: (p.creative.mods || []).map(m => ({ ...newMod(p), ...m })) };
   syncDiameter();
   renderCreativeUI();
@@ -1010,6 +1088,8 @@ function generate(p, w, h, x0, x1, slotFn) {
   const offset = effectiveOffset(p, h), eps = 1e-9;
   // kerf compensation: shapes are drawn k2 smaller all round so the cut slot has the nominal size
   const k2 = Math.max(0, p.kerf || 0) / 2;
+  // slots that would open through the edge under a mount tab are left out, so the tab keeps solid material
+  const spans = tabSpans(p, w), underTab = (x, hw) => spans.some(([a, b]) => x - hw < b && x + hw > a);
   const slots = [];
   const fixed = { shape: p.shape, hw: p.slotW / 2, hh: p.slotH / 2, skip: false };
   const columns = cols.map((c, k) => {
@@ -1027,10 +1107,10 @@ function generate(p, w, h, x0, x1, slotFn) {
       if (sp.skip) rec.status = 'skip';
       else if (S.line) {
         const top = Math.max(0, y - hh), bot = Math.min(h, y + hh);
-        if (bot - top > eps) rec.els = S.draw(c.x, top, bot);
+        if (bot - top > eps && !((top <= eps || bot >= h - eps) && underTab(c.x, 0.1))) rec.els = S.draw(c.x, top, bot);
       } else if (y - hh >= -eps && y + hh <= h + eps) {
         rec.els = S.draw(c.x, y, Math.max(0, hw - k2), Math.max(0.05, hh - k2));
-      } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2) {
+      } else if (p.openEdges && Math.min(h, y + hh) - Math.max(0, y - hh) > 0.2 && !underTab(c.x, hw)) {
         const dw = Math.max(0, hw - k2), dh = Math.max(0.05, hh - k2);
         const open = sp.shape === 'Pill' && pillOpen(c.x, y, dw, dh, h);
         rec.els = open ? [open] : clipToBand(S.draw(c.x, y, dw, dh), h);
@@ -1265,15 +1345,34 @@ function fingerRows(H, size) {
   if (n % 2 === 0) n++;
   return Array.from({ length: n + 1 }, (_, i) => H * i / n);
 }
-function boardOutline(p, W, H) {
-  const j = p.joint, d = Math.max(0.5, p.jointSize || 0);
-  if (j === 'tab') return [[0, 0], [W + d, 0], [W + d, H], [0, H]];
-  if (j !== 'fingers') return [[0, 0], [W, 0], [W, H], [0, H]];
-  const ys = fingerRows(H, d), n = ys.length - 1, pts = [[0, 0], [W, 0]];
-  for (let i = 0; i < n; i++) if (i % 2) pts.push([W, ys[i]], [W + d, ys[i]], [W + d, ys[i + 1]], [W, ys[i + 1]]);
-  pts.push([W, H], [0, H]);
-  for (let i = n - 1; i >= 0; i--) if (i % 2) pts.push([0, ys[i + 1]], [d, ys[i + 1]], [d, ys[i]], [0, ys[i]]);
-  return pts;
+// Lamp mount with tabs & slots: tabs of one material thickness on the top and
+// bottom edges of the cylinder, evenly spread around the circumference.
+const tabHeight = p => p.mountFix === 'tabs' && p.mode !== 'test' ? p.thick : 0;
+function tabSpans(p, W) {
+  if (!tabHeight(p)) return [];
+  const n = clamp(Math.round(p.tabCount) || 4, 2, 24), w = Math.max(1, p.tabW || 10);
+  return Array.from({ length: n }, (_, i) => { const x = W * (i + 0.5) / n; return [x - w / 2, x + w / 2]; });
+}
+function boardOutline(p, W, H, withJoint = true) {
+  const j = withJoint ? p.joint : 'none', d = Math.max(0.5, p.jointSize || 0);
+  const th = tabHeight(p), spans = tabSpans(p, W);
+  const pts = [[0, 0]];
+  for (const [a, b] of spans) pts.push([a, 0], [a, -th], [b, -th], [b, 0]);   // tabs on the top edge
+  if (j === 'tab') pts.push([W + d, 0], [W + d, H]);
+  else if (j === 'fingers') {
+    const ys = fingerRows(H, d), n = ys.length - 1;
+    pts.push([W, 0]);
+    for (let i = 0; i < n; i++) if (i % 2) pts.push([W, ys[i]], [W + d, ys[i]], [W + d, ys[i + 1]], [W, ys[i + 1]]);
+    pts.push([W, H]);
+  } else pts.push([W, 0], [W, H]);
+  for (const [a, b] of [...spans].reverse()) pts.push([b, H], [b, H + th], [a, H + th], [a, H]);   // and on the bottom edge
+  pts.push([0, H]);
+  if (j === 'fingers') {
+    const ys = fingerRows(H, d), n = ys.length - 1;
+    for (let i = n - 1; i >= 0; i--) if (i % 2) pts.push([0, ys[i + 1]], [d, ys[i + 1]], [d, ys[i]], [0, ys[i]]);
+  }
+  // drop repeated points (e.g. a tab starting right at a corner)
+  return pts.filter((q, i) => { const r = pts[(i + 1) % pts.length]; return q[0] !== r[0] || q[1] !== r[1]; });
 }
 // Offset a rectilinear polygon outward by k (kerf compensation of the outline).
 function offsetOutline(pts, k) {
@@ -1290,7 +1389,86 @@ function offsetOutline(pts, k) {
 }
 const outlinePath = pts => `<path d="M${pts.map(q => `${f(q[0])},${f(q[1])}`).join(' L')} Z"/>`;
 
+// ---------------------------------------------------------------- mount
+// Pendant mount: parts that sit inside the cylinder (outer Ø = inner Ø of the
+// cylinder minus clearance) – a spider or disc with the E27 socket hole, or a
+// plain ring that keeps the cylinder round.
+function mountGeometry(p) {
+  const di = midDiameter(p) - p.thick, rm = midDiameter(p) / 2, tabs = p.mountFix === 'tabs';
+  // glued: inside the cylinder; tabs: on the ends, reaching past the wall by the rim
+  const ro = tabs ? rm + p.thick / 2 + p.rim : (di - p.mountClear) / 2;
+  const rh = p.socketHole / 2, ri = (tabs ? rm - p.thick / 2 : ro) - p.ringW, rhub = rh + p.hubW;
+  return { di, rm, ro, rh, ri, rhub, tabs, ok: ro > 0 && rh > 0.5 && ri > rhub + 1 && p.spokeW / 2 < rhub };
+}
+// Slots for the cylinder tabs, on the wall's centre line. The angles match the
+// tab positions around the cylinder in the 3D view and the assembly export.
+function tabSlots(p, cx, cy, k2) {
+  const g = mountGeometry(p), n = clamp(Math.round(p.tabCount) || 4, 2, 24);
+  const L = Math.max(0.5, p.tabW + p.mountClear - 2 * k2) / 2, Wd = Math.max(0.2, p.thick + p.mountClear - 2 * k2) / 2;
+  return Array.from({ length: n }, (_, i) => {
+    const a = 1.5 * Math.PI - 2 * Math.PI * (i + 0.5) / n, c = [cx + g.rm * Math.cos(a), cy + g.rm * Math.sin(a)];
+    const u = [-Math.sin(a), Math.cos(a)], nn = [Math.cos(a), Math.sin(a)];
+    const q = (su, sn) => `${f(c[0] + su * L * u[0] + sn * Wd * nn[0])},${f(c[1] + su * L * u[1] + sn * Wd * nn[1])}`;
+    return `<path d="M${q(-1, -1)} L${q(1, -1)} L${q(1, 1)} L${q(-1, 1)} Z"/>`;
+  });
+}
+// four quarter arcs: unlike two half arcs they stay exact when the endpoints are rounded
+const circlePath = (cx, cy, r) => {
+  const A = `A${f(r)},${f(r)} 0 0 1`;
+  return `<path d="M${f(cx + r)},${f(cy)} ${A} ${f(cx)},${f(cy + r)} ${A} ${f(cx - r)},${f(cy)} ${A} ${f(cx)},${f(cy - r)} ${A} ${f(cx + r)},${f(cy)} Z"/>`;
+};
+// Openings of a spider between ring (radius ri) and hub (rhub), n spokes of width w.
+function spiderWindows(cx, cy, ri, rhub, w, n) {
+  const out = [], h = w / 2;
+  const pt = (a, r, side) => {   // point on circle r along the spoke edge on `side` (±1)
+    const tt = Math.sqrt(Math.max(0, r * r - h * h)), c = Math.cos(a), s = Math.sin(a);
+    return [cx + tt * c - side * h * s, cy + tt * s + side * h * c];
+  };
+  for (let i = 0; i < n; i++) {
+    const a0 = -Math.PI / 2 + 2 * Math.PI * i / n, a1 = a0 + 2 * Math.PI / n;
+    const p1 = pt(a0, ri, 1), p2 = pt(a1, ri, -1), p3 = pt(a1, rhub, -1), p4 = pt(a0, rhub, 1);
+    const large = 2 * Math.PI / n > Math.PI ? 1 : 0;
+    out.push(`<path d="M${f(p1[0])},${f(p1[1])} A${f(ri)},${f(ri)} 0 ${large} 1 ${f(p2[0])},${f(p2[1])} L${f(p3[0])},${f(p3[1])} ` +
+             `A${f(rhub)},${f(rhub)} 0 ${large} 0 ${f(p4[0])},${f(p4[1])} Z"/>`);
+  }
+  return out;
+}
+function mountPartEls(p, kind, cx, cy, k2) {
+  const g = mountGeometry(p), holes = [];
+  if (kind === 'ring') holes.push(circlePath(cx, cy, g.ri - k2));
+  else if (kind !== 'closed') {
+    holes.push(circlePath(cx, cy, g.rh - k2));
+    if (kind === 'spider') holes.push(...spiderWindows(cx, cy, g.ri - k2, g.rhub + k2, p.spokeW + 2 * k2, p.spokes));
+  }
+  if (g.tabs) holes.push(...tabSlots(p, cx, cy, k2));
+  return { outer: [circlePath(cx, cy, g.ro + k2)], holes };
+}
+function buildMountDoc(p) {
+  const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
+  const g = mountGeometry(p), k2 = Math.max(0, p.kerf || 0) / 2, gap = 6;
+  doc.mount = { g, parts: [] };
+  let x = 0;
+  if (g.ro > 0) for (const [pos, kind] of [['top', p.mountTop], ['bottom', p.mountBottom]]) {
+    if (kind === 'none') continue;
+    const cx = x + g.ro + k2, cy = g.ro + k2, els = mountPartEls(p, kind, cx, cy, k2);
+    doc.cuts.push(...els.holes);
+    doc.borders.push(...els.outer);
+    doc.boards.push({ circle: [cx, cy, g.ro] });
+    // engraved label in the solid ring band (or between hole and edge on a disc)
+    const ly = kind === 'closed' ? cy + g.ro / 2 : kind === 'disc' ? cy + (g.rh + g.ro) / 2 : cy + g.ro - p.ringW / 2;
+    const fs = clamp((kind === 'closed' ? g.ro : kind === 'disc' ? g.ro - g.rh : p.ringW) * 0.45, 1.5, 4);
+    doc.labels.push(`<text x="${f(cx)}" y="${f(ly)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}">${esc(t('lbl.' + pos))}</text>`);
+    doc.mount.parts.push({ pos, kind, cx, cy, els });
+    x += 2 * (g.ro + k2) + gap;
+  }
+  doc.count = doc.cuts.length + doc.borders.length;
+  doc.w = Math.max(1, x - gap); doc.h = Math.max(1, 2 * (g.ro + k2)); doc.rotate = p.rotate;
+  doc.shell = buildDoc({ ...p, mode: p.shellMode || 'pattern' });
+  return doc;
+}
+
 function buildDoc(p) {
+  if (p.mode === 'mount') return buildMountDoc(p);
   const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
   const mat = MATERIALS[p.material], dMid = midDiameter(p);
 
@@ -1357,6 +1535,7 @@ function buildDoc(p) {
   // with a seam joint the outline is part of the joint, so it is always cut
   if (p.border || p.joint === 'tab' || p.joint === 'fingers') doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
   doc.bw = w;   // circumference; doc.w also covers a tab or fingers past it
+  doc.padY = tabHeight(p);   // mount tabs stick out above and below the board
   doc.w = Math.max(...doc.outline.map(q => q[0])); doc.h = h; doc.rotate = p.rotate;
   return doc;
 }
@@ -1387,6 +1566,19 @@ function modText(m) {
 }
 
 function paramLines(p, doc) {
+  if (p.mode === 'mount') {
+    const g = doc.mount.g, L = [];
+    if (p.project) L.push(t('pl.project', p.project));
+    L.push(t('pl.mode', t('mode.mount')));
+    L.push(t('pl.mountCyl', fmt(+g.di.toFixed(2)), fmt(p.thick), t('mat.' + p.material)));
+    for (const prt of doc.mount.parts) L.push(t('pl.mountPart', t('mt.' + (prt.pos === 'top' ? 'top' : 'bottom')), t('mt.' + prt.kind), fmt(+(2 * g.ro).toFixed(2))));
+    L.push(t('pl.mountDims', fmt(p.socketHole), fmt(p.ringW), p.spokes, fmt(p.spokeW), fmt(p.hubW), fmt(p.mountClear)));
+    L.push(t('pl.mountFix', t('mt.fix.' + p.mountFix)));
+    if (g.tabs) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
+    if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
+    L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
+    return L;
+  }
   const dm = midDiameter(p), th = p.thick;
   const L = [];
   if (p.project) L.push(t('pl.project', p.project));
@@ -1417,6 +1609,7 @@ function paramLines(p, doc) {
   L.push(t('pl.rotated', p.rotate));
   L.push(t('pl.edges', fmt(p.marginX), p.openEdges, p.mode === 'test' || p.border));
   if (p.mode !== 'test' && p.joint && p.joint !== 'none') L.push(t('pl.joint', t('joint.' + p.joint), `, ${fmt(p.jointSize)} mm`));
+  if (tabHeight(p)) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
   if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
   L.push(t('pl.order', t('ord.' + p.order)));
   if (p.mode !== 'test') {
@@ -1435,6 +1628,14 @@ function slug(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 function fileName(p, doc) {
+  if (p.mode === 'mount') {
+    const proj = slug(p.project || ''), g = doc.mount.g;
+    const parts = ['kerflamp', p.material, `D${fmt(+g.di.toFixed(1))}x${fmt(p.thick)}mm`, `top-${p.mountTop}`, `bottom-${p.mountBottom}`, `hole${fmt(p.socketHole)}`];
+    if (g.tabs) parts.push(`tabs${clamp(Math.round(p.tabCount), 2, 24)}x${fmt(p.tabW)}`);
+    if (p.kerf) parts.push(`kerf${fmt(p.kerf)}`);
+    if (proj) parts.unshift(proj);
+    return parts.join('_') + '.svg';
+  }
   const parts = [p.mode === 'test' ? 'kerftest' : 'kerf', p.shape.toLowerCase(), p.material];
   const proj = slug(p.project || '');
   if (proj) parts.unshift(proj);
@@ -1449,6 +1650,7 @@ function fileName(p, doc) {
   if (off) parts.push(`ofs${fmt(off)}`);
   if (p.marginX) parts.push(`m${fmt(p.marginX)}`);
   if (p.mode !== 'test' && p.joint && p.joint !== 'none') parts.push(`${p.joint}${fmt(p.jointSize)}`);
+  if (tabHeight(p)) parts.push(`tabs${clamp(Math.round(p.tabCount), 2, 24)}x${fmt(p.tabW)}`);
   if (p.kerf) parts.push(`kerf${fmt(p.kerf)}`);
   if (p.mode === 'creative') parts.push(`creative-b${p.creative.bands.length}m${p.creative.mods.length}`);
   if (p.mode !== 'test' && p.seamless) parts.push('seamless');
@@ -1466,8 +1668,14 @@ function paramsJSON(p) {
 }
 
 // Rotation by 90° clockwise: (x, y) → (H − y, x)
-const rotTransform = doc => doc.rotate ? ` transform="matrix(0,1,-1,0,${f(doc.h)},0)"` : '';
-const outerSize = doc => doc.rotate ? [doc.h, doc.w] : [doc.w, doc.h];
+// Mount tabs (doc.padY) stick out above and below the board: shift everything
+// down by padY and enlarge the drawing so nothing ends up outside the page.
+const rotTransform = doc => {
+  const pad = doc.padY || 0, H = doc.h + 2 * pad;
+  const shift = pad ? ` translate(0,${f(pad)})` : '';
+  return doc.rotate ? ` transform="matrix(0,1,-1,0,${f(H)},0)${shift}"` : shift ? ` transform="${shift.trim()}"` : '';
+};
+const outerSize = doc => { const H = doc.h + 2 * (doc.padY || 0); return doc.rotate ? [H, doc.w] : [doc.w, H]; };
 
 // Export document: separate Inkscape-compatible layers for cuts, border,
 // engraving and parameters. The parameter block sits below the work area.
@@ -1617,7 +1825,7 @@ if (viewMode !== '3d') { legacyView = viewMode; viewMode = '2d'; }   // cut / li
 document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
-  const boards = doc.boards.map(b => b.outline ? outlinePath(b.outline) : `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
+  const boards = doc.boards.map(b => b.circle ? `<circle cx="${f(b.circle[0])}" cy="${f(b.circle[1])}" r="${f(b.circle[2])}"/>` : b.outline ? outlinePath(b.outline) : `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/>`).join('');
   if (vm === 'light') {
     const all = doc.cuts.join('');
     return `<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.4"/></filter></defs>` +
@@ -1630,7 +1838,7 @@ function previewInner(p, doc, vm) {
     return `<g class="boards" fill="var(--board)" stroke="var(--muted)" stroke-width="1">${boards}</g>` +
       `<g stroke="#00000066" stroke-width="0.15">${doc.recs.map(r => `<g fill="${heatColor(r, dMid, mat)}">${r.els.join('')}</g>`).join('')}</g>`;
   }
-  return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' || (p.joint && p.joint !== 'none') ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
+  return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' || p.mode === 'mount' || (p.joint && p.joint !== 'none') ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
     `<g class="cuts" fill="none" stroke="var(--cut)" stroke-width="1.2">${doc.cuts.join('')}</g>` +
     `<g fill="var(--engrave)" font-family="Arial, Helvetica, sans-serif" font-size="3">${doc.labels.join('')}</g>`;
 }
@@ -1642,6 +1850,9 @@ function render() {
   $('meanderNote').hidden = !(p.mode === 'creative' && SHAPES[p.shape].meander);
   $('offset').disabled = p.offsetMode !== 'custom';
   $('jointSize').disabled = p.joint === 'none';
+  $('tabsNote').hidden = !tabHeight(p) || !['pattern', 'creative'].includes(p.mode);
+  document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = p.mountFix !== 'tabs'; });
+  $('mountDesc').textContent = t(p.mountFix === 'tabs' ? 'mt.desc.tabs' : 'mt.desc');
   $('jointDesc').textContent = p.joint === 'none' ? '' : t('joint.' + p.joint + '.d') + (p.border ? '' : t('joint.border'));
   $('testTo').disabled = p.testCount === 1;
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
@@ -1658,13 +1869,15 @@ function render() {
     return;
   }
   // 2D/3D plus an overlay: lamp light or flex heatmap
-  const test = p.mode === 'test', ov = test ? null : view3d.overlay;
+  const test = p.mode === 'test', mount = p.mode === 'mount';
+  const ov = test ? null : mount && view3d.overlay === 'flex' ? null : view3d.overlay;
   const is3d = !test && viewMode === '3d';
   const vm = is3d ? '3d' : ov === 'light' ? 'light' : ov === 'flex' ? 'flex' : 'cut';
   view.classList.toggle('dark', ov === 'light');
   view.classList.toggle('is3d', is3d);
   $('three').hidden = !is3d;
-  $('bendCtl').hidden = test;
+  $('bendCtl').hidden = test || mount;
+  $('flexCtl').hidden = mount;
   $('bendVal').textContent = view3d.bend + ' %';
   $('overlayCtl').hidden = test;
   stage.hidden = is3d;
@@ -1780,6 +1993,27 @@ function stripPart(W, y0, y1, d0, d1, v0, v1, material) {
 // The 3D view uses the same extruded solid as the STL/OBJ export, so slots
 // have exact round ends and real walls; texture coordinates follow the board
 // (for the heatmap).
+// Mount parts in 3D: flat solids lying horizontally inside the closed cylinder,
+// the top part flush with the top edge, the bottom part with the bottom edge.
+function buildMountParts(p, doc) {
+  if (!three.mountGroup) { three.mountGroup = new THREE.Group(); three.scene.add(three.mountGroup); }
+  for (const m of [...three.mountGroup.children]) { m.geometry.dispose(); three.mountGroup.remove(m); }
+  if (!doc.mount) return;
+  const sd = doc.shell, W = sd.bw ?? sd.w, H = sd.h, th = p.thick, R = W / (2 * Math.PI);
+  for (const prt of doc.mount.parts) {
+    const onEnds = doc.mount.g.tabs, tris = extrudeParts(prt.els.outer, prt.els.holes, th), cyUp = -prt.cy;
+    const y0 = prt.pos === 'top' ? (onEnds ? H / 2 : H / 2 - th) : (onEnds ? -H / 2 - th : -H / 2);
+    const pos = new Float32Array(tris.length);
+    // part plane (x, y up) → horizontal: x stays, y → −z around the cylinder axis, thickness → height
+    for (let k = 0; k < tris.length; k += 3) {
+      pos[k] = tris[k] - prt.cx; pos[k + 1] = y0 + tris[k + 2]; pos[k + 2] = -R - (tris[k + 1] - cyUp);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.computeVertexNormals();
+    three.mountGroup.add(new THREE.Mesh(geo, three.solidMat));
+  }
+}
 function buildParts(p, doc) {
   for (const prt of three.parts) { prt.mesh.geometry.dispose(); three.group.remove(prt.mesh); }
   three.parts = [];
@@ -1829,15 +2063,16 @@ function styleMaterial(m, p, lampOn, flexOn) {
 }
 function apply3dScene(p, doc, refit) {
   if (!three.parts.length) return;
-  const W = doc.bw ?? doc.w, H = doc.h, lampOn = view3d.overlay === 'light', flexOn = view3d.overlay === 'flex';
+  const mount = !!doc.shell, sd = doc.shell || doc, bend = mount ? 100 : view3d.bend;
+  const W = sd.bw ?? sd.w, H = sd.h, lampOn = view3d.overlay === 'light', flexOn = !mount && view3d.overlay === 'flex';
   $('bendVal').textContent = view3d.bend + ' %';
-  const axis = bendParts(W, view3d.bend / 100);
+  const axis = bendParts(W, bend / 100);
   const axisZ = axis == null ? -H : Math.max(axis, -Math.max(W, H));
   three.scene.background = new THREE.Color(lampOn ? 0x0f0d0c : 0x1a181b);
   three.hemi.intensity = lampOn ? 0.22 : 0.9;
   three.dir.intensity = lampOn ? 0.08 : 0.6;
   three.lamp.intensity = lampOn ? 2.4 : 0;
-  three.lamp.position.set(0, 0, axisZ);
+  three.lamp.position.set(0, mount ? H / 2 - Math.min(70, H * 0.4) : 0, axisZ);
   three.glow.mesh.visible = lampOn && !!three.glowMat.map;
   styleMaterial(three.solidMat, p, lampOn, flexOn);
   const size = `${W}x${H}`;
@@ -1924,10 +2159,11 @@ function buildHeat(p, doc) {
 async function rebuild3d(p, doc) {
   const token = ++buildToken;
   let masks, heat;
-  try { [masks, heat] = await Promise.all([buildMasks(doc), buildHeat(p, doc), ensureGeoLibs()]); }
+  try { [masks, heat] = await Promise.all([buildMasks(doc.shell || doc), buildHeat(p, doc.shell || doc), ensureGeoLibs()]); }
   catch (e) { geoLoading = null; $('threeMsg').textContent = t('three.fail'); return; }
   if (token !== buildToken) return;
-  buildParts(p, doc);
+  buildParts(p, doc.shell || doc);
+  buildMountParts(p, doc);
   setTexture(three.glowMat, 'map', masks.glow);
   if (three.heatTex) three.heatTex.dispose();
   three.heatTex = new THREE.CanvasTexture(heat);
@@ -1972,6 +2208,17 @@ $('lampOn').addEventListener('change', () => setOverlay($('lampOn').checked ? 'l
 $('flexOn').addEventListener('change', () => setOverlay($('flexOn').checked ? 'flex' : null));
 
 function renderInfo(p, doc) {
+  $('flexHead').textContent = t(p.mode === 'mount' ? 'sec.mountInfo' : 'sec.flex');
+  if (p.mode === 'mount') {
+    const g = doc.mount.g;
+    let html = `<p style="margin:0">${t('mt.info', g.di.toFixed(1), (2 * g.ro).toFixed(1), fmt(p.socketHole))}</p>`;
+    if (!g.ok) html += `<p class="bad">${esc(t('mt.bad'))}</p>`;
+    html += `<p>${esc(t('mt.from', t('mode.' + (p.shellMode || 'pattern'))))}</p>`;
+    if (p.material === 'pmma' || p.material === 'petg') html += `<p class="warn">${esc(t('mt.led'))}</p>`;
+    $('flexInfo').innerHTML = html;
+    $('info').innerHTML = `<b>${t('info.cuts')}:</b> ${doc.count}<br><code>${esc(fileName(p, doc))}</code>`;
+    return;
+  }
   const mat = MATERIALS[p.material], dm = midDiameter(p), matName = t('mat.' + p.material);
   let html = '';
   if (p.mode === 'test') {
@@ -2075,7 +2322,10 @@ $('diameter').addEventListener('input', diameterChanged);
 document.querySelectorAll('.panel input, .panel select, #project').forEach(el => el.addEventListener('input', render));
 $('slotW').addEventListener('input', renderCreativeUI);
 $('slotH').addEventListener('input', renderCreativeUI);
-document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', () => { zoom = 1; panX = panY = 0; render(); }));
+document.querySelectorAll('input[name=mode]').forEach(el => el.addEventListener('change', () => {
+  if (el.value === 'pattern' || el.value === 'creative') shellMode = el.value;
+  zoom = 1; panX = panY = 0; render();
+}));
 document.querySelectorAll('input[name=view]').forEach(el => el.addEventListener('change', () => {
   viewMode = el.value;
   try { localStorage.setItem('kerf-view', viewMode); } catch (e) {}
@@ -2109,6 +2359,7 @@ async function exportAs(fmt) {
   const { p, doc } = last;
   if (fmt === 'svg') { download(new Blob([buildSVG(p, doc)], { type: 'image/svg+xml' }), fileName(p, doc)); return; }
   if (p.mode === 'test') { alert(t('alert.stlTest')); return; }
+  if (p.mode === 'mount' && fmt === 'png') { alert(t('alert.pngMount')); return; }
   const btn = $('saveBtn'), base = fileName(p, doc).replace(/\.svg$/, '');
   btn.disabled = true; btn.textContent = t('stl.busy');
   try {
@@ -2118,9 +2369,10 @@ async function exportAs(fmt) {
       download(await pngWithParams(tile.blob, paramsJSON(p)), `${base}_tile_${fmt3(tile.w)}x${fmt3(tile.h)}mm.png`);
     } else {
       await ensureGeoLibs();
-      const bend = view3d.bend, tris = buildMesh(p, doc, bend / 100);
-      if (fmt === 'stl') download(new Blob([stlBytes(tris)], { type: 'model/stl' }), `${base}_bend${bend}.stl`);
-      else download(new Blob([objText(tris, base, paramsJSON(p))], { type: 'model/obj' }), `${base}_bend${bend}.obj`);
+      const mount = p.mode === 'mount', bend = mount ? 100 : view3d.bend;
+      const tris = mount ? buildAssembly(p, doc) : buildMesh(p, doc, bend / 100), suffix = mount ? '_assembly' : `_bend${bend}`;
+      if (fmt === 'stl') download(new Blob([stlBytes(tris)], { type: 'model/stl' }), `${base}${suffix}.stl`);
+      else download(new Blob([objText(tris, base, paramsJSON(p))], { type: 'model/obj' }), `${base}${suffix}.obj`);
     }
   } catch (e) {
     console.error(e);
@@ -2294,6 +2546,53 @@ function splitSeamTJunctions(tris, seams) {
   tris.length = 0;
   for (const x of out) tris.push(x);
 }
+// Extrude a Clipper PolyTree into a closed solid of thickness th: faces are
+// triangulated with earcut, walls follow every contour except `seam` edges.
+function extrudeTree(tree, P, th, tri, seam = () => false) {
+  const face = (outer, inner) => {
+    outer = cleanRing(outer);
+    inner = inner.map(cleanRing).filter(r => r.length >= 3);
+    if (outer.length < 3) return;
+    if (ringArea(outer) < 0) outer = [...outer].reverse();            // outer CCW
+    inner = inner.map(r => ringArea(r) > 0 ? [...r].reverse() : r);   // holes CW
+    const rings = [outer, ...inner], flat = [], idx = [], pts = [];
+    for (const r of rings) { if (pts.length) idx.push(pts.length); for (const q of r) { pts.push(q); flat.push(q.X, q.Y); } }
+    const ti = earcut(flat, idx.length ? idx : null);
+    for (let k = 0; k < ti.length; k += 3) {
+      let a = pts[ti[k]], b = pts[ti[k + 1]], c = pts[ti[k + 2]];
+      if ((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X) < 0) [b, c] = [c, b];
+      tri(P(a, th), P(b, th), P(c, th));   // top, facing +z
+      tri(P(a, 0), P(c, 0), P(b, 0));      // bottom, facing −z
+    }
+    for (const r of rings) for (let k = 0; k < r.length; k++) {
+      const a = r[k], b = r[(k + 1) % r.length];
+      if (seam(a, b)) continue;
+      tri(P(a, 0), P(b, 0), P(b, th));
+      tri(P(a, 0), P(b, th), P(a, th));
+    }
+  };
+  const walk = node => {
+    for (const c of node.Childs()) {
+      if (c.IsHole()) continue;
+      face(c.Contour(), c.Childs().map(h => h.Contour()));
+      for (const h of c.Childs()) walk(h);   // islands inside holes
+    }
+  };
+  walk(tree);
+}
+// A flat part from SVG outlines: outer elements minus hole elements, extruded
+// to th. Returns triangles (x, y up, z 0…th) in the elements' coordinates.
+function extrudeParts(outerEls, holeEls, th) {
+  const S = STL_SCALE, paths = els => { sampler.innerHTML = els.join(''); return [...sampler.children].map(el => sampleOutline(el, true).map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round(-y * S) }))); };
+  const cl = new ClipperLib.Clipper(), tree = new ClipperLib.PolyTree(), tris = [];
+  cl.StrictlySimple = true;
+  cl.AddPaths(paths(outerEls), ClipperLib.PolyType.ptSubject, true);
+  if (holeEls.length) cl.AddPaths(paths(holeEls), ClipperLib.PolyType.ptClip, true);
+  cl.Execute(ClipperLib.ClipType.ctDifference, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+  extrudeTree(tree, (q, z) => [q.X / S, q.Y / S, z], th, (a, b, c) => tris.push(...a, ...b, ...c));
+  return tris;
+}
+
 // The board as a closed flat solid: triangles (x centred, y up 0…H, z 0…th).
 // With `withJoint` the board outline includes the seam joint (3D view only;
 // STL/OBJ stay at the plain circumference).
@@ -2301,8 +2600,9 @@ function buildSolid(p, doc, withJoint = false) {
   const W = doc.bw ?? doc.w, H = doc.h, th = p.thick, S = STL_SCALE;
   const holes = slotPolygons(doc);
   const HS = Math.round(H * S);
-  const outline = (withJoint && doc.outline ? doc.outline : [[0, 0], [W, 0], [W, H], [0, H]])
+  const outline = (doc.outline ? (withJoint ? doc.outline : boardOutline(p, W, H, false)) : [[0, 0], [W, 0], [W, H], [0, H]])
     .map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round((H - y) * S) }));
+  const minY = Math.min(...outline.map(q => q.Y)), maxY = Math.max(...outline.map(q => q.Y));
   const minX = Math.min(...outline.map(q => q.X)), maxX = Math.max(...outline.map(q => q.X));
   const n = Math.max(1, Math.ceil((maxX - minX) / S / STL_STRIP));
   const tris = [];   // flat triangles: 9 numbers each, (x mm, y mm up, z 0…th)
@@ -2316,7 +2616,7 @@ function buildSolid(p, doc, withJoint = false) {
     // this strip of the board outline …
     const ci = new ClipperLib.Clipper(), piece = new ClipperLib.Paths();
     ci.AddPath(outline, ClipperLib.PolyType.ptSubject, true);
-    ci.AddPath([{ X: X0, Y: 0 }, { X: X1, Y: 0 }, { X: X1, Y: HS }, { X: X0, Y: HS }], ClipperLib.PolyType.ptClip, true);
+    ci.AddPath([{ X: X0, Y: minY }, { X: X1, Y: minY }, { X: X1, Y: maxY }, { X: X0, Y: maxY }], ClipperLib.PolyType.ptClip, true);
     ci.Execute(ClipperLib.ClipType.ctIntersection, piece, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
     // … minus the slots
     const cl = new ClipperLib.Clipper();
@@ -2326,36 +2626,7 @@ function buildSolid(p, doc, withJoint = false) {
     const tree = new ClipperLib.PolyTree();
     cl.Execute(ClipperLib.ClipType.ctDifference, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
     const seam = (a, b) => a.X === b.X && ((a.X === X0 && X0 !== minX) || (a.X === X1 && X1 !== maxX));
-    const face = (outer, inner) => {
-      outer = cleanRing(outer);
-      inner = inner.map(cleanRing).filter(r => r.length >= 3);
-      if (outer.length < 3) return;
-      if (ringArea(outer) < 0) outer = [...outer].reverse();            // outer CCW
-      inner = inner.map(r => ringArea(r) > 0 ? [...r].reverse() : r);   // holes CW
-      const rings = [outer, ...inner], flat = [], idx = [], pts = [];
-      for (const r of rings) { if (pts.length) idx.push(pts.length); for (const q of r) { pts.push(q); flat.push(q.X, q.Y); } }
-      const ti = earcut(flat, idx.length ? idx : null);
-      for (let k = 0; k < ti.length; k += 3) {
-        let a = pts[ti[k]], b = pts[ti[k + 1]], c = pts[ti[k + 2]];
-        if ((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X) < 0) [b, c] = [c, b];
-        tri(P(a, th), P(b, th), P(c, th));   // top, facing +z
-        tri(P(a, 0), P(c, 0), P(b, 0));      // bottom, facing −z
-      }
-      for (const r of rings) for (let k = 0; k < r.length; k++) {
-        const a = r[k], b = r[(k + 1) % r.length];
-        if (seam(a, b)) continue;
-        tri(P(a, 0), P(b, 0), P(b, th));
-        tri(P(a, 0), P(b, th), P(a, th));
-      }
-    };
-    const walk = node => {
-      for (const c of node.Childs()) {
-        if (c.IsHole()) continue;
-        face(c.Contour(), c.Childs().map(h => h.Contour()));
-        for (const h of c.Childs()) walk(h);   // islands inside holes
-      }
-    };
-    walk(tree);
+    extrudeTree(tree, P, th, tri, seam);
   }
   splitSeamTJunctions(tris, Array.from({ length: n - 1 }, (_, k) => seamX(k + 1) / S - W / 2));
   return tris;
@@ -2376,6 +2647,22 @@ function buildMesh(p, doc, bend) {
     out.set(map(tris[k + 6], tris[k + 7], tris[k + 8]), k + 3);
     out.set(map(tris[k + 3], tris[k + 4], tris[k + 5]), k + 6);
   }
+  return out;
+}
+// The pendant as one model: the closed cylinder plus the mount parts inside it
+// (axis at the origin, height along z – same frame as buildMesh).
+function buildAssembly(p, doc) {
+  const sd = doc.shell, H = sd.h, th = p.thick;
+  const shell = buildMesh(p, sd, 1), parts = [];
+  for (const prt of doc.mount.parts) {
+    const onEnds = doc.mount.g.tabs, tris = extrudeParts(prt.els.outer, prt.els.holes, th);
+    const z0 = prt.pos === 'top' ? (onEnds ? H : H - th) : (onEnds ? -th : 0);
+    // part plane → horizontal, mirrored in y like the 3D view so slots meet the tabs; swap b/c to keep normals outward
+    const v = k => [tris[k] - prt.cx, -(tris[k + 1] + prt.cy), z0 + tris[k + 2]];
+    for (let k = 0; k < tris.length; k += 9) parts.push(...v(k), ...v(k + 6), ...v(k + 3));
+  }
+  const out = new Float32Array(shell.length + parts.length);
+  out.set(shell); out.set(parts, shell.length);
   return out;
 }
 function stlBytes(tris) {
