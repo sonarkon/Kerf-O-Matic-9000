@@ -117,10 +117,28 @@
   .card-ph { margin-top: 8px; border: 2px dashed var(--accent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
   body.card-drag, body.card-drag * { cursor: grabbing !important; user-select: none; }
   .card .grid2, .card .grid3 { gap: 6px; }
+  /* slider with its value: drag or type */
+  .card label.sl { flex-direction: row; align-items: center; gap: 6px; }
+  .slrow .sllabel { flex: 0 0 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slrow input[type=range] { flex: 1; min-width: 0; padding: 0; accent-color: var(--accent); }
+  .card .slrow input[type=number] { width: 58px; flex: 0 0 auto; padding: 3px 4px; }
+  /* image modulator: fit buttons, placement preview, levels */
+  .fitseg { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .fitseg button { border: 0; border-radius: 0; padding: 4px 0; background: var(--input); color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 10px; }
+  .fitseg button + button { border-left: 1px solid var(--line); }
+  .fitseg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .fitseg svg { width: 22px; height: 16px; }
+  .placer { display: block; margin: 0 auto; border-radius: 4px; touch-action: none; cursor: grab; }
+  .placer.fixed { cursor: default; }
+  .placer.dragging { cursor: grabbing; }
+  .levels canvas { display: block; width: 100%; height: 46px; touch-action: none; cursor: ew-resize; }
+  .levels .lvnums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 3px; }
+  .levels .lvnums label { font-size: 10px; }
+  .levels .lvnums input { padding: 2px 4px; font-size: 12px; }
   .card input, .card select { padding: 4px 6px; font-size: 13px; }
   .card .imgrow { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
   .card .imgrow button { padding: 4px 8px; font-size: 12px; }
-  .card .imgrow img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); }
+  .card .imgrow img { width: 56px; height: 56px; object-fit: contain; background: repeating-conic-gradient(#0001 0 25%, #0000 0 50%) 0 0 / 8px 8px; border-radius: 4px; border: 1px solid var(--line); }
   .info {
     font-size: 12px; line-height: 1.5; color: var(--muted);
     background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px;
@@ -529,7 +547,13 @@ const STR = {
     'mod.cx': 'Center X (%)', 'mod.cy': 'Center Y (%)', 'mod.radius': 'Radius (mm)', 'mod.period': 'Period (mm)',
     'mod.phase': 'Phase (°)', 'mod.scale': 'Scale (mm)', 'mod.seed': 'Seed',
     'mod.pick': 'Choose image…', 'mod.noImage': 'No image yet', 'mod.angleHint': '0° = left → right · 90° = top → bottom',
-    'mod.imgHint': 'Bright = 1, dark = 0. Stretched to the board.',
+    'mod.imgHint': 'Bright = 1, dark = 0. The preview shows the image as it reaches the pattern.',
+    'mod.fit': 'Fit', 'mod.levels': 'levels', 'mod.levels.title': 'Levels', 'fit.stretch': 'Stretch to the board', 'fit.contain': 'Fit (no distortion)', 'fit.cover': 'Fill (cropped)', 'fit.tile': 'Tile',
+    'mod.imgScale': 'Size (%)', 'mod.posX': 'Position X (%)', 'mod.posY': 'Position Y (%)',
+    'mod.black': 'Black %', 'mod.white': 'White %', 'mod.gamma': 'Gamma', 'mod.blur': 'Blur (mm)',
+    'mod.fitHint': 'Outside a fitted image the modulator has no effect. Tiles repeat seamlessly around the cylinder with Seamless on.',
+    'mod.placeHint': 'Drag to move, wheel to resize.', 'mod.levelsHint': 'Drag the markers: black point, mid-tones (gamma), white point. Double-click resets.',
+    'fit.s.stretch': 'Stretch', 'fit.s.contain': 'Fit', 'fit.s.cover': 'Fill', 'fit.s.tile': 'Tile',
     'btn.up': 'Move up', 'btn.down': 'Move down', 'btn.del': 'Remove', 'btn.drag': 'Drag to reorder, click to collapse or expand', 'btn.dup': 'Duplicate', 'btn.on': 'Active – untick to switch it off for a moment', 'mod.offTag': '(off)',
 
     'shape.Pill': 'Pill', 'desc.Pill': 'Pill shape: one closed path, a rectangle with semicircular ends. First choice for acrylic – round ends prevent cracks.',
@@ -687,7 +711,13 @@ const STR = {
     'mod.cx': 'Mitte X (%)', 'mod.cy': 'Mitte Y (%)', 'mod.radius': 'Radius (mm)', 'mod.period': 'Periode (mm)',
     'mod.phase': 'Phase (°)', 'mod.scale': 'Größe (mm)', 'mod.seed': 'Seed',
     'mod.pick': 'Bild wählen…', 'mod.noImage': 'Noch kein Bild', 'mod.angleHint': '0° = links → rechts · 90° = oben → unten',
-    'mod.imgHint': 'Hell = 1, dunkel = 0. Auf die Platte gestreckt.',
+    'mod.imgHint': 'Hell = 1, dunkel = 0. Die Vorschau zeigt das Bild so, wie es beim Muster ankommt.',
+    'mod.fit': 'Einpassen', 'mod.levels': 'Tonwerte', 'mod.levels.title': 'Tonwerte', 'fit.stretch': 'Auf die Platte strecken', 'fit.contain': 'Einpassen (unverzerrt)', 'fit.cover': 'Füllen (beschnitten)', 'fit.tile': 'Kacheln',
+    'mod.imgScale': 'Größe (%)', 'mod.posX': 'Position X (%)', 'mod.posY': 'Position Y (%)',
+    'mod.black': 'Schwarz %', 'mod.white': 'Weiß %', 'mod.gamma': 'Gamma', 'mod.blur': 'Weichz. (mm)',
+    'mod.fitHint': 'Außerhalb eines eingepassten Bildes wirkt der Modulator nicht. Kacheln laufen mit Seamless nahtlos um den Zylinder.',
+    'mod.placeHint': 'Ziehen verschiebt, Mausrad skaliert.', 'mod.levelsHint': 'Marker ziehen: Schwarzpunkt, Mitten (Gamma), Weißpunkt. Doppelklick setzt zurück.',
+    'fit.s.stretch': 'Strecken', 'fit.s.contain': 'Einpassen', 'fit.s.cover': 'Füllen', 'fit.s.tile': 'Kacheln',
     'btn.up': 'Nach oben', 'btn.down': 'Nach unten', 'btn.del': 'Entfernen', 'btn.drag': 'Ziehen zum Umsortieren, klicken zum Ein- oder Ausklappen', 'btn.dup': 'Duplizieren', 'btn.on': 'Aktiv – abwählen, um ihn kurz auszuschalten', 'mod.offTag': '(aus)',
 
     'shape.Pill': 'Pille', 'desc.Pill': 'Pillenform: ein geschlossener Pfad, Rechteck mit halbrunden Enden. Für Acryl erste Wahl – runde Enden vermeiden Risse.',
@@ -924,7 +954,8 @@ function newMod(p) {
     target: 'slotW', source: 'linear', invert: false, strength: 100,
     from: +(p.slotW * 0.5).toFixed(2), to: +(p.slotW * 1.5).toFixed(2), threshold: 50, shapeB: 'Bone',
     angle: 90, mirror: false, cx: 50, cy: 50, radius: Math.round(Math.min(p.boardW, p.boardH) / 2),
-    period: 40, phase: 0, scale: 25, seed: 1, img: null
+    period: 40, phase: 0, scale: 25, seed: 1, img: null,
+    fit: 'stretch', imgScale: 100, posX: 50, posY: 50, black: 0, white: 100, gamma: 1, blur: 0
   };
 }
 
@@ -1283,6 +1314,7 @@ function imageGrid(url) {
     const d = g.getImageData(0, 0, im.width, im.height).data, a = new Float32Array(im.width * im.height);
     for (let i = 0; i < a.length; i++) a[i] = (0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) / 255;
     imgCache.set(url, { w: im.width, h: im.height, a });
+    renderCreativeUI();   // thumbnails with levels need the decoded image
     render();
   };
   im.src = url;
@@ -1294,6 +1326,52 @@ function sampleGrid(g, u, v) {
   const at = (i, j) => g.a[(iy + j) * g.w + ix + i];
   if (g.w < 2 || g.h < 2) return g.a[0] ?? 0;
   return at(0, 0) * (1 - fx) * (1 - fy) + at(1, 0) * fx * (1 - fy) + at(0, 1) * (1 - fx) * fy + at(1, 1) * fx * fy;
+}
+
+// Tone curve of an image modulator: black and white point, then gamma (> 1 lightens the mid-tones).
+function levelsFn(m) {
+  const b = (+m.black || 0) / 100, w = (m.white ?? 100) / 100, gm = Math.max(0.1, +m.gamma || 1);
+  return v => Math.pow(clamp((v - b) / Math.max(1e-3, w - b), 0, 1), 1 / gm);
+}
+// Gaussian blur of a brightness grid (radius = sigma in pixels), cached per image and radius.
+const blurCache = new Map();
+function blurGrid(g, sigma, key) {
+  if (!(sigma >= 0.3)) return g;
+  const k = `${key}|${sigma.toFixed(1)}`;
+  if (blurCache.has(k)) return blurCache.get(k);
+  const r = Math.ceil(2.5 * sigma), ker = Array.from({ length: 2 * r + 1 }, (_, i) => Math.exp(-((i - r) ** 2) / (2 * sigma * sigma)));
+  const sum = ker.reduce((a, b) => a + b, 0), { w, h } = g, tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let a = 0;
+    for (let i = -r; i <= r; i++) a += ker[i + r] * g.a[y * w + clamp(x + i, 0, w - 1)];
+    tmp[y * w + x] = a / sum;
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let a = 0;
+    for (let i = -r; i <= r; i++) a += ker[i + r] * tmp[clamp(y + i, 0, h - 1) * w + x];
+    out[y * w + x] = a / sum;
+  }
+  if (blurCache.size > 20) blurCache.clear();
+  const res = { w, h, a: out };
+  blurCache.set(k, res);
+  return res;
+}
+// Where the image lies on the W × H board: stretched, fitted, filled or tiled
+// (tiles fit a whole number of times around the cylinder with `wrap`).
+function imagePlacement(m, g, W, H, wrap) {
+  const ia = g.w / g.h, fit = m.fit || 'stretch', sc = Math.max(1, +m.imgScale || 100) / 100;
+  const px = (m.posX ?? 50) / 100, py = (m.posY ?? 50) / 100;
+  if (fit === 'contain' || fit === 'cover') {
+    const iw = (fit === 'contain' ? Math.min(W, H * ia) : Math.max(W, H * ia)) * sc, ih = iw / ia;
+    return { fit, iw, ih, x0: (W - iw) * px, y0: (H - ih) * py };
+  }
+  if (fit === 'tile') {
+    let iw = W * sc;
+    if (wrap) iw = W / Math.max(1, Math.round(W / iw));
+    const ih = iw / ia;
+    return { fit, iw, ih, x0: iw * (px - 0.5), y0: ih * (py - 0.5) };
+  }
+  return { fit: 'stretch', iw: W, ih: H, x0: 0, y0: 0 };
 }
 
 // Source function v(x, y) → 0…1 for one modulator on a W × H board. With
@@ -1328,8 +1406,16 @@ function modSource(m, W, H, wrap) {
       };
     }
     case 'image': {
-      const g = m.img && imageGrid(m.img.url);
-      return g ? (x, y) => sampleGrid(g, x / W, y / H) : null;
+      const g0 = m.img && imageGrid(m.img.url);
+      if (!g0) return null;
+      const pl = imagePlacement(m, g0, W, H, wrap), lv = levelsFn(m);
+      const g = blurGrid(g0, (+m.blur || 0) / ((pl.iw / g0.w + pl.ih / g0.h) / 2), m.img.url);
+      return (x, y) => {
+        let u = (x - pl.x0) / pl.iw, v = (y - pl.y0) / pl.ih;
+        if (pl.fit === 'tile') { u -= Math.floor(u); v -= Math.floor(v); }
+        else if (u < 0 || u > 1 || v < 0 || v > 1) return null;   // outside a fitted image: no effect
+        return lv(sampleGrid(g, u, v));
+      };
     }
   }
   return null;
@@ -1356,7 +1442,9 @@ function creativeSlotFn(p, W, H) {
       if (num(b.slotH) != null) sh = num(b.slotH);
     }
     for (const { m, fn } of mods) {
-      let v = clamp(fn(x, y), 0, 1);
+      const raw = fn(x, y);
+      if (raw == null) continue;
+      let v = clamp(raw, 0, 1);
       if (m.invert) v = 1 - v;
       if (m.target === 'skip') { if (v > m.threshold / 100) skip = true; }
       else if (m.target === 'shape') { if (v > m.threshold / 100 && SHAPES[m.shapeB]) shape = m.shapeB; }
@@ -1851,7 +1939,8 @@ function modText(m) {
     radial: () => `${fmt(m.cx)}/${fmt(m.cy)} %, r ${fmt(m.radius)} mm`,
     wave: () => `${fmt(m.angle)}°, ${fmt(m.period)} mm, ${fmt(m.phase)}°`,
     noise: () => `${fmt(m.scale)} mm, seed ${m.seed}`,
-    image: () => m.img ? m.img.name : '–'
+    image: () => !m.img ? '–' : [m.img.name, t('fit.' + (m.fit || 'stretch')) + ((m.fit || 'stretch') === 'stretch' ? '' : ` ${fmt(m.imgScale ?? 100)} % @ ${fmt(m.posX ?? 50)}/${fmt(m.posY ?? 50)}`),
+      `${t('mod.levels')} ${fmt(m.black || 0)}–${fmt(m.white ?? 100)} %, γ ${fmt(m.gamma || 1)}`, m.blur ? `${t('mod.blur')} ${fmt(m.blur)}` : ''].filter(Boolean).join(', ')
   }[m.source]();
   const tgt = m.target === 'skip' ? `> ${fmt(m.threshold)} %`
     : m.target === 'shape' ? `→ ${shapeName(m.shapeB)} > ${fmt(m.threshold)} %`
@@ -2016,6 +2105,12 @@ function buildSVG(p, doc) {
 const opt = (v, label, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(label)}</option>`;
 const numField = (list, i, key, label, val, extra = '') =>
   `<label>${esc(label)}<input type="number" data-list="${list}" data-i="${i}" data-k="${key}" value="${val ?? ''}" ${extra}></label>`;
+// a slider with its value next to it (both edit the same field)
+const sliderField = (list, i, key, label, val, min, max, step) => {
+  const a = `data-list="${list}" data-i="${i}" data-k="${key}"`;
+  return `<label class="sl slrow"><span class="sllabel">${esc(label)}</span><input type="range" ${a} min="${min}" max="${max}" step="${step}" value="${val ?? ''}">` +
+    `<input type="number" ${a} step="${step}" value="${val ?? ''}"></label>`;
+};
 const cardHead = (list, i, n, title, item) =>
   `<div class="card-head" data-list="${list}" data-i="${i}" title="${esc(t('btn.drag'))}"><i class="grip" aria-hidden="true">⠿</i>` +
   `<i class="fold" aria-hidden="true">${item.collapsed ? '▸' : '▾'}</i><span>${esc(title)}</span>` +
@@ -2043,6 +2138,7 @@ function renderCreativeUI() {
   }).join('');
 
   renderPartsUI();
+  requestAnimationFrame(drawAllImageWidgets);   // canvases need their layout size
   $('modList').innerHTML = creative.mods.map((m, i, all) => {
     const head = cardHead('mods', i, all.length, `${t('mod.n', i + 1)} · ${m.collapsed ? modText(m) : t('tg.' + m.target)}`, m);
     const cls = 'card' + (m.collapsed ? ' collapsed' : '') + (m.off ? ' off' : '');
@@ -2052,30 +2148,45 @@ function renderCreativeUI() {
     h += `<label>${esc(t('mod.source'))}<select data-list="mods" data-i="${i}" data-k="source" data-rebuild>${MOD_SOURCES.map(k => opt(k, t('src.' + k), m.source)).join('')}</select></label>`;
     if (m.target === 'slotW' || m.target === 'slotH') {
       h += numField('mods', i, 'from', t('mod.from'), m.from, 'step="0.1"') + numField('mods', i, 'to', t('mod.to'), m.to, 'step="0.1"');
-      h += numField('mods', i, 'strength', t('mod.strength'), m.strength, 'min="0" max="100" step="5"');
+      h += `<div class="span2">${sliderField('mods', i, 'strength', t('mod.strength'), m.strength, 0, 100, 1)}</div>`;
     } else {
       if (m.target === 'shape') h += `<label>${esc(t('mod.shapeB'))}<select data-list="mods" data-i="${i}" data-k="shapeB">${shapeOpts(m.shapeB)}</select></label>`;
-      h += numField('mods', i, 'threshold', t('mod.threshold'), m.threshold, 'min="0" max="100" step="5"');
+      h += `<div class="span2">${sliderField('mods', i, 'threshold', t('mod.threshold'), m.threshold, 0, 100, 1)}</div>`;
     }
     h += `<label class="check" style="align-self:end"><input type="checkbox" data-list="mods" data-i="${i}" data-k="invert"${m.invert ? ' checked' : ''}> ${esc(t('mod.invert'))}</label>`;
     h += '</div><div class="grid2" style="margin-top:6px">';
     if (m.source === 'linear') {
-      h += numField('mods', i, 'angle', t('mod.angle'), m.angle, 'step="15"');
+      h += `<div class="span2">${sliderField('mods', i, 'angle', t('mod.angle'), m.angle, 0, 360, 5)}</div>`;
       h += `<label class="check" style="align-self:end"><input type="checkbox" data-list="mods" data-i="${i}" data-k="mirror"${m.mirror ? ' checked' : ''}> ${esc(t('mod.mirror'))}</label>`;
       h += `<div class="desc span2">${esc(t('mod.angleHint'))}</div>`;
     } else if (m.source === 'radial') {
-      h += numField('mods', i, 'cx', t('mod.cx'), m.cx, 'step="5"') + numField('mods', i, 'cy', t('mod.cy'), m.cy, 'step="5"');
+      h += `<div class="span2">${sliderField('mods', i, 'cx', t('mod.cx'), m.cx, 0, 100, 1)}</div><div class="span2">${sliderField('mods', i, 'cy', t('mod.cy'), m.cy, 0, 100, 1)}</div>`;
       h += numField('mods', i, 'radius', t('mod.radius'), m.radius, 'min="1" step="5"');
     } else if (m.source === 'wave') {
-      h += numField('mods', i, 'angle', t('mod.angle'), m.angle, 'step="15"') + numField('mods', i, 'period', t('mod.period'), m.period, 'min="1" step="5"');
-      h += numField('mods', i, 'phase', t('mod.phase'), m.phase, 'step="15"');
+      h += `<div class="span2">${sliderField('mods', i, 'angle', t('mod.angle'), m.angle, 0, 360, 5)}</div>`;
+      h += `<div class="span2">${sliderField('mods', i, 'phase', t('mod.phase'), m.phase, 0, 360, 5)}</div>`;
+      h += numField('mods', i, 'period', t('mod.period'), m.period, 'min="1" step="5"');
       h += `<div class="desc span2">${esc(t('mod.angleHint'))}</div>`;
     } else if (m.source === 'noise') {
       h += numField('mods', i, 'scale', t('mod.scale'), m.scale, 'min="1" step="5"') + numField('mods', i, 'seed', t('mod.seed'), m.seed, 'step="1"');
     } else if (m.source === 'image') {
-      h += `<div class="imgrow span2">${m.img ? `<img src="${m.img.url}" alt="">` : ''}<span>${esc(m.img ? m.img.name : t('mod.noImage'))}</span>` +
+      h += `<div class="imgrow span2"><span>${esc(m.img ? m.img.name : t('mod.noImage'))}</span>` +
            `<button data-act="img" data-list="mods" data-i="${i}">${esc(t('mod.pick'))}</button></div>`;
-      h += `<div class="desc span2">${esc(t('mod.imgHint'))}</div>`;
+      const fit = m.fit || 'stretch';
+      h += `<div class="span2 fitseg" role="group" aria-label="${esc(t('mod.fit'))}">${['stretch', 'contain', 'cover', 'tile'].map(k =>
+        `<button type="button" data-act="fit" data-v="${k}" data-list="mods" data-i="${i}" aria-pressed="${fit === k}" title="${esc(t('fit.' + k))}">${FIT_ICONS[k]}${esc(t('fit.s.' + k))}</button>`).join('')}</div>`;
+      if (m.img) {
+        h += `<div class="span2"><canvas class="placer${fit === 'stretch' ? ' fixed' : ''}" data-placer="${i}"></canvas>` +
+             (fit === 'stretch' ? '' : `<div class="desc" style="text-align:center">${esc(t('mod.placeHint'))}</div>`) + `</div>`;
+        if (fit !== 'stretch') h += `<div class="span2">${sliderField('mods', i, 'imgScale', t('mod.imgScale'), m.imgScale ?? 100, 10, 400, 1)}</div>`;
+        h += `<div class="span2 levels" title="${esc(t('mod.levelsHint'))}"><span style="font-size:12px;color:var(--muted)">${esc(t('mod.levels.title'))}</span>` +
+             `<canvas data-levels="${i}"></canvas><div class="lvnums">` +
+             numField('mods', i, 'black', t('mod.black'), m.black ?? 0, 'min="0" max="100" step="1"') +
+             numField('mods', i, 'gamma', t('mod.gamma'), m.gamma ?? 1, 'min="0.1" max="10" step="0.05"') +
+             numField('mods', i, 'white', t('mod.white'), m.white ?? 100, 'min="0" max="100" step="1"') + `</div></div>`;
+        h += `<div class="span2">${sliderField('mods', i, 'blur', t('mod.blur'), m.blur ?? 0, 0, 20, 0.5)}</div>`;
+      }
+      h += `<div class="desc span2">${esc(t('mod.imgHint'))}${fit === 'stretch' ? '' : ' ' + esc(t('mod.fitHint'))}</div>`;
     }
     return h + '</div></div>';
   }).join('');
@@ -2097,17 +2208,191 @@ function renderPartsUI() {
       `</div></div>`;
   }).join('');
 }
+// ---------------------------------------------------------------- image widgets
+const FIT_ICONS = {
+  stretch: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="2" width="20" height="12" rx="1"/><path d="M5 8h12M5 8l2-2M5 8l2 2M17 8l-2-2M17 8l-2 2"/></svg>',
+  contain: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="2" width="20" height="12" rx="1"/><rect x="7" y="3.5" width="8" height="9" fill="currentColor" fill-opacity=".35"/></svg>',
+  cover: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="2" width="20" height="12" rx="1" fill="currentColor" fill-opacity=".35"/><path d="M3 0.5v15M19 0.5v15" stroke-dasharray="1.5 1.5"/></svg>',
+  tile: '<svg viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="2" width="20" height="12" rx="1"/><path d="M8 2v12M14 2v12M1 8h20"/></svg>'
+};
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// The image after levels, blur and invert, as a canvas (what reaches the pattern).
+const procCache = new Map();
+function processedImage(m, W, H) {
+  const g0 = m.img && imageGrid(m.img.url);
+  if (!g0) return null;
+  const pl = imagePlacement(m, g0, W, H, false), sigma = (+m.blur || 0) / ((pl.iw / g0.w + pl.ih / g0.h) / 2);
+  const key = [m.img.url.length, m.img.name, m.black, m.white, m.gamma, m.invert, sigma.toFixed(1)].join('|');
+  if (procCache.has(key)) return procCache.get(key);
+  const g = blurGrid(g0, sigma, m.img.url), lv = levelsFn(m);
+  const cv = document.createElement('canvas');
+  cv.width = g.w; cv.height = g.h;
+  const ctx = cv.getContext('2d'), id = ctx.createImageData(g.w, g.h);
+  for (let i = 0; i < g.a.length; i++) {
+    let v = lv(g.a[i]);
+    if (m.invert) v = 1 - v;
+    id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = Math.round(v * 255); id.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  if (procCache.size > 30) procCache.clear();
+  procCache.set(key, cv);
+  return cv;
+}
+// Placement preview: the board in its proportions with the image as it lies on it.
+function drawPlacer(cv, m) {
+  const p = readParams(), W = p.boardW || 1, H = p.boardH || 1, g0 = m.img && imageGrid(m.img.url);
+  const avail = cv.parentElement.clientWidth || 240, s = Math.min(avail / W, 150 / H), dpr = window.devicePixelRatio || 1;
+  const cw = Math.max(20, Math.round(W * s)), ch = Math.max(12, Math.round(H * s));
+  cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr * s, 0, 0, dpr * s, 0, 0);
+  ctx.fillStyle = cssVar('--board'); ctx.fillRect(0, 0, W, H);
+  const img = processedImage(m, W, H);
+  if (!img || !g0) return;
+  const pl = imagePlacement(m, g0, W, H, p.seamless);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
+  ctx.imageSmoothingEnabled = true;
+  if (pl.fit === 'tile') {
+    const i0 = Math.floor(-pl.x0 / pl.iw) - 1, j0 = Math.floor(-pl.y0 / pl.ih) - 1;
+    for (let i = i0; pl.x0 + i * pl.iw < W; i++) for (let j = j0; pl.y0 + j * pl.ih < H; j++) ctx.drawImage(img, pl.x0 + i * pl.iw, pl.y0 + j * pl.ih, pl.iw, pl.ih);
+  } else ctx.drawImage(img, pl.x0, pl.y0, pl.iw, pl.ih);
+  ctx.restore();
+  if (pl.fit === 'contain' || pl.fit === 'cover') {
+    ctx.strokeStyle = cssVar('--accent'); ctx.lineWidth = 1.2 / s; ctx.setLineDash([4 / s, 3 / s]);
+    ctx.strokeRect(pl.x0, pl.y0, pl.iw, pl.ih);
+  }
+  ctx.setLineDash([]); ctx.strokeStyle = cssVar('--line'); ctx.lineWidth = 1 / s; ctx.strokeRect(0, 0, W, H);
+}
+// Levels: histogram of the image with markers for black point, mid-tones and white point.
+const histCache = new Map();
+function drawLevels(cv, m) {
+  const g0 = m.img && imageGrid(m.img.url);
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 240, h = 46;
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const top = 2, bh = 30, b = (m.black ?? 0) / 100, wp = (m.white ?? 100) / 100;
+  // tone ramp behind the histogram
+  const grd = ctx.createLinearGradient(0, 0, w, 0);
+  grd.addColorStop(0, '#000'); grd.addColorStop(1, '#fff');
+  ctx.globalAlpha = 0.12; ctx.fillStyle = grd; ctx.fillRect(0, top, w, bh); ctx.globalAlpha = 1;
+  if (g0) {
+    let hist = histCache.get(m.img.url);
+    if (!hist) {
+      hist = new Float32Array(64);
+      for (const v of g0.a) hist[Math.min(63, Math.floor(v * 64))]++;
+      const mx = Math.max(...hist) || 1;
+      for (let i = 0; i < 64; i++) hist[i] = Math.sqrt(hist[i] / mx);
+      histCache.set(m.img.url, hist);
+    }
+    ctx.fillStyle = cssVar('--muted');
+    for (let i = 0; i < 64; i++) { const bw = w / 64, hh = hist[i] * bh; ctx.fillRect(i * bw, top + bh - hh, bw - 0.5, hh); }
+  }
+  // clipped ranges below the black and above the white point
+  ctx.fillStyle = cssVar('--panel'); ctx.globalAlpha = 0.6;
+  ctx.fillRect(0, top, b * w, bh); ctx.fillRect(wp * w, top, w - wp * w, bh); ctx.globalAlpha = 1;
+  const mid = b + (wp - b) * Math.pow(0.5, m.gamma || 1);
+  const tri = (x, fill) => {
+    ctx.beginPath(); ctx.moveTo(x, top + bh + 1); ctx.lineTo(x - 6, h - 1); ctx.lineTo(x + 6, h - 1); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = cssVar('--text'); ctx.lineWidth = 1; ctx.stroke();
+  };
+  tri(clamp(b * w, 6, w - 6), '#000'); tri(clamp(mid * w, 6, w - 6), '#888'); tri(clamp(wp * w, 6, w - 6), '#fff');
+}
+function drawImageWidgets(card, m) {
+  if (!card) return;
+  const pc = card.querySelector('canvas[data-placer]'), lc = card.querySelector('canvas[data-levels]');
+  if (pc) drawPlacer(pc, m);
+  if (lc) drawLevels(lc, m);
+  for (const k of ['black', 'white', 'gamma']) {
+    const inp = card.querySelector(`.lvnums input[data-k="${k}"]`);
+    if (inp && document.activeElement !== inp) inp.value = +(+m[k]).toFixed(k === 'gamma' ? 2 : 0);
+  }
+  const sc = card.querySelectorAll('input[data-k="imgScale"]');
+  for (const inp of sc) if (document.activeElement !== inp) inp.value = Math.round(m.imgScale ?? 100);
+}
+function drawAllImageWidgets() {
+  document.querySelectorAll('#modList canvas[data-placer], #modList canvas[data-levels]').forEach(cv => {
+    const i = +(cv.dataset.placer ?? cv.dataset.levels), m = creative.mods[i];
+    if (!m) return;
+    if (cv.dataset.placer != null) drawPlacer(cv, m); else drawLevels(cv, m);
+  });
+}
+// dragging on the placement preview (move) and on the levels (markers)
+function imageWidgetDown(e) {
+  const pc = e.target.closest('canvas[data-placer]'), lc = e.target.closest('canvas[data-levels]');
+  if (!pc && !lc) return;
+  const i = +(pc ? pc.dataset.placer : lc.dataset.levels), m = creative.mods[i], card = e.target.closest('.card');
+  if (!m || !m.img || (pc && (m.fit || 'stretch') === 'stretch')) return;
+  e.preventDefault();
+  const cv = pc || lc, rect = cv.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY;
+  let which = null;
+  const start = { posX: m.posX ?? 50, posY: m.posY ?? 50 };
+  const setLevel = cx => {
+    const u = clamp((cx - rect.left) / rect.width, 0, 1), b = (m.black ?? 0) / 100, wp = (m.white ?? 100) / 100;
+    if (!which) {   // pick the nearest marker
+      const mid = b + (wp - b) * Math.pow(0.5, m.gamma || 1), d = [Math.abs(u - b), Math.abs(u - mid), Math.abs(u - wp)];
+      which = ['black', 'gamma', 'white'][d.indexOf(Math.min(...d))];
+    }
+    if (which === 'black') m.black = Math.round(clamp(u, 0, wp - 0.01) * 100);
+    else if (which === 'white') m.white = Math.round(clamp(u, b + 0.01, 1) * 100);
+    else { const tt = clamp((u - b) / Math.max(1e-3, wp - b), 0.01, 0.99); m.gamma = +clamp(Math.log(tt) / Math.log(0.5), 0.1, 10).toFixed(2); }
+  };
+  const move = ev => {
+    if (pc) {
+      const p = readParams(), W = p.boardW || 1, H = p.boardH || 1, g0 = imageGrid(m.img.url), pl = imagePlacement(m, g0, W, H, p.seamless);
+      const sx = W / rect.width, dx = (ev.clientX - x0) * sx, dy = (ev.clientY - y0) * sx;
+      if (pl.fit === 'tile') { m.posX = +(start.posX + dx / pl.iw * 100).toFixed(1); m.posY = +(start.posY + dy / pl.ih * 100).toFixed(1); }
+      else {
+        if (Math.abs(W - pl.iw) > 1e-6) m.posX = +clamp(start.posX + dx / (W - pl.iw) * 100, -100, 200).toFixed(1);
+        if (Math.abs(H - pl.ih) > 1e-6) m.posY = +clamp(start.posY + dy / (H - pl.ih) * 100, -100, 200).toFixed(1);
+      }
+    } else setLevel(ev.clientX);
+    drawImageWidgets(card, m);
+    renderSoon();
+  };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); cv.classList.remove('dragging'); render(); };
+  cv.classList.add('dragging');
+  if (lc) move(e);
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+function imageWidgetWheel(e) {
+  const pc = e.target.closest('canvas[data-placer]');
+  if (!pc) return;
+  const m = creative.mods[+pc.dataset.placer];
+  if (!m || (m.fit || 'stretch') === 'stretch') return;
+  e.preventDefault();
+  m.imgScale = Math.round(clamp((m.imgScale ?? 100) * Math.pow(1.1, -Math.sign(e.deltaY)), 10, 400));
+  drawImageWidgets(pc.closest('.card'), m);
+  renderSoon();
+}
+function imageWidgetReset(e) {
+  const lc = e.target.closest('canvas[data-levels]');
+  if (!lc) return;
+  const m = creative.mods[+lc.dataset.levels];
+  Object.assign(m, { black: 0, white: 100, gamma: 1 });
+  drawImageWidgets(lc.closest('.card'), m);
+  render();
+}
 function creativeInput(e) {
   const el = e.target, list = el.dataset.list;
   if (!list || !el.dataset.k) return;
   const item = listOf(list)[+el.dataset.i], k = el.dataset.k;
   if (k === 'on') { item.off = !el.checked; renderCreativeUI(); render(); return; }
   if (el.type === 'checkbox') item[k] = el.checked;
-  else if (el.type === 'number') item[k] = el.value === '' ? null : parseFloat(el.value);
+  else if (el.type === 'number' || el.type === 'range') item[k] = el.value === '' ? null : parseFloat(el.value);
   else item[k] = el.value;
+  // a slider and its number field edit the same value
+  const twin = el.closest('.slrow')?.querySelector(`input:not([type="${el.type}"])`);
+  if (twin) twin.value = el.value;
   // waves along the height barely show between the rows; start them across the circumference
   if (k === 'source' && item.source === 'wave' && item.angle === 90) item.angle = 0;
   if (el.hasAttribute('data-rebuild')) renderCreativeUI();
+  // keep the image preview and levels in step
+  if (list === 'mods' && item.source === 'image') drawImageWidgets(el.closest('.card'), item);
   // the attachment of a part only applies with an offset
   if (list === 'parts' && k === 'offset') {
     // the choice of attachments depends on the offset: remember the choice for each side of it
@@ -2116,14 +2401,22 @@ function creativeInput(e) {
     const sel = el.closest('.card')?.querySelector('[data-k="fix"]');
     if (sel) sel.innerHTML = fixOptions(item);
   }
-  render();
+  if (el.type === 'range') renderSoon(); else render();
 }
+// sliders fire continuously: render at most once per frame
+let renderQueued = 0;
+const renderSoon = () => { if (!renderQueued) renderQueued = requestAnimationFrame(() => { renderQueued = 0; render(); }); };
 let imgTarget = null;
 function creativeClick(e) {
   const b = e.target.closest('button[data-act]');
   if (!b) return;
   const list = listOf(b.dataset.list), i = +b.dataset.i;
   if (b.dataset.act === 'img') { imgTarget = list[i]; $('imgFile').click(); return; }
+  if (b.dataset.act === 'fit') {
+    // tiles start at a quarter of the board width, so the repeat shows right away
+    if (b.dataset.v === 'tile' && list[i].fit !== 'tile' && (list[i].imgScale ?? 100) >= 100) list[i].imgScale = 25;
+    list[i].fit = b.dataset.v;
+  }
   if (b.dataset.act === 'del') list.splice(i, 1);
   if (b.dataset.act === 'dup') list.splice(i + 1, 0, JSON.parse(JSON.stringify(list[i])));
   if (b.dataset.act === 'up' && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
@@ -2182,6 +2475,7 @@ function previewInner(p, doc, vm) {
 
 function render() {
   const p = readParams();
+  if (p.mode === 'creative' && p.creative.mods.some(m => m.source === 'image')) requestAnimationFrame(drawAllImageWidgets);   // board size → placement preview
   document.querySelectorAll('[data-modes]').forEach(el => { el.hidden = !el.dataset.modes.split(' ').includes(p.mode); });
   $('shapeDesc').textContent = t('desc.' + p.shape);
   $('meanderNote').hidden = !(p.mode === 'creative' && SHAPES[p.shape].meander);
@@ -2954,6 +3248,9 @@ for (const det of document.querySelectorAll('#design details.sec')) {
   b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); resetSection(det); });
   det.querySelector('summary').append(b);
 }
+$('modList').addEventListener('pointerdown', imageWidgetDown);
+$('modList').addEventListener('wheel', imageWidgetWheel, { passive: false });
+$('modList').addEventListener('dblclick', imageWidgetReset);
 for (const id of ['bandList', 'modList', 'partList']) {
   $(id).addEventListener('input', creativeInput);
   $(id).addEventListener('click', creativeClick);

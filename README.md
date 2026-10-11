@@ -54,6 +54,12 @@ Everything from Simple, plus per-slot variation on the same grid, so the shade s
 - Drag a band or modulator by its header to reorder it (or use ↑ / ↓); click the header to collapse or expand it.
 - ⧉ duplicates a band or modulator; the checkbox in a modulator's header switches it off for a moment without deleting it.
 - With **Seamless** on, radial, waves and noise wrap around the cylinder, so the design continues across the glue seam.
+- **Image source:**
+  - *Stretch*, *Fit* (no distortion), *Fill* (cropped) or *Tile* (whole tiles around the cylinder with *Seamless*); outside a fitted image the modulator has no effect.
+  - A preview in the board's proportions shows the image as it reaches the pattern (levels, blur, invert) – drag it to move it, use the wheel or the *Size* slider to scale it.
+  - *Levels*: a histogram of the image with markers for black point, mid-tones (gamma) and white point – drag them to spread a flat photo over the full range; double-click resets.
+  - *Blur* (mm) smooths out single pixels.
+- Strength, threshold, angle, phase and the radial centre are sliders with their value next to them.
 - An image is stored (downscaled) with the design, so it reloads completely.
 
 ### Test Pattern
