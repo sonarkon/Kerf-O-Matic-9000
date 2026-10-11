@@ -301,10 +301,10 @@
         <option value="none" data-i18n="mt.none"></option>
       </select></label>
       <label><span data-i18n="mt.bottom"></span><select id="mountBottom">
-        <option value="ring" data-i18n="mt.ring"></option>
         <option value="spider" data-i18n="mt.spider"></option>
         <option value="disc" data-i18n="mt.disc"></option>
         <option value="closed" data-i18n="mt.closed"></option>
+        <option value="ring" data-i18n="mt.ring" selected></option>
         <option value="none" data-i18n="mt.none"></option>
       </select></label>
       <label><span data-i18n="mt.hole"></span><input type="number" id="socketHole" value="40" min="5" step="0.5"></label>
@@ -316,10 +316,11 @@
       <label class="span2"><span data-i18n="mt.fix"></span><select id="mountFix">
         <option value="glue" data-i18n="mt.fix.glue"></option>
         <option value="tabs" data-i18n="mt.fix.tabs"></option>
+        <option value="edge" data-i18n="mt.fix.edge"></option>
       </select></label>
       <label data-tabs><span data-i18n="mt.tabCount"></span><input type="number" id="tabCount" value="4" min="2" max="24" step="1"></label>
       <label data-tabs><span data-i18n="mt.tabW"></span><input type="number" id="tabW" value="10" min="2" step="0.5"></label>
-      <label data-tabs><span data-i18n="mt.rim"></span><input type="number" id="rim" value="4" min="1" step="0.5"></label>
+      <label data-rim><span data-i18n="mt.rim"></span><input type="number" id="rim" value="4" min="1" step="0.5"></label>
     </div>
     <div class="desc" id="mountDesc"></div>
   </details>
@@ -354,6 +355,7 @@
     </div>
   </div>
   <div class="toggles" id="overlayCtl">
+    <label class="pill" id="explodeCtl" hidden><span data-i18n="explode"></span><input type="range" id="explode" min="0" max="100" value="0"><output id="explodeVal">0 %</output></label>
     <label class="pill" id="bendCtl"><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
     <label class="iconbtn lamp" data-i18n-title="lamp">
       <input type="checkbox" id="lampOn" data-i18n-aria="lamp">
@@ -433,7 +435,10 @@ const STR = {
     'sec.mount': 'Pendant lamp (E27)', 'sec.mountInfo': 'Lamp',
     'mt.top': 'Top part', 'mt.bottom': 'Bottom part', 'mt.spider': 'Spider + socket hole', 'mt.disc': 'Disc + socket hole', 'mt.closed': 'Disc', 'mt.ring': 'Ring', 'mt.none': 'None',
     'mt.hole': 'Socket hole Ø (mm)', 'mt.ringW': 'Ring width (mm)', 'mt.spokes': 'Spokes', 'mt.spokeW': 'Spoke width (mm)', 'mt.hubW': 'Hub width (mm)', 'mt.clear': 'Fit clearance (mm)',
-    'mt.fix': 'Attachment', 'mt.fix.glue': 'Glued in (inside the cylinder)', 'mt.fix.tabs': 'Tabs & slots (parts on the ends)',
+    'mt.fix': 'Attachment', 'mt.fix.glue': 'Glued in (inside the cylinder)', 'mt.fix.tabs': 'Tabs & slots (parts on the ends)', 'mt.fix.edge': 'Edge interlock (fits the edge slots)',
+    'mt.desc.edge': 'The part is pushed onto the cylinder edge: curved slots take the wall pieces between the open edge slots, and the part reaches through those slots to an outer rim. Needs open edges whose slots are at least one material thickness deep.',
+    'mt.noNotches': p => `No usable edge slots on the ${p} edge: turn on “Open edges” and make sure the edge slots are at least one material thickness deep.`,
+    'mt.notches': (top, bottom) => `Edge interlock: ${top} slots at the top, ${bottom} at the bottom.`,
     'mt.tabCount': 'Tabs per edge', 'mt.tabW': 'Tab width (mm)', 'mt.rim': 'Rim outside (mm)',
     'mt.tabsNote': 'Tabs for the Lamp mount are added to the top and bottom edges (set in Lamp mode).',
     'mt.desc': 'The parts sit inside the cylinder from Simple/Creative and are glued in. E27 shade rings usually need a 40–42 mm hole – check your socket.',
@@ -472,7 +477,7 @@ const STR = {
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
     'hint': 'Drag = pan · Wheel = zoom', 'hint3d': 'Drag = rotate · Right-drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
     'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex heatmap',
-    'bend': 'Bend', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
+    'bend': 'Bend', 'explode': 'Explode', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
@@ -564,7 +569,10 @@ const STR = {
     'sec.mount': 'Pendelleuchte (E27)', 'sec.mountInfo': 'Leuchte',
     'mt.top': 'Oberes Teil', 'mt.bottom': 'Unteres Teil', 'mt.spider': 'Spinne + Fassungsloch', 'mt.disc': 'Scheibe + Fassungsloch', 'mt.closed': 'Scheibe', 'mt.ring': 'Ring', 'mt.none': 'Keins',
     'mt.hole': 'Fassungsloch Ø (mm)', 'mt.ringW': 'Ringbreite (mm)', 'mt.spokes': 'Speichen', 'mt.spokeW': 'Speichenbreite (mm)', 'mt.hubW': 'Nabenbreite (mm)', 'mt.clear': 'Spiel (mm)',
-    'mt.fix': 'Befestigung', 'mt.fix.glue': 'Eingeklebt (innen im Zylinder)', 'mt.fix.tabs': 'Zapfen & Schlitze (Teile auf den Enden)',
+    'mt.fix': 'Befestigung', 'mt.fix.glue': 'Eingeklebt (innen im Zylinder)', 'mt.fix.tabs': 'Zapfen & Schlitze (Teile auf den Enden)', 'mt.fix.edge': 'Randverzahnung (passt in die Randschlitze)',
+    'mt.desc.edge': 'Das Teil wird auf die Zylinderkante gesteckt: Bogenschlitze nehmen die Wandstücke zwischen den offenen Randschlitzen auf, durch die Randschlitze reicht das Teil zu einem Außenrand. Braucht offene Ränder mit Randschlitzen von mindestens Materialstärke Tiefe.',
+    'mt.noNotches': p => `Keine passenden Randschlitze an der ${p === 'top' ? 'oberen' : 'unteren'} Kante: „Ränder offen“ einschalten und Randschlitze mindestens materialstark tief machen.`,
+    'mt.notches': (top, bottom) => `Randverzahnung: ${top} Schlitze oben, ${bottom} unten.`,
     'mt.tabCount': 'Zapfen pro Kante', 'mt.tabW': 'Zapfenbreite (mm)', 'mt.rim': 'Rand außen (mm)',
     'mt.tabsNote': 'Für die Lamp-Halterung bekommen Ober- und Unterkante Zapfen (eingestellt im Lamp-Modus).',
     'mt.desc': 'Die Teile sitzen innen im Zylinder aus Simple/Creative und werden eingeklebt. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
@@ -603,7 +611,7 @@ const STR = {
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
     'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap',
-    'bend': 'Biegung', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
+    'bend': 'Biegung', 'explode': 'Explode', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Rand l/r (mm)', 'order': 'Schnittreihenfolge',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
@@ -1394,11 +1402,50 @@ const outlinePath = pts => `<path d="M${pts.map(q => `${f(q[0])},${f(q[1])}`).jo
 // cylinder minus clearance) – a spider or disc with the E27 socket hole, or a
 // plain ring that keeps the cylinder round.
 function mountGeometry(p) {
-  const di = midDiameter(p) - p.thick, rm = midDiameter(p) / 2, tabs = p.mountFix === 'tabs';
-  // glued: inside the cylinder; tabs: on the ends, reaching past the wall by the rim
-  const ro = tabs ? rm + p.thick / 2 + p.rim : (di - p.mountClear) / 2;
-  const rh = p.socketHole / 2, ri = (tabs ? rm - p.thick / 2 : ro) - p.ringW, rhub = rh + p.hubW;
-  return { di, rm, ro, rh, ri, rhub, tabs, ok: ro > 0 && rh > 0.5 && ri > rhub + 1 && p.spokeW / 2 < rhub };
+  const di = midDiameter(p) - p.thick, rm = midDiameter(p) / 2, tabs = p.mountFix === 'tabs', edge = p.mountFix === 'edge';
+  // glued: inside the cylinder; tabs / edge interlock: reaching past the wall by the rim
+  const ro = tabs || edge ? rm + p.thick / 2 + p.rim : (di - p.mountClear) / 2;
+  const rh = p.socketHole / 2, ri = (tabs || edge ? rm - p.thick / 2 : ro) - p.ringW, rhub = rh + p.hubW;
+  return { di, rm, ro, rh, ri, rhub, tabs, edge, ok: ro > 0 && rh > 0.5 && ri > rhub + 1 && p.spokeW / 2 < rhub };
+}
+// Open edge slots of the cylinder at its top or bottom edge, as x ranges of
+// their opening (nominal, after the kerf). Only slots at least one material
+// thickness deep count: the part has to pass through them.
+function edgeNotches(p, shell, pos) {
+  const H = shell.h, k2 = Math.max(0, p.kerf || 0) / 2, out = [];
+  for (const r of shell.recs) {
+    if (!r.els || !r.els.length) continue;
+    const atTop = r.y - r.hh < 0, atBot = r.y + r.hh > H;
+    if (pos === 'top' ? !atTop : !atBot) continue;
+    const depth = pos === 'top' ? r.y + r.hh : H - (r.y - r.hh);
+    if (depth < p.thick + 0.1) continue;
+    sampler.innerHTML = r.els[0];
+    const el = sampler.firstChild;
+    if (el.tagName !== 'path' || /z\s*$/i.test(el.getAttribute('d'))) continue;   // open paths end on the edge
+    const pts = sampleOutline(el, false), x0 = pts[0][0], x1 = pts[pts.length - 1][0];
+    const a = Math.min(x0, x1) - k2, b = Math.max(x0, x1) + k2;
+    if (b - a > 0.3) out.push([a, b]);
+  }
+  out.sort((u, v) => u[0] - v[0]);
+  const merged = [];
+  for (const n of out) { const l = merged[merged.length - 1]; if (l && n[0] <= l[1]) l[1] = Math.max(l[1], n[1]); else merged.push([...n]); }
+  return merged;
+}
+// Curved slots for the wall pieces between those edge slots, on the wall's
+// curvature (centre radius rm ± half the thickness plus clearance). Angles use
+// the same mapping as the tabs, so they line up in 3D and in the assembly.
+function edgeSlots(p, notches, W, cx, cy, k2) {
+  if (!notches.length) return [];
+  const g = mountGeometry(p), c = p.mountClear;
+  const r1 = g.rm - p.thick / 2 - c / 2 + k2, r2 = g.rm + p.thick / 2 + c / 2 - k2;
+  const ang = x => 1.5 * Math.PI - 2 * Math.PI * x / W;
+  const pt = (r, a) => `${f(cx + r * Math.cos(a))},${f(cy + r * Math.sin(a))}`;
+  return notches.map((n, i) => {
+    const next = notches[(i + 1) % notches.length];
+    const x0 = n[1] - c / 2 + k2, x1 = (i + 1 < notches.length ? next[0] : next[0] + W) + c / 2 - k2;
+    const a0 = ang(x0), a1 = ang(x1), large = Math.abs(a1 - a0) > Math.PI ? 1 : 0;
+    return `<path d="M${pt(r2, a0)} A${f(r2)},${f(r2)} 0 ${large} 0 ${pt(r2, a1)} L${pt(r1, a1)} A${f(r1)},${f(r1)} 0 ${large} 1 ${pt(r1, a0)} Z"/>`;
+  });
 }
 // Slots for the cylinder tabs, on the wall's centre line. The angles match the
 // tab positions around the cylinder in the 3D view and the assembly export.
@@ -1433,7 +1480,7 @@ function spiderWindows(cx, cy, ri, rhub, w, n) {
   }
   return out;
 }
-function mountPartEls(p, kind, cx, cy, k2) {
+function mountPartEls(p, kind, cx, cy, k2, notches, W) {
   const g = mountGeometry(p), holes = [];
   if (kind === 'ring') holes.push(circlePath(cx, cy, g.ri - k2));
   else if (kind !== 'closed') {
@@ -1441,16 +1488,28 @@ function mountPartEls(p, kind, cx, cy, k2) {
     if (kind === 'spider') holes.push(...spiderWindows(cx, cy, g.ri - k2, g.rhub + k2, p.spokeW + 2 * k2, p.spokes));
   }
   if (g.tabs) holes.push(...tabSlots(p, cx, cy, k2));
+  if (g.edge) holes.push(...edgeSlots(p, notches || [], W, cx, cy, k2));
   return { outer: [circlePath(cx, cy, g.ro + k2)], holes };
 }
 function buildMountDoc(p) {
   const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
   const g = mountGeometry(p), k2 = Math.max(0, p.kerf || 0) / 2, gap = 6;
-  doc.mount = { g, parts: [] };
+  doc.shell = buildDoc({ ...p, mode: p.shellMode || 'pattern' });
+  const W = doc.shell.bw ?? doc.shell.w;
+  doc.mount = { g, parts: [], notches: {} };
+  if (g.edge) for (const pos of ['top', 'bottom']) doc.mount.notches[pos] = edgeNotches(p, doc.shell, pos);
+  // the complete cut set: the flat shade on top (its outline is always cut here) …
+  const sh = doc.shell, pad = sh.padY || 0, move = `translate(0,${f(pad)})`;
+  if (sh.cuts.length) doc.cuts.push(`<g transform="${move}">${sh.cuts.join('')}</g>`);
+  const shellOutline = sh.borders.length ? sh.borders : [outlinePath(offsetOutline(sh.outline, k2))];
+  doc.borders.push(`<g transform="${move}">${shellOutline.join('')}</g>`);
+  doc.boards.push({ outline: sh.outline.map(([px, py]) => [px, py + pad]) });
+  // … and the mount parts below it
+  const y0 = sh.h + 2 * pad + 10;
   let x = 0;
   if (g.ro > 0) for (const [pos, kind] of [['top', p.mountTop], ['bottom', p.mountBottom]]) {
     if (kind === 'none') continue;
-    const cx = x + g.ro + k2, cy = g.ro + k2, els = mountPartEls(p, kind, cx, cy, k2);
+    const cx = x + g.ro + k2, cy = y0 + g.ro + k2, els = mountPartEls(p, kind, cx, cy, k2, doc.mount.notches[pos], W);
     doc.cuts.push(...els.holes);
     doc.borders.push(...els.outer);
     doc.boards.push({ circle: [cx, cy, g.ro] });
@@ -1461,9 +1520,8 @@ function buildMountDoc(p) {
     doc.mount.parts.push({ pos, kind, cx, cy, els });
     x += 2 * (g.ro + k2) + gap;
   }
-  doc.count = doc.cuts.length + doc.borders.length;
-  doc.w = Math.max(1, x - gap); doc.h = Math.max(1, 2 * (g.ro + k2)); doc.rotate = p.rotate;
-  doc.shell = buildDoc({ ...p, mode: p.shellMode || 'pattern' });
+  doc.count = sh.count + doc.mount.parts.reduce((n, q) => n + q.els.outer.length + q.els.holes.length, 0) + 1;
+  doc.w = Math.max(sh.w, x - gap); doc.h = y0 + 2 * (g.ro + k2); doc.rotate = p.rotate;
   return doc;
 }
 
@@ -1576,6 +1634,8 @@ function paramLines(p, doc) {
     L.push(t('pl.mountFix', t('mt.fix.' + p.mountFix)));
     if (g.tabs) L.push(t('pl.tabs', clamp(Math.round(p.tabCount), 2, 24), fmt(p.tabW), fmt(p.thick)));
     if (p.kerf) L.push(t('pl.kerf', fmt(p.kerf)));
+    // the shade's own parameters (its mode line first), without its footer
+    L.push(...paramLines({ ...p, mode: p.shellMode || 'pattern', project: '' }, doc.shell).slice(0, -1));
     L.push(t('pl.footer', doc.count, new Date().toISOString().slice(0, 16).replace('T', ' ')));
     return L;
   }
@@ -1632,6 +1692,7 @@ function fileName(p, doc) {
     const proj = slug(p.project || ''), g = doc.mount.g;
     const parts = ['kerflamp', p.material, `D${fmt(+g.di.toFixed(1))}x${fmt(p.thick)}mm`, `top-${p.mountTop}`, `bottom-${p.mountBottom}`, `hole${fmt(p.socketHole)}`];
     if (g.tabs) parts.push(`tabs${clamp(Math.round(p.tabCount), 2, 24)}x${fmt(p.tabW)}`);
+    if (g.edge) parts.push('edge');
     if (p.kerf) parts.push(`kerf${fmt(p.kerf)}`);
     if (proj) parts.unshift(proj);
     return parts.join('_') + '.svg';
@@ -1852,7 +1913,8 @@ function render() {
   $('jointSize').disabled = p.joint === 'none';
   $('tabsNote').hidden = !tabHeight(p) || !['pattern', 'creative'].includes(p.mode);
   document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = p.mountFix !== 'tabs'; });
-  $('mountDesc').textContent = t(p.mountFix === 'tabs' ? 'mt.desc.tabs' : 'mt.desc');
+  document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = p.mountFix === 'glue'; });
+  $('mountDesc').textContent = t(p.mountFix === 'glue' ? 'mt.desc' : 'mt.desc.' + p.mountFix);
   $('jointDesc').textContent = p.joint === 'none' ? '' : t('joint.' + p.joint + '.d') + (p.border ? '' : t('joint.border'));
   $('testTo').disabled = p.testCount === 1;
   if (p.offsetMode !== 'custom') $('offset').value = effectiveOffset(p, p.mode === 'test' ? p.testH : p.boardH);
@@ -1877,6 +1939,7 @@ function render() {
   view.classList.toggle('is3d', is3d);
   $('three').hidden = !is3d;
   $('bendCtl').hidden = test || mount;
+  $('explodeCtl').hidden = !(mount && is3d);
   $('flexCtl').hidden = mount;
   $('bendVal').textContent = view3d.bend + ' %';
   $('overlayCtl').hidden = test;
@@ -1903,7 +1966,7 @@ const MAT_COLORS = { pmma: 0xf3efe6, petg: 0xe6ecef, plywood: 0xd8b98a, mdf: 0xa
 const MAT_OPACITY = { pmma: 0.6, petg: 0.7 };
 const SEG_X = 360;   // segments around the circumference
 let three = null, threeLoading = null, buildToken = 0, buildTimer = null;
-let view3d = { bend: 100, overlay: null };
+let view3d = { bend: 100, overlay: null, explode: 0 };
 try {
   const saved = JSON.parse(localStorage.getItem('kerf-3d')) || {};
   if (!('overlay' in saved)) saved.overlay = legacyView === 'flex' ? 'flex' : saved.lamp || legacyView === 'light' ? 'light' : null;
@@ -1911,6 +1974,7 @@ try {
   Object.assign(view3d, saved);
 } catch (e) {}
 $('bend').value = view3d.bend;
+$('explode').value = view3d.explode; $('explodeVal').textContent = view3d.explode + ' %';
 $('lampOn').checked = view3d.overlay === 'light';
 $('flexOn').checked = view3d.overlay === 'flex';
 
@@ -2011,7 +2075,9 @@ function buildMountParts(p, doc) {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.computeVertexNormals();
-    three.mountGroup.add(new THREE.Mesh(geo, three.solidMat));
+    const mesh = new THREE.Mesh(geo, three.solidMat);
+    mesh.userData.dir = prt.pos === 'top' ? 1 : -1;
+    three.mountGroup.add(mesh);
   }
 }
 function buildParts(p, doc) {
@@ -2073,6 +2139,8 @@ function apply3dScene(p, doc, refit) {
   three.dir.intensity = lampOn ? 0.08 : 0.6;
   three.lamp.intensity = lampOn ? 2.4 : 0;
   three.lamp.position.set(0, mount ? H / 2 - Math.min(70, H * 0.4) : 0, axisZ);
+  // explode: lift the top part and lower the bottom part (up to half the cylinder height each)
+  if (three.mountGroup) for (const m of three.mountGroup.children) m.position.y = m.userData.dir * view3d.explode / 100 * H / 2;
   three.glow.mesh.visible = lampOn && !!three.glowMat.map;
   styleMaterial(three.solidMat, p, lampOn, flexOn);
   const size = `${W}x${H}`;
@@ -2083,7 +2151,8 @@ function apply3dScene(p, doc, refit) {
     g.computeBoundingBox();
     const bb = g.boundingBox, cz = (bb.min.z + bb.max.z) / 2;
     const tanV = Math.tan(three.camera.fov * Math.PI / 360);
-    const fitV = (H / 2) / tanV, fitH = ((bb.max.x - bb.min.x) / 2) / (tanV * three.camera.aspect);
+    const lift = mount ? view3d.explode / 100 * H / 2 + 2 * p.thick : 0;   // exploded lamp parts
+    const fitV = (H / 2 + lift) / tanV, fitH = ((bb.max.x - bb.min.x) / 2) / (tanV * three.camera.aspect);
     const d = Math.max(fitV, fitH) * 1.25 + (bb.max.z - cz);   // measured from the front-most surface
     three.controls.target.set(0, 0, cz);
     three.camera.position.set(d * 0.25, H * 0.25, cz + d);
@@ -2205,6 +2274,11 @@ function setOverlay(ov) {
   else render();
 }
 $('lampOn').addEventListener('change', () => setOverlay($('lampOn').checked ? 'light' : null));
+$('explode').addEventListener('input', () => {
+  view3d.explode = +$('explode').value; save3d();
+  $('explodeVal').textContent = view3d.explode + ' %';
+  if (three && last) apply3dScene(last.p, last.doc, false);
+});
 $('flexOn').addEventListener('change', () => setOverlay($('flexOn').checked ? 'flex' : null));
 
 function renderInfo(p, doc) {
@@ -2213,6 +2287,11 @@ function renderInfo(p, doc) {
     const g = doc.mount.g;
     let html = `<p style="margin:0">${t('mt.info', g.di.toFixed(1), (2 * g.ro).toFixed(1), fmt(p.socketHole))}</p>`;
     if (!g.ok) html += `<p class="bad">${esc(t('mt.bad'))}</p>`;
+    if (g.edge) {
+      const used = doc.mount.parts.map(q => q.pos), nt = doc.mount.notches;
+      for (const pos of used) if (!nt[pos].length) html += `<p class="bad">${esc(t('mt.noNotches', pos))}</p>`;
+      html += `<p>${esc(t('mt.notches', nt.top?.length ?? 0, nt.bottom?.length ?? 0))}</p>`;
+    }
     html += `<p>${esc(t('mt.from', t('mode.' + (p.shellMode || 'pattern'))))}</p>`;
     if (p.material === 'pmma' || p.material === 'petg') html += `<p class="warn">${esc(t('mt.led'))}</p>`;
     $('flexInfo').innerHTML = html;
