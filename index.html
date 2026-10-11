@@ -480,14 +480,14 @@ const STR = {
     'mt.desc.tabs': 'The parts sit on the cylinder ends; the cylinder gets tabs that go through the slots. E27 shade rings usually need a 40–42 mm hole – check your socket.',
     'mt.info': (di, d, hole) => `<b>Cylinder</b> inner Ø ${di} mm<br><b>Parts</b> Ø ${d} mm · socket hole Ø ${hole} mm`,
     'mt.from': m => `Cylinder and pattern come from the ${m} mode.`,
-    'mt.bad': 'Ring, hub and socket hole do not fit into the part – make the ring or hub narrower or the hole smaller.',
+    'mt.bad': d => `Ring, hub and socket hole do not fit into the part – they need an inner Ø of at least ${d} mm. Make the shade wider, the ring or hub narrower or the hole smaller. Until then the spider is drawn without openings.`,
     'mt.led': 'Use LED bulbs: acrylic softens at about 80 °C.',
     'mt.flexWarn': 'The shade is borderline for this diameter – it may crack over time. Cut a test strip first or make the pattern softer in Simple/Creative.',
     'mt.flexBad': 'The shade is bent too far for this diameter and will probably crack. Make the pattern softer in Simple/Creative (longer slots, smaller gaps, thinner material) or choose a larger diameter.',
     'lbl.top': 'TOP', 'lbl.bottom': 'BOTTOM',
     'mt.parts': 'Parts', 'mt.addPart': '+ Add part', 'mt.part.n': i => `Part ${i}`,
     'mt.partsDesc': 'Each part sits at the top or bottom, optionally moved inward by an offset – add more for long lamps. At the end a part is glued in, sits on tabs of the shade, or is pushed onto the open edge slots (edge interlock, needs open edges at least one thickness deep). With an offset it sits inside the tube (no outer rim): glued in, held by tabs through slots in the wall, or with fingers in the pattern slots.',
-    'mt.kind': 'Type', 'mt.from': 'From', 'mt.from.top': 'Top', 'mt.from.bottom': 'Bottom', 'mt.offset': 'Offset (mm)',
+    'mt.kind': 'Type', 'mt.side': 'From', 'mt.from.top': 'Top', 'mt.from.bottom': 'Bottom', 'mt.offset': 'Offset (mm)',
     'mt.pfix': 'Attachment', 'mt.pf.glue': 'Glued in', 'mt.pf.through': 'Tabs through the wall', 'mt.pf.fingers': 'Fingers in the pattern slots', 'mt.pf.tabs': 'Tabs & slots', 'mt.pf.edge': 'Edge interlock',
     'mt.marks': 'Engrave part positions on the shade',
     'mt.partOut': n => `Part ${n} does not fit into the height of the shade.`,
@@ -644,14 +644,14 @@ const STR = {
     'mt.desc.tabs': 'Die Teile liegen auf den Zylinder-Enden; der Zylinder bekommt Zapfen, die durch die Schlitze gehen. E27-Schirmringe brauchen meist ein Loch von 40–42 mm – an der Fassung nachmessen.',
     'mt.info': (di, d, hole) => `<b>Zylinder</b> innen Ø ${di} mm<br><b>Teile</b> Ø ${d} mm · Fassungsloch Ø ${hole} mm`,
     'mt.from': m => `Zylinder und Muster kommen aus dem Modus ${m}.`,
-    'mt.bad': 'Ring, Nabe und Fassungsloch passen nicht ins Teil – Ring oder Nabe schmaler oder Loch kleiner machen.',
+    'mt.bad': d => `Ring, Nabe und Fassungsloch passen nicht ins Teil – sie brauchen mindestens Ø ${d} mm innen. Schirm breiter, Ring oder Nabe schmaler oder Loch kleiner machen. Bis dahin wird die Spinne ohne Öffnungen gezeichnet.`,
     'mt.led': 'LED-Leuchtmittel verwenden: Acryl wird ab etwa 80 °C weich.',
     'mt.flexWarn': 'Der Schirm ist bei diesem Durchmesser grenzwertig und kann mit der Zeit reißen. Vorher einen Teststreifen schneiden oder das Muster in Simple/Creative weicher machen.',
     'mt.flexBad': 'Der Schirm wird für diesen Durchmesser zu stark gebogen und reißt wahrscheinlich. Muster in Simple/Creative weicher machen (längere Schlitze, kleinere Stege, dünneres Material) oder einen größeren Durchmesser wählen.',
     'lbl.top': 'OBEN', 'lbl.bottom': 'UNTEN',
     'mt.parts': 'Teile', 'mt.addPart': '+ Teil hinzufügen', 'mt.part.n': i => `Teil ${i}`,
     'mt.partsDesc': 'Jedes Teil sitzt oben oder unten, auf Wunsch um einen Abstand nach innen versetzt – für lange Lampen weitere hinzufügen. Am Ende wird ein Teil eingeklebt, sitzt auf Zapfen des Schirms oder wird auf die offenen Randschlitze gesteckt (Randverzahnung, braucht offene Ränder mindestens materialstark tief). Mit Abstand sitzt es innen in der Röhre (ohne Außenrand): eingeklebt, mit Zapfen durch Schlitze in der Wand oder mit Fingern in den Musterschlitzen.',
-    'mt.kind': 'Typ', 'mt.from': 'Von', 'mt.from.top': 'Oben', 'mt.from.bottom': 'Unten', 'mt.offset': 'Abstand (mm)',
+    'mt.kind': 'Typ', 'mt.side': 'Von', 'mt.from.top': 'Oben', 'mt.from.bottom': 'Unten', 'mt.offset': 'Abstand (mm)',
     'mt.pfix': 'Befestigung', 'mt.pf.glue': 'Eingeklebt', 'mt.pf.through': 'Zapfen durch die Wand', 'mt.pf.fingers': 'Finger in die Musterschlitze', 'mt.pf.tabs': 'Zapfen & Schlitze', 'mt.pf.edge': 'Randverzahnung',
     'mt.marks': 'Teilepositionen auf den Schirm gravieren',
     'mt.partOut': n => `Teil ${n} passt nicht in die Höhe des Schirms.`,
@@ -1785,10 +1785,11 @@ function spiderWindows(cx, cy, ri, rhub, w, n) {
 }
 function mountPartEls(p, kind, cx, cy, k2, notches, W, fix = 'glue', fingers = []) {
   const g = mountGeometry(p, fix), holes = [];
-  if (kind === 'ring') holes.push(circlePath(cx, cy, g.ri - k2));
+  // too little room: a spider without openings (disc with hole); a hole or ring opening must leave material
+  if (kind === 'ring') { if (g.ri > 0.5) holes.push(circlePath(cx, cy, g.ri - k2)); }
   else if (kind !== 'closed') {
-    holes.push(circlePath(cx, cy, g.rh - k2));
-    if (kind === 'spider') holes.push(...spiderWindows(cx, cy, g.ri - k2, g.rhub + k2, p.spokeW + 2 * k2, p.spokes));
+    if (g.rh < g.ro - 0.5) holes.push(circlePath(cx, cy, g.rh - k2));
+    if (kind === 'spider' && g.ri > g.rhub + 1 && p.spokeW / 2 < g.rhub) holes.push(...spiderWindows(cx, cy, g.ri - k2, g.rhub + k2, p.spokeW + 2 * k2, p.spokes));
   }
   if (g.tabs) holes.push(...tabSlots(p, cx, cy, k2));
   if (g.edge) holes.push(...edgeSlots(p, notches || [], W, cx, cy, k2));
@@ -2205,7 +2206,7 @@ function renderPartsUI() {
     if (q.collapsed) return `<div class="card collapsed">${head}</div>`;
     return `<div class="card">${head}<div class="grid2">` +
       `<label>${esc(t('mt.kind'))}<select data-list="parts" data-i="${i}" data-k="kind">${kinds(q.kind)}</select></label>` +
-      `<label>${esc(t('mt.from'))}<select data-list="parts" data-i="${i}" data-k="from">${opt('top', t('mt.from.top'), q.from)}${opt('bottom', t('mt.from.bottom'), q.from)}</select></label>` +
+      `<label>${esc(t('mt.side'))}<select data-list="parts" data-i="${i}" data-k="from">${opt('top', t('mt.from.top'), q.from)}${opt('bottom', t('mt.from.bottom'), q.from)}</select></label>` +
       numField('parts', i, 'offset', t('mt.offset'), q.offset, 'min="0" step="1"') +
       `<label>${esc(t('mt.pfix'))}<select data-list="parts" data-i="${i}" data-k="fix">${fixOptions(q)}</select></label>` +
       `</div></div>`;
@@ -2948,7 +2949,9 @@ function renderInfo(p, doc) {
   if (p.mode === 'mount') {
     const g = doc.mount.g;
     let html = `<p style="margin:0">${t('mt.info', g.di.toFixed(1), (2 * g.ro).toFixed(1), fmt(p.socketHole))}</p>`;
-    if (!g.ok) html += `<p class="bad">${esc(t('mt.bad'))}</p>`;
+    // smallest inner Ø that fits ring + hub + hole (+1 mm between them), for glued-in parts
+    const dNeed = Math.ceil(2 * (p.socketHole / 2 + p.hubW + 1 + p.ringW) + p.mountClear);
+    if (doc.mount.parts.some(q => q.kind === 'spider' || q.kind === 'disc') && !g.ok) html += `<p class="bad">${esc(t('mt.bad', dNeed))}</p>`;
     // parts that leave the shade or overlap each other (height bands measured from the top)
     const H = doc.shell.h, band = q => q.fix === 'tabs' ? (q.pos === 'top' ? [-p.thick, 0] : [H, H + p.thick])
       : q.pos === 'top' ? [q.offset, q.offset + p.thick] : [H - q.offset - p.thick, H - q.offset];
