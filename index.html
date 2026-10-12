@@ -520,6 +520,7 @@ const STR = {
     'df.w': 'Groove width (mm)', 'df.gap': 'Distance to the shade (mm)', 'df.overlap': 'Glue overlap (mm)',
     'df.desc': 'A ring groove is engraved into the parts; the rolled-up diffuser sits in it. The engraving power sets the depth (about a third of the thickness). Parts between others get the groove on both sides.',
     'df.cut': 'Cut diffuser sheets',
+    'df.depth': (d, th) => `Calculated with a groove depth of ${d} mm (a third of ${th} mm) – set it with the engraving power.`,
     'df.sheet': (n, w, h) => `Diffuser ${n}: ${w} × ${h} mm (incl. overlap and the groove depth)`,
     'df.face': 'Mount the parts with the engraved groove facing the diffuser.',
     'df.back': list => `Parts ${list}: after cutting, leave them in the sheet, flip them in their opening and run the layer “Engrave – back side” for the groove on the other side.`,
@@ -703,6 +704,7 @@ const STR = {
     'df.w': 'Nutbreite (mm)', 'df.gap': 'Abstand zum Schirm (mm)', 'df.overlap': 'Klebe-Überlappung (mm)',
     'df.desc': 'In die Teile wird eine Ringnut graviert, in der der eingerollte Diffusor sitzt. Die Gravurleistung bestimmt die Tiefe (etwa ein Drittel der Dicke). Teile zwischen anderen bekommen die Nut auf beiden Seiten.',
     'df.cut': 'Diffusor-Zuschnitt schneiden',
+    'df.depth': (d, th) => `Gerechnet mit ${d} mm Nuttiefe (ein Drittel von ${th} mm) – über die Gravurleistung einstellen.`,
     'df.sheet': (n, w, h) => `Diffusor ${n}: ${w} × ${h} mm (inkl. Überlappung und Nuttiefe)`,
     'df.face': 'Teile mit der gravierten Nut zum Diffusor hin einbauen.',
     'df.back': list => `Teile ${list}: nach dem Schneiden im Restblech lassen, in ihrer Öffnung umdrehen und die Ebene „Gravur – Rückseite“ laufen lassen – für die Nut auf der anderen Seite.`,
@@ -3327,7 +3329,8 @@ function renderInfo(p, doc) {
     $('flexInfo').innerHTML = html;
     $('info').innerHTML = `<b>${t('info.cuts')}:</b> ${doc.count}<br><code>${esc(fileName(p, doc))}</code>`;
     // the diffuser sheet sizes sit with the cut option in the output column
-    $('diffSizes').innerHTML = plan && plan.ok ? plan.sections.map((sct, i) => esc(t('df.sheet', i + 1, fmt(+sct.w.toFixed(1)), fmt(+sct.h.toFixed(1))))).join('<br>') : '';
+    $('diffSizes').innerHTML = plan && plan.ok ? plan.sections.map((sct, i) => esc(t('df.sheet', i + 1, fmt(+sct.w.toFixed(1)), fmt(+sct.h.toFixed(1))))).join('<br>') +
+      `<br>${esc(t('df.depth', fmt(+(p.thick / 3).toFixed(2)), fmt(p.thick)))}` : '';
     return;
   }
   const mat = matOf(p), dm = midDiameter(p), matName = mat.name;
