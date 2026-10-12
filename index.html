@@ -457,6 +457,7 @@
       <label class="check" data-modes="pattern creative"><input type="checkbox" id="border" checked> <span data-i18n="border"></span></label>
       <label class="check" id="tabsNote" data-modes="pattern creative"><input type="checkbox" id="lampTabs" checked> <span data-i18n="mt.lampTabs"></span></label>
       <label class="check" id="diffRow" data-modes="mount"><input type="checkbox" id="diffCut" checked> <span data-i18n="df.cut"></span></label>
+      <div class="desc" id="diffSizes" data-modes="mount" style="margin:-2px 0 2px 26px"></div>
       <label class="check" id="marksRow" data-modes="mount"><input type="checkbox" id="mountMarks" checked> <span data-i18n="mt.marks"></span></label>
       <label class="check"><input type="checkbox" id="rotate"> <span data-i18n="rotate"></span></label>
       <label class="check"><input type="checkbox" id="paramVisible" checked> <span data-i18n="paramVisible"></span></label>
@@ -1944,7 +1945,9 @@ function diffuserPlan(p, parts, H) {
   }
   // a part needs the groove on the side facing a section: front = first such side, back = both sides
   const faces = new Map(list.map((e, i) => [e.q, (i > 0 ? 1 : 0) + (i < list.length - 1 ? 1 : 0)]));
-  return { r1, r2, rIn, sections, faces, ok: list.length >= 2 };
+  // up: a section above (groove on the upper face), down: one below
+  const sides = new Map(list.map((e, i) => [e.q, { up: i > 0, down: i < list.length - 1 }]));
+  return { r1, r2, rIn, sections, faces, sides, ok: list.length >= 2 };
 }
 const ringPathD = (cx, cy, r) => circlePath(cx, cy, r).match(/d="([^"]*)"/)[1];
 const ringPath = (cx, cy, r1, r2, cls = '') => `<path${cls ? ` class="${cls}"` : ''} fill-rule="evenodd" d="${ringPathD(cx, cy, r2)} ${ringPathD(cx, cy, r1)}"/>`;
@@ -2029,6 +2032,7 @@ function buildMountDoc(p) {
       const inner = q.kind === 'ring' || q.kind === 'spider' ? g.ri : q.kind === 'disc' ? g.rh : 0;
       q.diffOk = plan.r2 < q.ro - 0.3 && plan.r1 > inner + 0.3;
       if (!n || !q.diffOk || !plan.ok) continue;
+      q.groove = plan.sides.get(q);   // for the 3D view
       doc.labels.push(ringPath(q.cx, q.cy, plan.r1, plan.r2));
       if (n === 2) { doc.back.push(ringPath(q.cx, q.cy, plan.r1, plan.r2)); q.back = true; }
     }
@@ -2731,7 +2735,7 @@ function render() {
   const fixes = p.mountParts.map(q => partFix(p, q)), anyTabs = fixes.some(x => x === 'tabs' || x === 'through');
   $('tabsNote').hidden = !anyTabs || !['pattern', 'creative'].includes(p.mode);
   $('marksRow').hidden = p.mode !== 'mount' || !p.mountParts.some((q, i) => q.offset > 0 && fixes[i] !== 'through');
-  $('diffRow').hidden = p.mode !== 'mount' || !p.diffuser;
+  $('diffRow').hidden = $('diffSizes').hidden = p.mode !== 'mount' || !p.diffuser;
   document.querySelectorAll('[data-diff]').forEach(el => { el.hidden = !p.diffuser; });
   document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = !anyTabs; });
   document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = !fixes.some(x => x === 'tabs' || x === 'edge'); });
@@ -2952,8 +2956,19 @@ function buildMountParts(p, doc) {
   if (!doc.mount) return;
   const sd = doc.shell, W = sd.bw ?? sd.w, H = sd.h, th = p.thick, R = W / (2 * Math.PI);
   for (const prt of doc.mount.parts) {
-    const onEnds = prt.fix === 'tabs', tris = extrudeParts(prt.els.outer, prt.els.holes, th), cyUp = -prt.cy, o = prt.offset || 0;
+    const onEnds = prt.fix === 'tabs', cyUp = -prt.cy, o = prt.offset || 0;
     const y0 = prt.pos === 'top' ? (onEnds ? H / 2 : H / 2 - o - th) : (onEnds ? -H / 2 - th : -H / 2 + o);
+    let tris;
+    const plan = doc.mount.diffuser;
+    if (prt.groove && plan) {
+      // the engraved groove, about a third of the thickness deep, on the face(s) towards the diffuser
+      const d = th / 3, lo = prt.groove.down ? d : 0, hi = prt.groove.up ? th - d : th;
+      const ring = [circlePath(prt.cx, prt.cy, plan.r2), circlePath(prt.cx, prt.cy, plan.r1)];
+      const lift = (arr, dz) => { for (let k = 2; k < arr.length; k += 3) arr[k] += dz; return arr; };
+      tris = lift(extrudeParts(prt.els.outer, prt.els.holes, hi - lo), lo);
+      if (prt.groove.down) tris = tris.concat(extrudeParts(prt.els.outer, [...prt.els.holes, ...ring], d, true));
+      if (prt.groove.up) tris = tris.concat(lift(extrudeParts(prt.els.outer, [...prt.els.holes, ...ring], d, true), hi));
+    } else tris = extrudeParts(prt.els.outer, prt.els.holes, th);
     const pos = new Float32Array(tris.length);
     // part plane (x, y up) → horizontal: x stays, y → −z around the cylinder axis, thickness → height
     for (let k = 0; k < tris.length; k += 3) {
@@ -3298,7 +3313,6 @@ function renderInfo(p, doc) {
       if (!plan.ok) html += `<p class="warn">${esc(t('df.few'))}</p>`;
       else {
         for (const q of doc.mount.parts) if ((plan.faces.get(q) || 0) && !q.diffOk) html += `<p class="bad">${esc(t('df.noRoom', q.n))}</p>`;
-        html += `<p>${plan.sections.map((sct, i) => esc(t('df.sheet', i + 1, fmt(+sct.w.toFixed(1)), fmt(+sct.h.toFixed(1))))).join('<br>')}</p>`;
         html += `<p>${esc(t('df.face'))}</p>`;
         const backs = doc.mount.parts.filter(q => q.back).map(q => q.n);
         if (backs.length) html += `<p class="warn">${esc(t('df.back', backs.join(', ')))}</p>`;
@@ -3312,6 +3326,8 @@ function renderInfo(p, doc) {
     html += `<p>${esc(t('mt.from', t('mode.' + (p.shellMode || 'pattern'))))}</p>`;
     $('flexInfo').innerHTML = html;
     $('info').innerHTML = `<b>${t('info.cuts')}:</b> ${doc.count}<br><code>${esc(fileName(p, doc))}</code>`;
+    // the diffuser sheet sizes sit with the cut option in the output column
+    $('diffSizes').innerHTML = plan && plan.ok ? plan.sections.map((sct, i) => esc(t('df.sheet', i + 1, fmt(+sct.w.toFixed(1)), fmt(+sct.h.toFixed(1))))).join('<br>') : '';
     return;
   }
   const mat = matOf(p), dm = midDiameter(p), matName = mat.name;
@@ -3931,13 +3947,13 @@ function extrudeTree(tree, P, th, tri, seam = () => false) {
 }
 // A flat part from SVG outlines: outer elements minus hole elements, extruded
 // to th. Returns triangles (x, y up, z 0…th) in the elements' coordinates.
-function extrudeParts(outerEls, holeEls, th) {
+function extrudeParts(outerEls, holeEls, th, evenOddHoles = false) {
   const S = STL_SCALE, paths = els => { sampler.innerHTML = els.join(''); return [...sampler.children].map(el => sampleOutline(el, true).map(([x, y]) => ({ X: Math.round(x * S), Y: Math.round(-y * S) }))); };
   const cl = new ClipperLib.Clipper(), tree = new ClipperLib.PolyTree(), tris = [];
   cl.StrictlySimple = true;
   cl.AddPaths(paths(outerEls), ClipperLib.PolyType.ptSubject, true);
   if (holeEls.length) cl.AddPaths(paths(holeEls), ClipperLib.PolyType.ptClip, true);
-  cl.Execute(ClipperLib.ClipType.ctDifference, tree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+  cl.Execute(ClipperLib.ClipType.ctDifference, tree, ClipperLib.PolyFillType.pftNonZero, evenOddHoles ? ClipperLib.PolyFillType.pftEvenOdd : ClipperLib.PolyFillType.pftNonZero);
   extrudeTree(tree, (q, z) => [q.X / S, q.Y / S, z], th, (a, b, c) => tris.push(...a, ...b, ...c));
   return tris;
 }
