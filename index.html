@@ -476,6 +476,7 @@
       <label class="check" id="tabsNote" data-modes="pattern creative"><input type="checkbox" id="lampTabs" checked> <span data-i18n="mt.lampTabs"></span></label>
       <label class="check" id="diffRow" data-modes="mount"><input type="checkbox" id="diffCut" checked> <span data-i18n="df.cut"></span></label>
       <div class="desc" id="diffSizes" data-modes="mount" style="margin:-2px 0 2px 26px"></div>
+      <label class="check" id="partMarksRow" data-modes="mount"><input type="checkbox" id="partMarks" checked> <span data-i18n="mt.partMarks"></span></label>
       <label class="check" id="marksRow" data-modes="mount"><input type="checkbox" id="mountMarks" checked> <span data-i18n="mt.marks"></span></label>
       <label class="check"><input type="checkbox" id="rotate"> <span data-i18n="rotate"></span></label>
       <label class="check"><input type="checkbox" id="paramVisible" checked> <span data-i18n="paramVisible"></span></label>
@@ -554,6 +555,7 @@ const STR = {
     'mt.kind': 'Type', 'mt.side': 'From', 'mt.from.top': 'Top', 'mt.from.bottom': 'Bottom', 'mt.offset': 'Offset (mm)',
     'mt.pfix': 'Attachment', 'mt.pf.glue': 'Glued in', 'mt.pf.through': 'Tabs through the wall', 'mt.pf.fingers': 'Fingers in the pattern slots', 'mt.pf.tabs': 'Tabs & slots', 'mt.pf.edge': 'Edge interlock',
     'mt.marks': 'Engrave part positions on the shade',
+    'mt.partMarks': 'Engrave part names and seam tick',
     'mt.partOut': n => `Part ${n} does not fit into the height of the shade.`,
     'mt.partClash': (a, b) => `Parts ${a} and ${b} overlap.`,
     'mt.fingersGlue': (n, k, w) => `Part ${n}: ${k} fingers (${w} mm wide) sit in the pattern slots – they keep the part centred, but the slots are longer than the part is thick, so it can slide up and down. Glue it in as well.`,
@@ -741,6 +743,7 @@ const STR = {
     'mt.kind': 'Typ', 'mt.side': 'Von', 'mt.from.top': 'Oben', 'mt.from.bottom': 'Unten', 'mt.offset': 'Abstand (mm)',
     'mt.pfix': 'Befestigung', 'mt.pf.glue': 'Eingeklebt', 'mt.pf.through': 'Zapfen durch die Wand', 'mt.pf.fingers': 'Finger in die Musterschlitze', 'mt.pf.tabs': 'Zapfen & Schlitze', 'mt.pf.edge': 'Randverzahnung',
     'mt.marks': 'Teilepositionen auf den Schirm gravieren',
+    'mt.partMarks': 'Teilenamen und Naht-Strich gravieren',
     'mt.partOut': n => `Teil ${n} passt nicht in die Höhe des Schirms.`,
     'mt.partClash': (a, b) => `Teile ${a} und ${b} überschneiden sich.`,
     'mt.fingersGlue': (n, k, w) => `Teil ${n}: ${k} Finger (${w} mm breit) sitzen in den Musterschlitzen – sie zentrieren das Teil, aber die Schlitze sind länger als das Teil dick ist, es kann darin auf und ab rutschen. Zusätzlich einkleben.`,
@@ -1062,7 +1065,7 @@ const NUM = ['spreadBal', 'boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY',
              'socketHole', 'ringW', 'spokes', 'spokeW', 'hubW', 'mountClear', 'tabCount', 'tabW', 'rim',
              'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
 const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint'];
-const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible', 'lampTabs', 'mountMarks', 'diffuser', 'diffCut'];
+const CHK = ['seamless', 'openEdges', 'border', 'rotate', 'paramVisible', 'lampTabs', 'mountMarks', 'partMarks', 'diffuser', 'diffCut'];
 const MODES = ['pattern', 'creative', 'mount', 'test'];
 // the cylinder the mount mode builds parts for comes from the last Simple/Creative design
 let shellMode = 'pattern';
@@ -2234,7 +2237,7 @@ function buildMountDoc(p) {
     doc.boards.push({ path: els.outer[0] });   // the real outline, so tabs and fingers show
     // engraved name along a free ring of material, plus a short tick where the shade's seam goes
     const label = `${part.i + 1} ${t('lbl.' + part.from)}${part.offset > 0 ? ' ' + fmt(part.offset) : ''}`;
-    const marks = partMarks(p, part.fix, kind, gp, cx, cy, label);
+    const marks = p.partMarks === false ? null : partMarks(p, part.fix, kind, gp, cx, cy, label);
     if (marks) doc.labels.push(...marks);
     else doc.notes.push(`<text x="${f(cx)}" y="${f(cy)}" text-anchor="middle" dominant-baseline="central" font-size="3">${esc(label)}</text>`);   // no room: information only
     doc.mount.parts.push({ pos: part.from, offset: part.offset || 0, fix: part.fix, n: part.i + 1, kind, cx, cy, ro: gp.ro, els, fingers, stopDepth: part.stopDepth, engrave: marks ? [...marks] : [] });
@@ -2355,7 +2358,11 @@ function buildDoc(p) {
   if (p.mountMarks && (p.inLamp || p.mode === 'mount')) for (const part of p.mountParts || []) {
     if (!(part.offset > 0) || part.fix === 'through' || part.offset >= h) continue;
     const y = part.from === 'bottom' ? h - part.offset : part.offset;
-    doc.labels.push(`<path class="marks" d="M0,${f(y)} H${f(w)}" fill="none" stroke="#000000" stroke-width="0.2" stroke-dasharray="2 3"/>`);
+    // only on the material: leave out every slot at this height (plus 0.3 mm), so the laser never engraves into a slot
+    const gaps = doc.recs.filter(r => r.els && r.els.length && Math.abs(r.y - y) < (r.hh || 0)).map(r => [r.x - r.hw - 0.3, r.x + r.hw + 0.3]).sort((u, v) => u[0] - v[0]);
+    let x0 = 0, d = '';
+    for (const [a, b] of [...gaps, [w, w]]) { if (a - x0 > 0.5) d += `M${f(x0)},${f(y)} H${f(Math.min(a, w))} `; x0 = Math.max(x0, b); }
+    if (d) doc.labels.push(`<path class="marks" d="${d.trim()}" fill="none" stroke="#000000" stroke-width="0.2"/>`);
   }
   doc.count = doc.cuts.length;
   // with a seam joint the outline is part of the joint, so it is always cut
