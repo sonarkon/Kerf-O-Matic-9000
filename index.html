@@ -546,7 +546,7 @@ const STR = {
     'df.back': list => `Parts ${list}: after cutting, leave them in the sheet, flip them in their opening and run the layer “Engrave – back side” for the groove on the other side.`,
     'df.noRoom': n => `Part ${n}: the diffuser groove does not fit into its material – change the distance to the shade or the ring width.`,
     'df.few': 'A diffuser needs at least two parts to sit between.',
-    'layer.back': 'Engrave – back side (flip the parts)', 'layer.diff': 'Diffuser (cut separately)',
+    'layer.back': 'Engrave – back side (flip the parts)', 'layer.shade': 'Shade', 'layer.diff': 'Diffuser (cut separately)',
     'pl.diff': (w, g, sheets) => `Diffuser: groove ${w} mm, ${g} mm from the shade · sheets ${sheets}`,
     'mt.parts': 'Parts', 'mt.addPart': '+ Add part', 'mt.part.n': i => `Part ${i}`,
     'mt.partsDesc': 'Each part sits at the top or bottom, optionally moved inward by an offset – add more for long lamps. At the end a part is glued in, sits on tabs of the shade, or is pushed onto the open edge slots (edge interlock, needs open edges at least one thickness deep). With an offset it sits inside the tube (no outer rim): glued in, held by tabs through slots in the wall, or with fingers in the pattern slots.',
@@ -732,7 +732,7 @@ const STR = {
     'df.back': list => `Teile ${list}: nach dem Schneiden im Restblech lassen, in ihrer Öffnung umdrehen und die Ebene „Gravur – Rückseite“ laufen lassen – für die Nut auf der anderen Seite.`,
     'df.noRoom': n => `Teil ${n}: Die Diffusor-Nut passt nicht ins Material – Abstand zum Schirm oder Ringbreite ändern.`,
     'df.few': 'Ein Diffusor braucht mindestens zwei Teile, zwischen denen er sitzt.',
-    'layer.back': 'Gravur – Rückseite (Teile umdrehen)', 'layer.diff': 'Diffusor (separat schneiden)',
+    'layer.back': 'Gravur – Rückseite (Teile umdrehen)', 'layer.shade': 'Schirm', 'layer.diff': 'Diffusor (separat schneiden)',
     'pl.diff': (w, g, sheets) => `Diffusor: Nut ${w} mm, ${g} mm vom Schirm · Zuschnitte ${sheets}`,
     'mt.parts': 'Teile', 'mt.addPart': '+ Teil hinzufügen', 'mt.part.n': i => `Teil ${i}`,
     'mt.partsDesc': 'Jedes Teil sitzt oben oder unten, auf Wunsch um einen Abstand nach innen versetzt – für lange Lampen weitere hinzufügen. Am Ende wird ein Teil eingeklebt, sitzt auf Zapfen des Schirms oder wird auf die offenen Randschlitze gesteckt (Randverzahnung, braucht offene Ränder mindestens materialstark tief). Mit Abstand sitzt es innen in der Röhre (ohne Außenrand): eingeklebt, mit Zapfen durch Schlitze in der Wand oder mit Fingern in den Musterschlitzen.',
@@ -2054,7 +2054,7 @@ function mountPartEls(p, kind, cx, cy, k2, notches, W, fix = 'glue', fingers = [
   return { outer: [tabs.length ? tabbedOutline(p, cx, cy, g.ro, k2, tabs) : circlePath(cx, cy, g.ro + k2)], holes };
 }
 function buildMountDoc(p) {
-  const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], count: 0, rows: [] };
+  const doc = { boards: [], cuts: [], recs: [], borders: [], labels: [], notes: [], count: 0, rows: [] };
   const g = mountGeometry(p), k2 = Math.max(0, p.kerf || 0) / 2, gap = 6;
   doc.shell = buildDoc(shellOf(p));
   const W = doc.shell.bw ?? doc.shell.w;
@@ -2063,10 +2063,13 @@ function buildMountDoc(p) {
   for (const pos of ['top', 'bottom']) if (parts.some(q => q.fix === 'edge' && q.from === pos)) doc.mount.notches[pos] = edgeNotches(p, doc.shell, pos);
   // the complete cut set: the flat shade on top (its outline is always cut here) …
   const sh = doc.shell, pad = sh.padY || 0, move = `translate(0,${f(pad)})`;
-  doc.cuts.push(...(pad ? sh.cuts.map(e => shiftEl(e, 0, pad)) : sh.cuts));   // one by one, so the cut order and its preview reach into the shade
+  const shCuts = pad ? sh.cuts.map(e => shiftEl(e, 0, pad)) : sh.cuts;
+  doc.cuts.push(...shCuts);   // one by one, so the cut order and its preview reach into the shade
   const shellOutline = sh.borders.length ? sh.borders : [outlinePath(offsetOutline(sh.outline, k2))];
-  doc.borders.push(`<g transform="${move}">${shellOutline.join('')}</g>`);
-  if (sh.labels.length) doc.labels.push(`<g transform="${move}">${sh.labels.join('')}</g>`);   // position marks
+  const shBorder = `<g transform="${move}">${shellOutline.join('')}</g>`, shMarks = sh.labels.length ? [`<g transform="${move}">${sh.labels.join('')}</g>`] : [];
+  doc.borders.push(shBorder);
+  doc.labels.push(...shMarks);   // position marks
+  doc.mount.shade = { cuts: shCuts, border: [shBorder], engrave: shMarks };
   doc.boards.push({ outline: sh.outline.map(([px, py]) => [px, py + pad]) });
   // … and the mount parts below it
   // … and the parts below it, in rows as wide as the shade
@@ -2086,7 +2089,7 @@ function buildMountDoc(p) {
     const ly = kind === 'closed' ? cy + gp.ro / 2 : kind === 'disc' ? cy + (gp.rh + gp.ro) / 2 : cy + gp.ro - p.ringW / 2;
     const fs = clamp((kind === 'closed' ? gp.ro : kind === 'disc' ? gp.ro - gp.rh : p.ringW) * 0.45, 1.5, 4);
     const label = `${part.i + 1} ${t('lbl.' + part.from)}${part.offset > 0 ? ' ' + fmt(part.offset) : ''}`;
-    doc.labels.push(`<text x="${f(cx)}" y="${f(ly)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}">${esc(label)}</text>`);
+    doc.notes.push(`<text x="${f(cx)}" y="${f(ly)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}">${esc(label)}</text>`);   // information only, not engraved
     doc.mount.parts.push({ pos: part.from, offset: part.offset || 0, fix: part.fix, n: part.i + 1, kind, cx, cy, ro: gp.ro, els, fingers });
     x += 2 * rx + gap; rowH = Math.max(rowH, 2 * rx); wMax = Math.max(wMax, x - gap);
   }
@@ -2102,13 +2105,14 @@ function buildMountDoc(p) {
       if (!n || !q.diffOk || !plan.ok) continue;
       q.groove = plan.sides.get(q);   // for the 3D view
       doc.labels.push(ringPath(q.cx, q.cy, plan.r1, plan.r2));
+      q.engrave = [ringPath(q.cx, q.cy, plan.r1, plan.r2)];
       if (n === 2) { doc.back.push(ringPath(q.cx, q.cy, plan.r1, plan.r2)); q.back = true; }
     }
     if (p.diffCut && plan.ok) {
       let dx = 0, dy = y0 + rowH + gap;
       for (const [i, sct] of plan.sections.entries()) {
-        doc.diff.push(`<rect x="${f(dx)}" y="${f(dy)}" width="${f(sct.w)}" height="${f(sct.h)}"/>`,
-          `<text x="${f(dx + 3)}" y="${f(dy + 5)}" font-size="3" stroke="none" fill="currentColor">D${i + 1}</text>`);
+        doc.diff.push(`<rect x="${f(dx)}" y="${f(dy)}" width="${f(sct.w)}" height="${f(sct.h)}"/>`);
+        doc.notes.push(`<text x="${f(dx + 3)}" y="${f(dy + 5)}" font-size="3">D${i + 1}</text>`);
         dy += sct.h + gap; wMax = Math.max(wMax, sct.w);
       }
       if (plan.sections.length) { y0 = dy - gap - rowH; }
@@ -2377,6 +2381,22 @@ function buildSVG(p, doc) {
   out.push(`  <title>${esc(p.project || fileName(p, doc))}</title>`);
   out.push(`  <desc>${esc(lines.join(' | '))}</desc>`);
   out.push(`  <metadata id="kerf-params">${esc(paramsJSON(p))}</metadata>`);
+  // Lamp: one group per object (the shade, each part), so a single part can be
+  // selected and cut on its own; inside, engrave first, then the cuts, the outline last
+  if (doc.mount) {
+    const red = 'stroke="#ff0000" stroke-width="0.1" fill="none"';
+    const object = (id, label, eng, cuts, outer) => {
+      out.push(`  <g id="${id}" inkscape:label="${esc(label)}"${tr}>`);
+      if (eng.length) out.push(`    <g fill="#000000" stroke="none">${eng.join('')}</g>`);
+      if (cuts.length) out.push(`    <g ${red}>`, ...cuts.map(c => '      ' + c), '    </g>');
+      if (outer.length) out.push(`    <g ${red}>${outer.join('')}</g>`);
+      out.push('  </g>');
+    };
+    const sd = doc.mount.shade;
+    if (sd) object('shade', t('layer.shade'), sd.engrave, sd.cuts, sd.border);
+    for (const q of doc.mount.parts)
+      object(`part-${q.n}`, `${t('mt.part.n', q.n)} · ${t('mt.from.' + q.pos)}${q.offset ? ` +${fmt(q.offset)} mm` : ''} · ${t('mt.' + q.kind)}`, q.engrave || [], q.els.holes, q.els.outer);
+  } else {
   // laser order: engrave first, then the inner cuts, the outer contour last (the part stays in place until then)
   if (doc.labels.length) {
     out.push(`  <g id="engrave" inkscape:groupmode="layer" inkscape:label="${t('layer.engrave')}" fill="#000000" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="3"${tr}>`);
@@ -2391,6 +2411,7 @@ function buildSVG(p, doc) {
     for (const b of doc.borders) out.push('    ' + b);
     out.push('  </g>');
   }
+  }
   // after the outer cut: the flipped parts' back-side grooves, then the diffuser sheets (paper: separate job)
   if (doc.back?.length) {
     out.push(`  <g id="engrave-back" inkscape:groupmode="layer" inkscape:label="${t('layer.back')}" fill="#555555" stroke="none"${tr}>`);
@@ -2404,6 +2425,7 @@ function buildSVG(p, doc) {
   }
   out.push(`  <g id="parameter" inkscape:groupmode="layer" inkscape:label="${t('layer.params')}" fill="#0000ff" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="${fs}"${paramVisible ? '' : ' style="display:none"'}>`);
   lines.forEach((txt, i) => out.push(`    <text x="0" y="${f(H + pad + fs + i * lh)}">${esc(txt)}</text>`));
+  if (doc.notes?.length) out.push(`    <g${tr}>${doc.notes.join('')}</g>`);   // part names etc. – information only
   out.push('  </g>');
   out.push('</svg>');
   return out.join('\n');
@@ -2782,6 +2804,7 @@ function previewInner(p, doc, vm) {
   return `<g class="boards" fill="var(--board)" stroke="${p.border || p.mode === 'test' || p.mode === 'mount' || (p.joint && p.joint !== 'none') ? 'var(--cut)' : 'var(--muted)'}" stroke-width="1">${boards}</g>` +
     `<g class="cuts" fill="none" stroke="var(--cut)" stroke-width="1.2">${doc.cuts.join('')}</g>` +
     `<g fill="var(--engrave)" font-family="Arial, Helvetica, sans-serif" font-size="3">${doc.labels.join('')}</g>` +
+    (doc.notes?.length ? `<g fill="#3b6fd8" font-family="Arial, Helvetica, sans-serif">${doc.notes.join('')}</g>` : '') +
     (doc.diff?.length ? `<g fill="none" stroke="#00a651" stroke-width="1" color="#00a651" style="vector-effect:non-scaling-stroke" font-family="Arial, Helvetica, sans-serif">${doc.diff.join('')}</g>` : '');
 }
 
