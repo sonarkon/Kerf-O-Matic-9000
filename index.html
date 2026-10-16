@@ -85,6 +85,8 @@
   .cutprev input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
   .cutprev button { padding: 2px 7px; font-size: 11px; line-height: 1.4; }
   #cutCount { font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
+  .cutprev .baltag { font-size: 10px; color: var(--muted); }
+  #stage .heat { pointer-events: none; image-rendering: auto; }
   #stage.cutprev .cuts > * { stroke: var(--muted); stroke-opacity: .25; }
   #stage.cutprev .cuts > .done { stroke: var(--cut); stroke-opacity: 1; }
   #stage.cutprev .cuts > .now { stroke: var(--accent); stroke-opacity: 1; stroke-width: 3.5; }
@@ -208,6 +210,7 @@
   .iconbtn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
   .iconbtn.lamp:has(input:checked) { color: #2b1a00; background: #ffc35a; border-color: #ffc35a; box-shadow: 0 0 14px #ffb04a99; }
   .iconbtn.lamp:has(input:checked) svg { fill: #fff3d0; }
+  .iconbtn.heat:has(input:checked) { color: #fff; background: linear-gradient(135deg, #ffb347, #e0503a); border-color: transparent; }
   .iconbtn.flex:has(input:checked) { color: #fff; background: linear-gradient(135deg, #3e9b4f, #e0a526 55%, #d6332a); border-color: transparent; }
   #three { position: absolute; inset: 0; }
   #three canvas { display: block; width: 100%; height: 100%; cursor: grab; }
@@ -423,6 +426,12 @@
     <label class="iconbtn flex" id="flexCtl" data-i18n-title="flexOverlay">
       <input type="checkbox" id="flexOn" data-i18n-aria="flexOverlay">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 18a9 9 0 0 1 18 0h-4a5 5 0 0 0-10 0z"/><path d="M7.76 13.76 6.34 12.34M12 13V11M16.24 13.76l1.42-1.42"/>
+      </svg>
+    </label>
+    <label class="iconbtn heat" id="heatCtl" data-i18n-title="heatMap">
+      <input type="checkbox" id="heatOn" data-i18n-aria="heatMap">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 14.76V4a2 2 0 1 0-4 0v10.76a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>
       </svg>
     </label>
@@ -448,6 +457,12 @@
         <option value="skip" data-i18n="ord.skip"></option>
         <option value="spread" data-i18n="ord.spread"></option>
       </select></label>
+      <label class="inline" id="balRow" data-modes="pattern creative test mount"><span data-i18n="ord.bal"></span><select id="spreadBal">
+        <option value="0" data-i18n="ord.bal.cool"></option>
+        <option value="30" data-i18n="ord.bal.mid" selected></option>
+        <option value="80" data-i18n="ord.bal.short"></option>
+      </select></label>
+      <div class="desc" id="balInfo" data-modes="pattern creative test mount"></div>
       <div class="cutprev inline" data-modes="pattern creative test mount">
         <span data-i18n="cp.label"></span>
         <span class="cprow"><button type="button" id="cutPlay" data-i18n-aria="cp.play">▶</button><input type="range" id="cutStep" min="0" max="1" value="1" step="1" data-nomain><span id="cutCount"></span></span>
@@ -478,11 +493,14 @@
   <footer class="credit">
     © 2026 sonarkon ·
     <a href="https://github.com/sonarkon/Kerf-O-Matic-9000" target="_blank" rel="noopener" data-i18n="credit.link"></a> ·
-    <a href="#" id="resetLink" data-i18n="reset"></a>
+    <a href="#" id="resetLink" data-i18n="reset"></a> ·
+    <span id="version"></span>
   </footer>
 </aside>
 
 <script>
+// date of the last update; shown in the footer and stored in every saved file
+const VERSION = '2026.10.16';
 const $ = id => document.getElementById(id);
 const f = v => +v.toFixed(4);              // compact number for SVG output
 const fmt = v => String(+(+v).toFixed(3)); // for filenames / labels
@@ -568,7 +586,7 @@ const STR = {
     'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
     'hint': 'Drag = pan · Wheel = zoom', 'hint3d': 'Drag = rotate · Right-drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
-    'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex heatmap',
+    'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex heatmap', 'heatMap': 'Heat during the cut preview',
     'bend': 'Bend', 'explode': 'Explode', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'png.title': 'PNG texture', 'png.hint': 'White = material, black = hole. The preview shows how it repeats.',
@@ -576,7 +594,8 @@ const STR = {
     'png.stripe': (w, h) => `The design only changes from top to bottom: a stripe two columns wide over the full height, ${w} × ${h} mm – repeat it around the cylinder.`,
     'png.board': (w, h, seam) => `The design also changes across the board: the whole board, ${w} × ${h} mm${seam ? ', seamless around' : ' – turn on Seamless for a seamless repeat'}.`,
     'png.na': 'PNG textures are available in Simple and Creative mode.',
-    'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first', 'ord.spread': 'Spread out', 'cp.label': 'Cut preview', 'cp.play': 'Play the cut order',
+    'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first', 'ord.spread': 'Spread out', 'ord.bal': 'Priority', 'ord.bal.cool': 'Coolest (more travel)', 'ord.bal.mid': 'Balanced', 'ord.bal.short': 'Short travel',
+    'ord.stats': (tr, trz, pct) => `Travel ${tr} m (zigzag ${trz} m) · heat build-up ${pct} % of zigzag`, 'cp.label': 'Cut preview', 'cp.play': 'Play the cut order',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
     'rotate': 'Rotate output by 90°', 'paramVisible': 'Parameter layer visible',
     'sec.flex': 'Bendability', 'sec.file': 'File', 'credit.link': 'Source on GitHub (MIT)', 'reset': 'Reset settings', 'reset.confirm': 'Reset all settings to the defaults?',
@@ -674,7 +693,7 @@ const STR = {
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, height ${h}, W ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
     'pl.flex': (e, st, d, b) => `Flex (guide value) at Bend ${b} %: ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
-    'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d}`
+    'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d} · Kerf-O-Matic 9000 v${VERSION}`
   },
   de: {
     'title': 'Kerf-O-Matic 9000',
@@ -752,7 +771,7 @@ const STR = {
     'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
-    'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap',
+    'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap', 'heatMap': 'Wärme in der Schnitt-Vorschau',
     'bend': 'Biegung', 'explode': 'Explode', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Seitenrand (mm)', 'order': 'Schnittreihenfolge',
     'png.title': 'PNG-Textur', 'png.hint': 'Weiß = Material, schwarz = Loch. Die Vorschau zeigt die Wiederholung.',
@@ -760,7 +779,8 @@ const STR = {
     'png.stripe': (w, h) => `Der Entwurf ändert sich nur von oben nach unten: ein Streifen, zwei Spalten breit über die volle Höhe, ${w} × ${h} mm – rundherum wiederholen.`,
     'png.board': (w, h, seam) => `Der Entwurf ändert sich auch quer: die ganze Platte, ${w} × ${h} mm${seam ? ', rundherum nahtlos' : ' – für nahtlose Wiederholung Seamless einschalten'}.`,
     'png.na': 'PNG-Texturen gibt es im Simple- und Creative-Modus.',
-    'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst', 'ord.spread': 'Verteilt', 'cp.label': 'Schnitt-Vorschau', 'cp.play': 'Schnittreihenfolge abspielen',
+    'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst', 'ord.spread': 'Verteilt', 'ord.bal': 'Vorrang', 'ord.bal.cool': 'Möglichst kühl (mehr Leerfahrt)', 'ord.bal.mid': 'Ausgewogen', 'ord.bal.short': 'Kurze Wege',
+    'ord.stats': (tr, trz, pct) => `Leerfahrt ${tr} m (Zickzack ${trz} m) · Wärmestau ${pct} % vom Zickzack`, 'cp.label': 'Schnitt-Vorschau', 'cp.play': 'Schnittreihenfolge abspielen',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
     'rotate': 'Um 90° gedreht ausgeben', 'paramVisible': 'Parameter-Layer sichtbar',
     'sec.flex': 'Biegbarkeit', 'sec.file': 'Datei', 'credit.link': 'Quellcode auf GitHub (MIT)', 'reset': 'Einstellungen zurücksetzen', 'reset.confirm': 'Alle Einstellungen auf Standard zurücksetzen?',
@@ -858,7 +878,7 @@ const STR = {
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, Höhe ${h}, B ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
     'pl.flex': (e, st, d, b) => `Flex (Richtwert) bei Bend ${b} %: ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
-    'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d}`
+    'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d} · Kerf-O-Matic 9000 v${VERSION}`
   }
 };
 let lang = 'en';
@@ -1031,7 +1051,7 @@ function newMod(p) {
 }
 
 // ---------------------------------------------------------------- params
-const NUM = ['boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'kerf', 'jointSize', 'diffW', 'diffGap', 'diffOverlap',
+const NUM = ['spreadBal', 'boardW', 'boardH', 'thick', 'slotH', 'slotW', 'gapY', 'gapX', 'offset', 'kerf', 'jointSize', 'diffW', 'diffGap', 'diffOverlap',
              'socketHole', 'ringW', 'spokes', 'spokeW', 'hubW', 'mountClear', 'tabCount', 'tabW', 'rim',
              'marginX', 'testFrom', 'testTo', 'testCount', 'testW', 'testH'];
 const SEL = ['material', 'diaRef', 'shape', 'offsetMode', 'order', 'testParam', 'joint'];
@@ -1059,7 +1079,7 @@ function writeParams(p) {
   // a design with its own material brings the definition along
   if (p.materialDef && p.material && !MATERIALS[p.material]) { customMaterials[p.material] = { ...p.materialDef }; saveMaterials(); fillMaterials(); }
   if (MODES.includes(p.mode)) document.querySelector(`input[name=mode][value="${p.mode}"]`).checked = true;
-  for (const k of NUM) if (p[k] != null) $(k).value = p[k];
+  for (const k of NUM) if (p[k] != null) $(k).value = k === 'spreadBal' ? [0, 30, 80].reduce((a, b) => Math.abs(b - p[k]) < Math.abs(a - p[k]) ? b : a) : p[k];
   for (const k of SEL) if (p[k] != null && [...$(k).options].some(o => o.value === p[k])) $(k).value = p[k];
   for (const k of CHK) if (p[k] != null) $(k).checked = !!p[k];
   if (p.project != null) $('project').value = p.project;
@@ -1350,8 +1370,8 @@ function generate(p, w, h, x0, x1, slotFn) {
 // Zigzag through the columns (alternating direction) to keep travel short.
 // "skip" cuts every other column first so heat can spread before the neighbour is cut.
 // "spread" jumps across the whole field (see spreadCuts).
-function orderCuts(columns, mode) {
-  if (mode === 'spread') return spreadCuts(columns.flat());
+function orderCuts(columns, mode, balance) {
+  if (mode === 'spread') return spreadCuts(columns.flat(), balance);
   const idx = columns.map((_, i) => i);
   const seq = mode === 'skip' ? [...idx.filter(i => i % 2 === 0), ...idx.filter(i => i % 2)] : idx;
   const out = [];
@@ -1363,31 +1383,71 @@ function orderCuts(columns, mode) {
   return out;
 }
 
-// Spread: each next cut is as far as possible from the last few, so every spot
-// can cool down before the laser comes back near it – more travel, less local
-// heat (acrylic warps less). Candidates are sampled with a fixed seed, so the
-// order is stable and fast even for thousands of slots.
-function spreadCuts(recs) {
-  const left = recs.filter(r => r.els && r.els.length);
-  if (left.length < 3) return left.flatMap(r => r.els);
-  let seed = 20261011;
-  const rnd = () => (seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) / 4294967296;
-  const out = [], recent = [];
-  let cur = left.splice(0, 1)[0];
-  for (;;) {
-    out.push(...cur.els);
-    recent.push(cur);
-    if (recent.length > 8) recent.shift();
-    if (!left.length) break;
-    const tries = Math.min(left.length, 48);
-    let best = 0, bestD = -1;
-    for (let t = 0; t < tries; t++) {
-      const i = tries === left.length ? t : Math.floor(rnd() * left.length), c = left[i];
-      let d = Infinity;
-      for (const r of recent) { const dd = (c.x - r.x) ** 2 + (c.y - r.y) ** 2; if (dd < d) d = dd; }
-      if (d > bestD) { bestD = d; best = i; }
+// A simple heat model for the cut order. Every cut leaves heat where it was
+// made, in proportion to its length; the heat spreads to the surroundings
+// (Gaussian, sigma about the slot spacing) and fades with time (time = cut
+// length plus travel at five times the cutting speed, so in mm of cutting).
+function heatParams(items) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, sumL = 0;
+  for (const q of items) { x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y); sumL += q.L; }
+  const area = Math.max(1, (x1 - x0 + 1) * (y1 - y0 + 1)), avgL = sumL / Math.max(1, items.length);
+  const sigma = clamp(Math.sqrt(area / Math.max(1, items.length)) * 0.8, 2, 20);
+  return { x0: x0 - 3 * sigma, y0: y0 - 3 * sigma, x1: x1 + 3 * sigma, y1: y1 + 3 * sigma, sigma, avgL, tau: 25 * avgL };
+}
+class HeatGrid {
+  constructor(hp) {
+    this.hp = hp; this.cell = hp.sigma / 2;
+    this.nx = Math.max(1, Math.ceil((hp.x1 - hp.x0) / this.cell) + 1);
+    this.ny = Math.max(1, Math.ceil((hp.y1 - hp.y0) / this.cell) + 1);
+    this.a = new Float64Array(this.nx * this.ny); this.t0 = 0;
+    const r = Math.ceil(2.5 * hp.sigma / this.cell);
+    this.k = [];   // kernel offsets and weights
+    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
+      const d2 = (i * this.cell) ** 2 + (j * this.cell) ** 2, w = Math.exp(-d2 / (2 * hp.sigma ** 2));
+      if (w > 0.01) this.k.push(i, j, w);
     }
-    cur = left[best]; left[best] = left[left.length - 1]; left.pop();
+  }
+  // values are stored scaled by exp((t - t0)/tau), so time only scales a query
+  add(x, y, E, t) {
+    if ((t - this.t0) / this.hp.tau > 200) { const f = Math.exp(-(t - this.t0) / this.hp.tau); for (let i = 0; i < this.a.length; i++) this.a[i] *= f; this.t0 = t; }
+    const s = E * Math.exp((t - this.t0) / this.hp.tau), ci = Math.round((x - this.hp.x0) / this.cell), cj = Math.round((y - this.hp.y0) / this.cell);
+    for (let n = 0; n < this.k.length; n += 3) {
+      const i = ci + this.k[n], j = cj + this.k[n + 1];
+      if (i >= 0 && j >= 0 && i < this.nx && j < this.ny) this.a[j * this.nx + i] += s * this.k[n + 2];
+    }
+  }
+  at(x, y, t) {
+    const i = clamp(Math.round((x - this.hp.x0) / this.cell), 0, this.nx - 1), j = clamp(Math.round((y - this.hp.y0) / this.cell), 0, this.ny - 1);
+    return this.a[j * this.nx + i] * Math.exp(-(t - this.t0) / this.hp.tau);
+  }
+}
+// rough cut length of a slot (its outline)
+const slotLength = r => Math.max(1, 4 * (r.hh || 1) + 2 * (r.hw || 0) * (Math.PI - 2));
+// Spread: each next cut goes where it is coolest right now; the balance (0…100)
+// weighs the travel to it against the heat, from "keep it cool" to "short paths".
+// Every candidate is checked, so the order is fixed for a design.
+function spreadCuts(recs, balance = 30) {
+  const left = recs.filter(r => r.els && r.els.length).map(r => ({ r, x: r.x, y: r.y, L: slotLength(r) }));
+  if (left.length < 3) return left.flatMap(q => q.r.els);
+  const hp = heatParams(left), grid = new HeatGrid(hp), out = [];
+  const D = Math.hypot(hp.x1 - hp.x0, hp.y1 - hp.y0), w = clamp(balance, 0, 100) / 100 * 3, H1 = hp.avgL;
+  let cur = left.splice(0, 1)[0], t = 0;
+  for (;;) {
+    out.push(...cur.r.els);
+    t += cur.L;
+    grid.add(cur.x, cur.y, cur.L, t);
+    if (!left.length) break;
+    let best = 0, bestS = Infinity;
+    for (let i = 0; i < left.length; i++) {
+      const c = left[i], dist = Math.hypot(c.x - cur.x, c.y - cur.y);
+      // heat in units of one fresh cut; travel in units of the whole field; with no
+      // weight on travel, prefer far away among equally cool spots
+      const sc = grid.at(c.x, c.y, t) / H1 + (w ? w * dist / D : -1e-3 * dist / D);
+      if (sc < bestS) { bestS = sc; best = i; }
+    }
+    const next = left[best];
+    t += Math.hypot(next.x - cur.x, next.y - cur.y) / 5;
+    cur = next; left[best] = left[left.length - 1]; left.pop();
   }
   return out;
 }
@@ -2077,7 +2137,7 @@ function buildDoc(p) {
         // the cuts one by one at the strip's place, so the order and its preview cover every strip
         const cols = gen.columns.map(col => col.map(r => ({ ...r, y: r.y + y0, els: r.els.map(e => shiftEl(e, 0, y0)) })));
         if (p.order === 'spread') spreadAll.push(...cols.flat());   // spread over all strips together, below
-        else doc.cuts.push(...orderCuts(cols, p.order));
+        else doc.cuts.push(...orderCuts(cols, p.order, p.spreadBal));
       }
       doc.borders.push(outlinePath(offsetOutline([[0, y0], [w, y0], [w, y0 + h], [0, y0 + h]], (p.kerf || 0) / 2)));
       // line 1 (large): varied value; then smaller: all slot values, project
@@ -2100,7 +2160,7 @@ function buildDoc(p) {
         doc.labels.push(`<text transform="translate(${x},${f(y0 + h / 2)}) rotate(-90)" text-anchor="middle" font-size="${fs}">${esc(str)}</text>`);
       });
     }
-    if (spreadAll.length) doc.cuts.push(...spreadCuts(spreadAll));
+    if (spreadAll.length) doc.cuts.push(...spreadCuts(spreadAll, p.spreadBal));
     doc.count = doc.cuts.length;
     doc.w = w;
     doc.h = n * h + (n - 1) * TEST_SPACING;
@@ -2122,7 +2182,7 @@ function buildDoc(p) {
     doc.flex = flexAnalysis(p, gen);   // before the seam moves slots
     const joined = patternJoin(p, gen, w, h);
     if (joined) doc.outline = doc.boards[0].outline = joined;
-    doc.cuts = orderCuts(gen.columns, p.order);
+    doc.cuts = orderCuts(gen.columns, p.order, p.spreadBal);
     doc.recs = gen.columns.flat();
   }
   // slots in the wall for parts held by tabs through it (also in the 3D solid and the heatmap, as rigid)
@@ -2283,7 +2343,7 @@ function fileName(p, doc) {
 function paramsJSON(p) {
   const { paramVisible, ...meta } = p;
   if (meta.mode !== 'creative') delete meta.creative;
-  return JSON.stringify({ generator: 'kerf-generator', unit: 'mm', ...meta });
+  return JSON.stringify({ generator: 'kerf-generator', version: VERSION, unit: 'mm', ...meta });
 }
 
 // Rotation by 90° clockwise: (x, y) → (H − y, x)
@@ -2738,6 +2798,7 @@ function render() {
   $('tabsNote').hidden = !anyTabs || !['pattern', 'creative'].includes(p.mode);
   $('marksRow').hidden = p.mode !== 'mount' || !p.mountParts.some((q, i) => q.offset > 0 && fixes[i] !== 'through');
   $('diffRow').hidden = $('diffSizes').hidden = p.mode !== 'mount' || !p.diffuser;
+  $('balRow').hidden = $('balInfo').hidden = p.order !== 'spread';
   document.querySelectorAll('[data-diff]').forEach(el => { el.hidden = !p.diffuser; });
   document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = !anyTabs; });
   document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = !fixes.some(x => x === 'tabs' || x === 'edge'); });
@@ -2769,6 +2830,7 @@ function render() {
   $('bendCtl').hidden = test || mount;
   $('explodeCtl').hidden = !(mount && is3d);
   $('flexCtl').hidden = mount;
+  $('heatCtl').hidden = is3d;
   $('bendVal').textContent = view3d.bend + ' %';
   $('overlayCtl').hidden = test;
   stage.hidden = is3d;
@@ -2780,6 +2842,7 @@ function render() {
   stage.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}"><g${rotTransform(doc)}>${previewInner(p, doc, vm)}</g></svg>`;
   layout();
   applyCutPreview();
+  updateOrderStats();
   updatePngInfo();
 }
 
@@ -2798,10 +2861,12 @@ function applyCutPreview() {
   $('cutPlay').textContent = cutPlaying ? '❚❚' : '▶';
   stage.classList.toggle('cutprev', cutStep != null && n > 0);
   stage.querySelector('.travel')?.remove();
+  stage.querySelector('.heat')?.remove();
   if (!g) return;
   const kids = g.children, cls = i => cutStep == null ? '' : i < cutStep - 1 ? 'done' : i === cutStep - 1 ? 'now' : '';
   for (let i = 0; i < nIn; i++) kids[i].setAttribute('class', cls(i));
   if (outer) outer.setAttribute('class', ('boards ' + cls(nIn)).trim());
+  if (heatOn && cutStep != null && cutStep > 0) drawHeat(g, Math.min(cutStep, nIn));
   if (cutStep >= 2 && cutStep <= nIn) {
     const a = kids[cutStep - 2].getBBox(), b = kids[cutStep - 1].getBBox();
     const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -2810,6 +2875,79 @@ function applyCutPreview() {
     ln.setAttribute('x2', b.x + b.width / 2); ln.setAttribute('y2', b.y + b.height / 2);
     g.parentNode.appendChild(ln);
   }
+}
+// Heat build-up of a cut sequence: the heat already at each spot when it is cut
+// (95th percentile, in units of one fresh cut) and the travel in mm.
+function heatStats(items) {
+  if (items.length < 3) return null;
+  const grid = new HeatGrid(heatParams(items)), hs = [];
+  let t = 0, travel = 0;
+  items.forEach((q, i) => {
+    if (i) { const d = Math.hypot(q.x - items[i - 1].x, q.y - items[i - 1].y); travel += d; t += d / 5; }
+    hs.push(grid.at(q.x, q.y, t));
+    t += q.L;
+    grid.add(q.x, q.y, q.L, t);
+  });
+  hs.sort((a, b) => a - b);
+  return { peak: hs[Math.floor(hs.length * 0.95)] / grid.hp.avgL, travel };
+}
+// the drawn cuts as model items (centre and outline length), cached per render
+function cutItems(g) {
+  if (!heatSeq || heatSeq.g !== g) {
+    const items = [];
+    for (const el of g.children) { const b = el.getBBox(); items.push({ x: b.x + b.width / 2, y: b.y + b.height / 2, L: Math.max(1, 2 * (b.width + b.height)) }); }
+    heatSeq = { g, items, hp: heatParams(items) };
+  }
+  return heatSeq;
+}
+// readout under the priority: travel and heat build-up against a zigzag of the same cuts
+function updateOrderStats() {
+  const g = stage.querySelector('g.cuts');
+  if ($('balInfo').hidden || !g || g.children.length < 3) { $('balInfo').textContent = ''; return; }
+  const { items } = cutItems(g), cur = heatStats(items);
+  const pitch = Math.max(1, heatSeq.hp.sigma / 2);   // columns: cuts whose centres share an x band
+  const band = q => Math.round(q.x / pitch);   // serpentine like the zigzag order: every other column upwards
+  const zig = [...items].sort((a, b) => band(a) - band(b) || (band(a) % 2 ? b.y - a.y : a.y - b.y));
+  const ref = heatStats(zig);
+  if (!cur || !ref) return;
+  $('balInfo').textContent = t('ord.stats', fmt(+(cur.travel / 1000).toFixed(1)), fmt(+(ref.travel / 1000).toFixed(1)), Math.round(100 * cur.peak / Math.max(1e-9, ref.peak)));
+}
+let heatOn = false;
+try { heatOn = localStorage.getItem('kerf-heat') === '1'; } catch (e) {}
+$('heatOn').checked = heatOn;
+$('heatOn').addEventListener('change', () => {
+  heatOn = $('heatOn').checked;
+  try { localStorage.setItem('kerf-heat', heatOn ? '1' : '0'); } catch (e) {}
+  if (heatOn && cutStep == null && !cutPlaying) $('cutPlay').click();   // heat only shows while stepping through the cuts
+  else applyCutPreview();
+});
+// Heat after the first `k` cuts with the same model as the spread order, drawn
+// as a warm overlay under the cuts. Positions and lengths come from the drawn
+// cuts (their boxes), so it works for every mode and every order.
+let heatSeq = null;
+function drawHeat(g, k) {
+  const { items, hp } = cutItems(g), grid = new HeatGrid(hp);
+  let t = 0;
+  for (let i = 0; i < k; i++) {
+    if (i) t += Math.hypot(items[i].x - items[i - 1].x, items[i].y - items[i - 1].y) / 5;
+    t += items[i].L;
+    grid.add(items[i].x, items[i].y, items[i].L, t);
+  }
+  const cv = document.createElement('canvas');
+  cv.width = grid.nx; cv.height = grid.ny;
+  const ctx = cv.getContext('2d'), id = ctx.createImageData(grid.nx, grid.ny), f = Math.exp(-(t - grid.t0) / hp.tau);
+  for (let n = 0; n < grid.a.length; n++) {
+    const v = clamp(grid.a[n] * f / (2 * hp.avgL), 0, 1);   // two fresh cuts on one spot = full colour
+    id.data[n * 4] = 255; id.data[n * 4 + 1] = Math.round(170 * (1 - v)); id.data[n * 4 + 2] = 0; id.data[n * 4 + 3] = Math.round(200 * Math.sqrt(v));
+  }
+  ctx.putImageData(id, 0, 0);
+  const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+  img.setAttribute('class', 'heat');
+  img.setAttribute('href', cv.toDataURL());
+  img.setAttribute('x', hp.x0 - grid.cell / 2); img.setAttribute('y', hp.y0 - grid.cell / 2);
+  img.setAttribute('width', grid.nx * grid.cell); img.setAttribute('height', grid.ny * grid.cell);
+  img.setAttribute('preserveAspectRatio', 'none');
+  g.parentNode.insertBefore(img, g);
 }
 // the preview works on the 2D cut view: switch there when it is used
 function cutPreviewView() {
@@ -4139,6 +4277,7 @@ $('resetLink').onclick = e => {
   location.reload();
 };
 
+$('version').textContent = 'v' + VERSION;
 applyLang();
 // Settings saved by an older version must never block the start: if they
 // fail to load or render, drop them and start from the defaults.

@@ -15,7 +15,7 @@ A browser tool for laser-cut kerf bending (living hinge) patterns, made for **cy
 - [Bendability estimate](#bendability-estimate) · [Material limits](#material-limits)
 - [Export and files](#export-and-files)
 - [Tips for acrylic](#tips-for-acrylic)
-- [Run locally](#run-locally) · [Credits](#credits) · [License](#license)
+- [Run locally](#run-locally) · [Version](#version) · [Credits](#credits) · [License](#license)
 
 ## Quick start
 
@@ -95,8 +95,8 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
 - **Seam joint:** a glue tab past the circumference, finger joints (fingers on one edge, matching notches on the other), or a **pattern join**: the seam runs through the pattern – along the middle of the bars beside the first slot column, switching sides once per row – so both ends get fingers one column wide and one row high that interlock and the pattern continues across the seam (glue the fingers; needs *Seamless*, side margins are ignored).
 - **Open edges:** slots run out through the top and bottom edges, so no continuous solid strip is left.
 - **Kerf compensation:** slots are drawn smaller and the outline larger by half the laser kerf, so the cut part has the nominal size.
-- **Cut order:** zigzag, every other column first, or **spread out** – each next cut as far as possible from the last few, so no spot heats up (acrylic warps less; more travel). The SVG lists the cuts in this order; laser software that optimises the path itself (e.g. LightBurn's *Optimize Cut Path*) has to be told to keep the file order.
-- **Cut preview** (under the cut order, in every mode): a slider and ▶ play button step through the cuts in that order – done cuts in red, the current one highlighted with the jump from the previous one; the outer contour comes last.
+- **Cut order:** zigzag, every other column first, or **spread out** – a simple heat model: every cut leaves heat in proportion to its length, which spreads to its surroundings and fades with time; the next cut goes where it is coolest. **Priority** chooses *Coolest* (most travel), *Balanced* or *Short travel*; a line below shows the travel and the heat build-up compared with zigzag (e.g. “Travel 12 m (zigzag 9.5 m) · heat build-up 10 % of zigzag”). The SVG lists the cuts in this order; laser software that optimises the path itself (e.g. LightBurn's *Optimize Cut Path*) has to be told to keep the file order.
+- **Cut preview** (under the cut order, in every mode): a slider and ▶ play button step through the cuts in that order – done cuts in red, the current one highlighted with the jump from the previous one, and – with the thermometer button at the top right – the heat of the model as a warm overlay, to compare zigzag and spread out; the outer contour comes last.
 - The SVG lists the layers in laser order: engrave first, then the inner cuts, the outer contour last – so the part stays in place until it is finished.
 - Side margins, optional outer border, 90° rotated output.
 
@@ -107,7 +107,8 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
   - **Bend** (Simple/Creative) – from flat to a closed cylinder; also used for the bendability estimate and the STL/OBJ export.
   - **Explode** (Lamp, 3D) – lifts the lamp parts off the shade.
   - **Lamp** – glowing slots on a dark background, in 2D and 3D.
-  - **Flex** – strain heatmap per slot: good / borderline / too high / rigid.
+  - **Flex** (bent-strip icon) – strain heatmap per slot: good / borderline / too high / rigid.
+  - **Heat** (thermometer) – the heat of the cut order during the cut preview.
 - **3D** shows the extruded part with its real thickness – the same closed solid as the STL/OBJ export. Acrylic is semi-transparent, wood is opaque. Drag to orbit, right-drag to pan, wheel to zoom. three.js is loaded only when 3D is opened.
 
 ![3D preview: closed cylinder with the light on](kerf-o-matic-3d.jpg)
@@ -194,6 +195,10 @@ The **Save** button exports in the format chosen from its menu:
 ## Run locally
 
 Open `index.html` in any modern browser. The 3D view and the STL/OBJ export load small libraries from a CDN on first use; everything else works offline.
+
+## Version
+
+The footer of the app shows the version – the date of the last update (e.g. *v2026.10.16*). It is also stored in every saved file (metadata and the last line of the parameter layer), so you can tell which version a design was made with.
 
 ## Credits
 
