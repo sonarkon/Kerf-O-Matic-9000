@@ -453,10 +453,12 @@
     <div class="rows">
       <label class="inline"><span data-i18n="kerf"></span><input type="number" id="kerf" value="0" min="0" max="1" step="0.01"></label>
       <label class="inline" data-modes="pattern creative test mount"><span data-i18n="order"></span><select id="order">
+        <option value="none" data-i18n="ord.none" selected></option>
         <option value="zigzag" data-i18n="ord.zigzag"></option>
         <option value="skip" data-i18n="ord.skip"></option>
         <option value="spread" data-i18n="ord.spread"></option>
       </select></label>
+      <div class="desc warn" id="orderHint" data-modes="pattern creative test mount" data-i18n="ord.hint"></div>
       <label class="inline" id="balRow" data-modes="pattern creative test mount"><span data-i18n="ord.bal"></span><select id="spreadBal">
         <option value="0" data-i18n="ord.bal.cool"></option>
         <option value="30" data-i18n="ord.bal.mid" selected></option>
@@ -594,6 +596,7 @@ const STR = {
     'png.stripe': (w, h) => `The design only changes from top to bottom: a stripe two columns wide over the full height, ${w} × ${h} mm – repeat it around the cylinder.`,
     'png.board': (w, h, seam) => `The design also changes across the board: the whole board, ${w} × ${h} mm${seam ? ', seamless around' : ' – turn on Seamless for a seamless repeat'}.`,
     'png.na': 'PNG textures are available in Simple and Creative mode.',
+    'ord.none': 'None (laser software decides)', 'ord.hint': 'To cut in this order, turn off path optimization in your laser software (LightBurn: Optimization Settings → Optimize Cut Path).',
     'ord.zigzag': 'Zigzag', 'ord.skip': 'Every other column first', 'ord.spread': 'Spread out', 'ord.bal': 'Priority', 'ord.bal.cool': 'Coolest (more travel)', 'ord.bal.mid': 'Balanced', 'ord.bal.short': 'Short travel',
     'ord.stats': (tr, trz, pct) => `Travel ${tr} m (zigzag ${trz} m) · heat build-up ${pct} % of zigzag`, 'cp.label': 'Cut preview', 'cp.play': 'Play the cut order',
     'openEdges': 'Open edges (no continuous strip top/bottom)', 'border': 'Cut outer border',
@@ -779,6 +782,7 @@ const STR = {
     'png.stripe': (w, h) => `Der Entwurf ändert sich nur von oben nach unten: ein Streifen, zwei Spalten breit über die volle Höhe, ${w} × ${h} mm – rundherum wiederholen.`,
     'png.board': (w, h, seam) => `Der Entwurf ändert sich auch quer: die ganze Platte, ${w} × ${h} mm${seam ? ', rundherum nahtlos' : ' – für nahtlose Wiederholung Seamless einschalten'}.`,
     'png.na': 'PNG-Texturen gibt es im Simple- und Creative-Modus.',
+    'ord.none': 'Keine (Laser-Software entscheidet)', 'ord.hint': 'Damit in dieser Reihenfolge geschnitten wird, die Pfadoptimierung der Laser-Software ausschalten (LightBurn: Optimization Settings → Optimize Cut Path).',
     'ord.zigzag': 'Zickzack', 'ord.skip': 'Jede 2. Spalte zuerst', 'ord.spread': 'Verteilt', 'ord.bal': 'Vorrang', 'ord.bal.cool': 'Möglichst kühl (mehr Leerfahrt)', 'ord.bal.mid': 'Ausgewogen', 'ord.bal.short': 'Kurze Wege',
     'ord.stats': (tr, trz, pct) => `Leerfahrt ${tr} m (Zickzack ${trz} m) · Wärmestau ${pct} % vom Zickzack`, 'cp.label': 'Schnitt-Vorschau', 'cp.play': 'Schnittreihenfolge abspielen',
     'openEdges': 'Ränder offen (kein durchgehender Steg oben/unten)', 'border': 'Außenkontur mitschneiden',
@@ -1372,6 +1376,8 @@ function generate(p, w, h, x0, x1, slotFn) {
 // "spread" jumps across the whole field (see spreadCuts).
 function orderCuts(columns, mode, balance) {
   if (mode === 'spread') return spreadCuts(columns.flat(), balance);
+  // none: column by column, top to bottom – the laser software decides the real order
+  if (mode === 'none') return columns.flatMap(col => [...col].sort((a, b) => a.y - b.y).flatMap(c => c.els));
   const idx = columns.map((_, i) => i);
   const seq = mode === 'skip' ? [...idx.filter(i => i % 2 === 0), ...idx.filter(i => i % 2)] : idx;
   const out = [];
@@ -2799,6 +2805,7 @@ function render() {
   $('marksRow').hidden = p.mode !== 'mount' || !p.mountParts.some((q, i) => q.offset > 0 && fixes[i] !== 'through');
   $('diffRow').hidden = $('diffSizes').hidden = p.mode !== 'mount' || !p.diffuser;
   $('balRow').hidden = $('balInfo').hidden = p.order !== 'spread';
+  $('orderHint').hidden = p.order === 'none' || !['pattern', 'creative', 'test', 'mount'].includes(p.mode);
   document.querySelectorAll('[data-diff]').forEach(el => { el.hidden = !p.diffuser; });
   document.querySelectorAll('[data-tabs]').forEach(el => { el.hidden = !anyTabs; });
   document.querySelectorAll('[data-rim]').forEach(el => { el.hidden = !fixes.some(x => x === 'tabs' || x === 'edge'); });
