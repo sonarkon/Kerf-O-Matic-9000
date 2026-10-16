@@ -1,4 +1,4 @@
-# Kerf-O-Matic 9000
+![Kerf-O-Matic 9000 – laser-cut living hinges for cylinders and lampshades](readme-banner.png)
 
 A browser tool for laser-cut kerf bending (living hinge) patterns, made for **cylinders and pendant lampshades**. Everything is metric and runs in a single HTML file – no install, no build step, nothing is uploaded.
 
