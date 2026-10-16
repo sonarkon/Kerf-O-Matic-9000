@@ -308,6 +308,7 @@
         <option value="none" data-i18n="joint.none"></option>
         <option value="tab" data-i18n="joint.tab"></option>
         <option value="fingers" data-i18n="joint.fingers"></option>
+        <option value="dovetail" data-i18n="joint.dovetail"></option>
         <option value="pattern" data-i18n="joint.pattern"></option>
       </select></label>
       <label><span data-i18n="jointSize"></span><input type="number" id="jointSize" value="10" min="1" step="0.5"></label>
@@ -536,9 +537,9 @@ const STR = {
     'mt.flexWarn': 'The shade is borderline for this diameter – it may crack over time. Cut a test strip first or make the pattern softer in Simple/Creative.',
     'mt.flexBad': 'The shade is bent too far for this diameter and will probably crack. Make the pattern softer in Simple/Creative (longer slots, smaller gaps, thinner material) or choose a larger diameter.',
     'lbl.top': 'TOP', 'lbl.bottom': 'BOTTOM',
-    'df.title': 'Diffuser', 'df.on': 'Engraved groove for a diffuser (paper, thin plastic)',
+    'df.title': 'Diffuser', 'df.on': 'Add diffuser',
     'df.w': 'Groove width (mm)', 'df.gap': 'Distance to the shade (mm)', 'df.overlap': 'Glue overlap (mm)',
-    'df.desc': 'A ring groove is engraved into the parts; the rolled-up diffuser sits in it. The engraving power sets the depth (about a third of the thickness). Parts between others get the groove on both sides.',
+    'df.desc': 'A ring groove is engraved into the parts; the rolled-up diffuser (paper, thin plastic) sits in it. The engraving power sets the depth (about a third of the thickness). Parts between others get the groove on both sides.',
     'df.cut': 'Cut diffuser sheets',
     'df.depth': (d, th) => `Calculated with a groove depth of ${d} mm (a third of ${th} mm) – set it with the engraving power.`,
     'df.sheet': (n, w, h) => `Diffuser ${n}: ${w} × ${h} mm (incl. overlap and the groove depth)`,
@@ -573,10 +574,11 @@ const STR = {
     'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
     'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
     'seamless': 'Seamless: fit column count to circumference',
-    'joint': 'Seam joint', 'joint.none': 'None', 'joint.tab': 'Glue tab', 'joint.fingers': 'Finger joint', 'joint.pattern': 'Pattern join', 'jointSize': 'Size (mm)',
+    'joint': 'Seam joint', 'joint.none': 'None', 'joint.tab': 'Glue tab', 'joint.fingers': 'Finger joint', 'joint.dovetail': 'Dovetail (snaps, no glue)', 'joint.pattern': 'Pattern join', 'jointSize': 'Size (mm)',
     'joint.tab.d': 'A solid tab of this width is added past the circumference; the other end overlaps it for gluing.',
     'joint.fingers.d': 'Fingers of this depth on the right edge fit into matching notches on the left edge.',
-    'joint.pattern.d': 'The seam runs through the pattern: both ends get fingers one column wide and one row high that interlock, so the pattern continues across the seam. Glue the fingers. Needs Seamless; side margins are ignored.',
+    'joint.dovetail.d': 'Dovetails of this depth on the right edge snap into matching sockets on the left edge (0.1 mm play) and hold the seam without glue – press them in from the inside. About 3× the material thickness works well; a solid strip stays at the seam.',
+    'joint.pattern.d': 'The seam runs through the pattern – along the middle of the slot columns, switching once per row: both ends get fingers one column wide and one row high that interlock, so the pattern continues across the seam. Glue the fingers. Needs Seamless; side margins are ignored.',
     'joint.pattern.off': 'Pattern join needs Seamless (and at least four columns) – turn it on.',
     'joint.border': ' The outer border is always cut.',
     'kerf': 'Laser kerf (mm)',
@@ -667,8 +669,8 @@ const STR = {
     'fi.useFlex': 'Turn on the Flex heatmap (thermometer, top right) to see where.',
     'fi.lg.ok': 'good', 'fi.lg.warn': 'borderline', 'fi.lg.bad': 'too high', 'fi.lg.rigid': 'rigid',
     'fi.rough': 'Rough estimate (torsion of the bridges); no substitute for a test strip.',
-    'fix.btn': 'Optimize', 'fix.title': 'Lengthens the slots – and if needed shortens the vertical gap – just enough to reach “good”. Thickness and diameter stay.',
-    'fix.slotH': 'slot length', 'fix.gapY': 'vertical gap', 'fix.undo': 'Undo',
+    'fix.btn': 'Optimize', 'fix.title': 'First moves parts with tabs through the wall onto the best spot, then lengthens the slots – and if needed shortens the vertical gap – just enough to reach “good”. Thickness and diameter stay.',
+    'fix.slotH': 'slot length', 'fix.part': n => `part ${n} offset`, 'fix.gapY': 'vertical gap', 'fix.undo': 'Undo',
     'fix.done': c => `Adjusted: ${c}.`,
     'fix.none': d => `Not reachable by adjusting the slots (up to half the board height, vertical gap down to 1.5 mm). With the softest pattern found it is good from inner Ø ${d} mm – choose a larger diameter, thinner material or narrower bridges.`,
     'info.cuts': 'Cuts', 'info.cols': 'Columns', 'info.seam': g => `Seamless: horizontal gap ${g} mm`,
@@ -722,9 +724,9 @@ const STR = {
     'mt.flexWarn': 'Der Schirm ist bei diesem Durchmesser grenzwertig und kann mit der Zeit reißen. Vorher einen Teststreifen schneiden oder das Muster in Simple/Creative weicher machen.',
     'mt.flexBad': 'Der Schirm wird für diesen Durchmesser zu stark gebogen und reißt wahrscheinlich. Muster in Simple/Creative weicher machen (längere Schlitze, kleinere Stege, dünneres Material) oder einen größeren Durchmesser wählen.',
     'lbl.top': 'OBEN', 'lbl.bottom': 'UNTEN',
-    'df.title': 'Diffusor', 'df.on': 'Gravierte Nut für einen Diffusor (Papier, dünne Folie)',
+    'df.title': 'Diffusor', 'df.on': 'Diffusor hinzufügen',
     'df.w': 'Nutbreite (mm)', 'df.gap': 'Abstand zum Schirm (mm)', 'df.overlap': 'Klebe-Überlappung (mm)',
-    'df.desc': 'In die Teile wird eine Ringnut graviert, in der der eingerollte Diffusor sitzt. Die Gravurleistung bestimmt die Tiefe (etwa ein Drittel der Dicke). Teile zwischen anderen bekommen die Nut auf beiden Seiten.',
+    'df.desc': 'In die Teile wird eine Ringnut graviert, in der der eingerollte Diffusor (Papier, dünne Folie) sitzt. Die Gravurleistung bestimmt die Tiefe (etwa ein Drittel der Dicke). Teile zwischen anderen bekommen die Nut auf beiden Seiten.',
     'df.cut': 'Diffusor-Zuschnitt schneiden',
     'df.depth': (d, th) => `Gerechnet mit ${d} mm Nuttiefe (ein Drittel von ${th} mm) – über die Gravurleistung einstellen.`,
     'df.sheet': (n, w, h) => `Diffusor ${n}: ${w} × ${h} mm (inkl. Überlappung und Nuttiefe)`,
@@ -759,10 +761,11 @@ const STR = {
     'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
     'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
     'seamless': 'Nahtlos: Spaltenzahl an Umfang anpassen',
-    'joint': 'Naht-Verbindung', 'joint.none': 'Keine', 'joint.tab': 'Klebelasche', 'joint.fingers': 'Fingerzinken', 'joint.pattern': 'Muster-Verzahnung', 'jointSize': 'Größe (mm)',
+    'joint': 'Naht-Verbindung', 'joint.none': 'Keine', 'joint.tab': 'Klebelasche', 'joint.fingers': 'Fingerzinken', 'joint.dovetail': 'Schwalbenschwanz (rastet, ohne Kleber)', 'joint.pattern': 'Muster-Verzahnung', 'jointSize': 'Größe (mm)',
     'joint.tab.d': 'Eine volle Lasche dieser Breite wird hinter dem Umfang angesetzt; das andere Ende überlappt sie zum Verkleben.',
     'joint.fingers.d': 'Zinken dieser Tiefe an der rechten Kante greifen in passende Aussparungen an der linken Kante.',
-    'joint.pattern.d': 'Die Naht läuft durch das Muster: Beide Enden bekommen Finger, eine Spalte breit und eine Reihe hoch, die ineinandergreifen – das Muster läuft über die Naht weiter. Die Finger verkleben. Braucht Seamless; Seitenränder entfallen.',
+    'joint.dovetail.d': 'Schwalbenschwänze dieser Tiefe an der rechten Kante rasten in passende Aussparungen an der linken Kante (0,1 mm Spiel) und halten die Naht ohne Kleber – von innen eindrücken. Etwa 3× die Materialdicke passt gut; an der Naht bleibt ein massiver Streifen.',
+    'joint.pattern.d': 'Die Naht läuft durch das Muster – durch die Mitte der Schlitzspalten, pro Reihe wechselnd: Beide Enden bekommen Finger, eine Spalte breit und eine Reihe hoch, die ineinandergreifen – das Muster läuft über die Naht weiter. Die Finger verkleben. Braucht Seamless; Seitenränder entfallen.',
     'joint.pattern.off': 'Muster-Verzahnung braucht Seamless (und mindestens vier Spalten) – bitte einschalten.',
     'joint.border': ' Die Außenkontur wird immer geschnitten.',
     'kerf': 'Laserfuge (mm)',
@@ -853,8 +856,8 @@ const STR = {
     'fi.useFlex': 'Flex-Heatmap einschalten (Thermometer oben rechts), um zu sehen wo.',
     'fi.lg.ok': 'gut', 'fi.lg.warn': 'grenzwertig', 'fi.lg.bad': 'zu hoch', 'fi.lg.rigid': 'starr',
     'fi.rough': 'Grobe Abschätzung (Torsion der Stege), ersetzt keinen Teststreifen.',
-    'fix.btn': 'Optimieren', 'fix.title': 'Verlängert die Schlitze – und verkürzt bei Bedarf den vertikalen Abstand – gerade so weit, dass es „gut“ ist. Dicke und Durchmesser bleiben.',
-    'fix.slotH': 'Schlitzlänge', 'fix.gapY': 'vertikaler Abstand', 'fix.undo': 'Rückgängig',
+    'fix.btn': 'Optimieren', 'fix.title': 'Schiebt zuerst Teile mit Zapfen durch die Wand an die günstigste Stelle, verlängert dann die Schlitze – und verkürzt bei Bedarf den vertikalen Abstand – gerade so weit, dass es „gut“ ist. Dicke und Durchmesser bleiben.',
+    'fix.slotH': 'Schlitzlänge', 'fix.part': n => `Abstand Teil ${n}`, 'fix.gapY': 'vertikaler Abstand', 'fix.undo': 'Rückgängig',
     'fix.done': c => `Angepasst: ${c}.`,
     'fix.none': d => `Mit den Schlitzen allein nicht erreichbar (höchstens halbe Plattenhöhe, vertikaler Abstand bis 1,5 mm). Mit dem weichsten gefundenen Muster ist es ab Innen-Ø ${d} mm gut – größeren Durchmesser, dünneres Material oder schmalere Stege wählen.`,
     'info.cuts': 'Schnitte', 'info.cols': 'Spalten', 'info.seam': g => `Nahtlos: Steg horizontal ${g} mm`,
@@ -1183,8 +1186,40 @@ function meanderSlot(x, r, h, rest, fromTop) {
 const sampler = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 sampler.style.cssText = 'position:absolute;width:0;height:0;visibility:hidden';
 document.body.append(sampler);
-function clipToBand(elements, h) {
+// Clip outlines to a region given as inside(x, y) – used where the pattern join
+// cuts through slots. Outlines are sampled every 0.1 mm; crossings are found by
+// bisection. A closed outline fully inside is kept as it is.
+function clipToRegion(elements, inside) {
   const out = [];
+  for (const src of elements) {
+    sampler.innerHTML = src;
+    const el = sampler.firstChild, len = el.getTotalLength();
+    const closed = !/^(line|polyline)$/.test(el.tagName) && !(el.tagName === 'path' && !/z\s*$/i.test(el.getAttribute('d') || ''));
+    const n = Math.max(8, Math.ceil(len / 0.1)), pts = [];
+    for (let i = 0; i < n + (closed ? 0 : 1); i++) { const q = el.getPointAtLength(len * i / n); pts.push({ x: q.x, y: q.y }); }
+    const ins = q => inside(q.x, q.y);
+    const cross = (a, b) => {
+      const aIn = ins(a);
+      let lo = a, hi = b;
+      for (let i = 0; i < 24; i++) { const m = { x: (lo.x + hi.x) / 2, y: (lo.y + hi.y) / 2 }; if (ins(m) === aIn) lo = m; else hi = m; }
+      return aIn ? lo : hi;
+    };
+    let start = 0;
+    if (closed) { start = pts.findIndex(q => !ins(q)); if (start < 0) { out.push(src); continue; } }
+    else if (pts.every(ins)) { out.push(src); continue; }
+    const seq = closed ? [...pts.slice(start), ...pts.slice(0, start), pts[start]] : pts;
+    let run = ins(seq[0]) ? [seq[0]] : null;
+    for (let i = 1; i < seq.length; i++) {
+      const a = seq[i - 1], b = seq[i];
+      if (ins(b)) { if (!run) run = [cross(b, a)]; run.push(b); }
+      else if (run) { run.push(cross(a, b)); if (run.length > 1) out.push(polyPath(run)); run = null; }
+    }
+    if (run && run.length > 1) out.push(polyPath(run));
+  }
+  return out;
+}
+function clipToBand(elements, h, axis = 'y') {
+  const out = [], v = q => axis === 'y' ? q.y : q.x;
   for (const src of elements) {
     sampler.innerHTML = src;
     const el = sampler.firstChild, len = el.getTotalLength();
@@ -1195,10 +1230,10 @@ function clipToBand(elements, h) {
       const q = el.getPointAtLength(len * i / n);
       pts.push({ x: q.x, y: q.y });
     }
-    const inside = q => q.y >= 0 && q.y <= h;
+    const inside = q => v(q) >= 0 && v(q) <= h;
     const cross = (a, b) => {
-      const e = (inside(a) ? b : a).y < 0 ? 0 : h, u = (e - a.y) / (b.y - a.y);
-      return { x: a.x + (b.x - a.x) * u, y: e };
+      const e = v(inside(a) ? b : a) < 0 ? 0 : h, u = (e - v(a)) / (v(b) - v(a));
+      return axis === 'y' ? { x: a.x + (b.x - a.x) * u, y: e } : { x: e, y: a.y + (b.y - a.y) * u };
     };
     // For rings, start at an outside point so no run wraps around.
     let start = 0;
@@ -1291,6 +1326,10 @@ function polyPath(pts) {
 // Column positions between x0 and x1 at a fixed pitch. Seamless mode picks an
 // even column count that fills the width exactly; otherwise the block is
 // centred so both side margins match.
+// With Seamless and nothing at the sides, the seam runs through the middle of a
+// slot column instead of the middle of a bar: both edges end in half slots that
+// become whole slots when glued, so no thin half-bar strip is left to break.
+const seamThroughSlots = (p, x0) => p.seamless && x0 <= 1e-9 && !(p.marginX > 0) && (!p.joint || ['none', 'tab', 'pattern'].includes(p.joint));
 function layoutColumns(p, x0, x1) {
   const A = x1 - x0, eps = 1e-9;
   const slotPart = SHAPES[p.shape].line ? 0 : p.slotW;
@@ -1302,6 +1341,11 @@ function layoutColumns(p, x0, x1) {
     stepX = A / n;
     seamGap = stepX - slotPart;
     if (seamGap <= 0) return { cols: [], stepX, stepY, seamGap };
+    if (seamThroughSlots(p, x0)) {
+      // columns on both edges (the same column, cut in half twice)
+      for (let k = 0; k <= n; k++) xs.push(x0 + k * stepX);
+      return { cols: xs.map(x => ({ x })), stepX, stepY, seamGap, slotSeam: true };
+    }
     for (let k = 0; k < n; k++) xs.push(x0 + stepX / 2 + k * stepX);
   } else {
     const n = Math.floor((A + eps) / stepX);
@@ -1349,7 +1393,25 @@ function generate(p, w, h, x0, x1, slotFn) {
       if (y - hh >= h || y + hh <= 0) continue;
       const rec = { k, x: c.x, y, yn, hw, hh, shape: sp.shape, status: 'cut', els: null };
       if (sp.skip) rec.status = 'skip';
-      else if (inPatch(c.x, y, hw, hh)) rec.status = 'tab';   // solid around a wall slot
+      else if (inPatch(c.x, y, hw, hh)) {
+        // a wall slot for a part's tabs crosses this slot: keep the slot above and
+        // below it, so only a narrow solid band around the wall slot remains
+        const hit = patches.filter(r => c.x - hw < r.x1 && c.x + hw > r.x0 && y - hh < r.y1 && y + hh > r.y0);
+        const py0 = Math.min(...hit.map(r => r.y0)), py1 = Math.max(...hit.map(r => r.y1)), minLen = Math.max(2 * hw + 0.4, 1.5);
+        const pieces = [[y - hh, py0], [py1, y + hh]].filter(([a, b]) => b - a >= minLen && (p.openEdges || (a >= -eps && b <= h + eps)));
+        if (!pieces.length) rec.status = 'tab';
+        else {
+          rec.els = [];
+          for (const [a, b] of pieces) {
+            const m = (a + b) / 2, half = (b - a) / 2;
+            const el = S.line ? S.draw(c.x, Math.max(0, a), Math.min(h, b)) : S.draw(c.x, m, Math.max(0, hw - k2), Math.max(0.05, half - k2));
+            rec.els.push(...(a < -eps || b > h + eps ? clipToBand(el, h) : el));
+          }
+          // the bridges see the longer piece
+          const [a, b] = pieces.reduce((u, v) => v[1] - v[0] > u[1] - u[0] ? v : u);
+          rec.y = (a + b) / 2; rec.hh = (b - a) / 2;
+        }
+      }
       else if (S.line) {
         const top = Math.max(0, y - hh), bot = Math.min(h, y + hh);
         if ((top <= eps && underTab(c.x, 0.1, 'top')) || (bot >= h - eps && underTab(c.x, 0.1, 'bottom'))) rec.status = 'tab';
@@ -1362,6 +1424,8 @@ function generate(p, w, h, x0, x1, slotFn) {
         const open = sp.shape === 'Pill' && pillOpen(c.x, y, dw, dh, h);
         rec.els = open ? [open] : clipToBand(S.draw(c.x, y, dw, dh), h);
       }
+      // half slots on the seam (seam through the slots)
+      if (layout.slotSeam && p.joint !== 'pattern' && rec.els && rec.els.length && (c.x - hw < -eps || c.x + hw > w + eps)) rec.els = clipToBand(rec.els, w, 'x');
       if (rec.status === 'cut' && !(rec.els && rec.els.length)) rec.status = 'edge';
       slots.push(rec);
       if (rec.status === 'cut') out.push(rec);
@@ -1773,6 +1837,19 @@ function tabSpans(p, W) {
   const n = clamp(Math.round(p.tabCount) || 4, 2, 24), w = Math.max(1, p.tabW || 10);
   return Array.from({ length: n }, (_, i) => { const x = W * (i + 0.5) / n; return [x - w / 2, x + w / 2]; });
 }
+// Dovetail joint: trapezoid tails on the right edge (narrow at the edge, wider
+// outside) snap into matching sockets on the left edge and hold the seam
+// without glue. Depth = joint size; root 0.9 × depth, tip 1.4 × depth wide;
+// the sockets get 0.1 mm play all round.
+function dovetails(H, d) {
+  const n = Math.max(2, Math.floor(H / (2.6 * 1.4 * d)));
+  return Array.from({ length: n }, (_, i) => H * (i + 0.5) / n);
+}
+// one tail as points from the edge (x = 0, going in +x) back to the edge, at height yc
+function tailPoints(yc, d, play = 0) {
+  const hr = 0.45 * d + play, ht = 0.7 * d + play, x1 = d + play;
+  return [[0, yc - hr], [x1, yc - ht], [x1, yc + ht], [0, yc + hr]];
+}
 function boardOutline(p, W, H, withJoint = true) {
   const j = withJoint ? p.joint : 'none', d = Math.max(0.5, p.jointSize || 0);
   const spans = tabSpans(p, W), tTop = edgeTabs(p, 'top'), tBot = edgeTabs(p, 'bottom');
@@ -1784,6 +1861,10 @@ function boardOutline(p, W, H, withJoint = true) {
     pts.push([W, 0]);
     for (let i = 0; i < n; i++) if (i % 2) pts.push([W, ys[i]], [W + d, ys[i]], [W + d, ys[i + 1]], [W, ys[i + 1]]);
     pts.push([W, H]);
+  } else if (j === 'dovetail') {
+    pts.push([W, 0]);
+    for (const yc of dovetails(H, d)) for (const [x, y] of tailPoints(yc, d)) pts.push([W + x, y]);
+    pts.push([W, H]);
   } else pts.push([W, 0], [W, H]);
   if (tBot) for (const [a, b] of [...spans].reverse()) pts.push([b, H], [b, H + tBot], [a, H + tBot], [a, H]);   // and on the bottom edge
   pts.push([0, H]);
@@ -1791,6 +1872,7 @@ function boardOutline(p, W, H, withJoint = true) {
     const ys = fingerRows(H, d), n = ys.length - 1;
     for (let i = n - 1; i >= 0; i--) if (i % 2) pts.push([0, ys[i + 1]], [d, ys[i + 1]], [d, ys[i]], [0, ys[i]]);
   }
+  if (j === 'dovetail') for (const yc of [...dovetails(H, d)].reverse()) pts.push(...tailPoints(yc, d, 0.1).reverse());   // sockets, going up
   // drop repeated points (e.g. a tab starting right at a corner)
   return pts.filter((q, i) => { const r = pts[(i + 1) % pts.length]; return q[0] !== r[0] || q[1] !== r[1]; });
 }
@@ -1817,27 +1899,31 @@ function shiftEl(el, dx, dy = 0) {
     .replace(/\spoints="([^"]*)"/, (m, pts) => ` points="${pts.trim().split(/\s+/).map(q => { const [x, y] = q.split(','); return `${f(+x + dx)},${f(+y + dy)}`; }).join(' ')}"`);
 }
 // Pattern join: the seam runs through the pattern instead of straight down.
-// It follows the middle of the bars beside the first slot column and changes
-// sides once per row (between two slots of that column), so no slot is cut:
-// both ends get fingers one column wide and one row high that interlock when
-// the board is rolled up. The first column's slots in the rows that end up on
-// the far side move there (x + W). Returns the outline, or null.
+// Like the straight seam it runs through the middle of the slot columns (no thin
+// half bars): along the first column (x = 0) in one row, along the second
+// (x = s) in the next, so both ends get fingers one column wide and one row high
+// that interlock when the board is rolled up. The board is the band between the
+// zigzag and the zigzag + W; slots the seam crosses are clipped to it, and the
+// second column reappears at the far end (x + W). Returns the outline, or null.
 function patternJoin(p, gen, W, H) {
-  if (p.joint !== 'pattern' || !p.seamless || !gen || gen.cols.length < 4) return null;
-  const s = gen.cols[1].x - gen.cols[0].x, x0 = gen.cols[0].x, stepY = gen.stepY;
+  if (p.joint !== 'pattern' || !p.seamless || !gen || !gen.slotSeam || gen.cols.length < 5) return null;
+  const s = gen.cols[1].x - gen.cols[0].x, stepY = gen.stepY;
   const any = gen.slots.find(r => r.k === 0);
   if (!any || !(stepY > 0)) return null;
-  const y0 = any.yn ?? any.y, row = y => Math.round((y - y0) / stepY);
-  const far = y => ((row(y) % 2) + 2) % 2 === 1;
-  const moved = [];
-  gen.columns[0] = gen.columns[0].filter(r => {
-    if (!far(r.yn ?? r.y)) return true;
-    r.x += W; r.els = r.els.map(e => shiftEl(e, W)); moved.push(r);
-    return false;
+  const y0 = any.yn ?? any.y;
+  const far = y => ((Math.round((y - y0) / stepY) % 2) + 2) % 2 === 1;
+  const L = y => far(y) ? s : 0;
+  const inside = (x, y) => { const a = L(y); return x >= a - 1e-6 && x <= a + W + 1e-6; };
+  // the second column again at the far end (the last column is the first one there already)
+  gen.columns.push(gen.columns[1].map(r => ({ ...r, x: r.x + W, els: r.els.map(e => shiftEl(e, W)), k: gen.cols.length })));
+  for (let c = 0; c < gen.columns.length; c++) gen.columns[c] = gen.columns[c].filter(r => {
+    const nearSeam = r.x - r.hw < s + 1e-6 || r.x + r.hw > W - 1e-6;
+    if (!nearSeam) return true;
+    const clipped = clipToRegion(r.els, inside);
+    if (!clipped.length) return false;
+    if (clipped.length !== r.els.length || clipped.some((e, i) => e !== r.els[i])) { r.solidEls = r.els; r.els = clipped; }
+    return true;
   });
-  gen.columns.push(moved);   // cut last, at the far end
-  for (const r of gen.slots) if (r.k === 0 && r.status !== 'cut' && far(r.yn ?? r.y)) r.x += W;
-  const L = y => far(y) ? x0 + s / 2 : x0 - s / 2;
   const cross = [];
   for (let m = Math.floor(-y0 / stepY) - 1; ; m++) { const yc = y0 + (m + 0.5) * stepY; if (yc >= H - 1e-6) break; if (yc > 1e-6) cross.push(yc); }
   const tTop = edgeTabs(p, 'top'), tBot = edgeTabs(p, 'bottom'), spans = tabSpans(p, W);
@@ -1862,8 +1948,8 @@ function offsetOutline(pts, k) {
   const nrm = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [-dy / l * sgn, dx / l * sgn]; };
   return pts.map((q, i) => {
     const a = pts[(i + pts.length - 1) % pts.length], b = pts[(i + 1) % pts.length];
-    const n1 = nrm(a, q), n2 = nrm(q, b);
-    return [q[0] + k * (n1[0] + n2[0]), q[1] + k * (n1[1] + n2[1])];
+    const n1 = nrm(a, q), n2 = nrm(q, b), m = 1 + n1[0] * n2[0] + n1[1] * n2[1];   // miter: exact for any corner angle
+    return m < 1e-6 ? [q[0] + k * n1[0], q[1] + k * n1[1]] : [q[0] + k * (n1[0] + n2[0]) / m, q[1] + k * (n1[1] + n2[1]) / m];
   });
 }
 const outlinePath = pts => `<path d="M${pts.map(q => `${f(q[0])},${f(q[1])}`).join(' L')} Z"/>`;
@@ -1872,6 +1958,19 @@ const outlinePath = pts => `<path d="M${pts.map(q => `${f(q[0])},${f(q[1])}`).jo
 // Pendant mount: parts that sit inside the cylinder (outer Ø = inner Ø of the
 // cylinder minus clearance) – a spider or disc with the E27 socket hole, or a
 // plain ring that keeps the cylinder round.
+// how far the open edge slots reach in from the top or bottom edge: a part pushed
+// into the tube stops at the first horizontal bridge there (0 without open edge slots)
+function firstBridgeDepth(shell, pos, th) {
+  const H = shell.h; shell = { ...shell, thick: th };
+  let d = Infinity;
+  for (const r of shell.recs) {
+    if (r.status !== 'cut' || !r.els || !r.els.length) continue;
+    if (!(pos === 'top' ? r.y - r.hh < 0 : r.y + r.hh > H)) continue;
+    const depth = pos === 'top' ? r.y + r.hh : H - (r.y - r.hh);
+    if (depth >= shell.thick + 0.1) d = Math.min(d, depth);   // shallow notches do not open the wall
+  }
+  return isFinite(d) ? d : 0;
+}
 function mountGeometry(p, fix = 'glue') {
   const di = midDiameter(p) - p.thick, rm = midDiameter(p) / 2, tabs = fix === 'tabs', edge = fix === 'edge';
   // glued: inside the cylinder; tabs / edge interlock: reaching past the wall by the rim
@@ -2000,6 +2099,48 @@ function tabSlots(p, cx, cy, k2) {
 // Diffuser: which faces of which parts get the groove, and the sheets between them.
 // Parts are sorted top to bottom by their height band (y down from the top edge);
 // a diffuser section runs between the facing sides of two neighbouring parts.
+// Engraved marks on a lamp part, inside the widest ring of material that no
+// hole, spider window, tab or edge slot or diffuser groove touches: the part's
+// name written along the arc (one letter at a time, so every laser program
+// reads it) and a short radial tick at the angle of the shade's seam (board
+// x = 0 → angle 1.5π, as for the tabs). Returns null if there is no room.
+function partMarks(p, fix, kind, g, cx, cy, label) {
+  const blocked = [[g.ro - 0.6, Infinity]];
+  if (kind === 'ring') blocked.push([0, g.ri + 0.5]);
+  else if (kind === 'disc') blocked.push([0, g.rh + 0.5]);
+  else if (kind === 'spider') blocked.push([0, g.rh + 0.5], [g.rhub - 0.5, g.ri + 0.5]);
+  if (fix === 'tabs' || fix === 'edge') blocked.push([g.rm - p.thick / 2 - p.mountClear - 0.5, g.rm + p.thick / 2 + p.mountClear + 0.5]);
+  if (p.diffuser) { const rIn = midDiameter(p) / 2 - p.thick / 2, r2 = rIn - Math.max(0, +p.diffGap || 0); blocked.push([r2 - Math.max(0.1, +p.diffW || 0.8) - 0.5, r2 + 0.5]); }
+  blocked.sort((a, b) => a[0] - b[0]);
+  let best = null, at = 0.6;
+  for (const [a, b] of blocked) { if (a > at && (!best || a - at > best[1] - best[0])) best = [at, a]; at = Math.max(at, b); }
+  if (!best || best[1] - best[0] < 2) return null;
+  const wb = best[1] - best[0], rc = (best[0] + best[1]) / 2, fs = clamp(wb * 0.55, 1.5, 4), out = [];
+  // text along the arc, centred at angle `mid`: at the bottom it reads left to right
+  // with the letters' tops towards the centre, at the top with their tops outwards
+  const arcText = (text, r, size, mid) => {
+    let chars = [...text], ws = chars.map(ch => textWidth(ch, size));
+    const max = 0.9 * Math.PI * r;   // at most half the circle
+    while (ws.reduce((a, b) => a + b, 0) > max && chars.length > 2) { chars = [...chars.slice(0, -2), '…']; ws = chars.map(ch => textWidth(ch, size)); }
+    const total = ws.reduce((a, b) => a + b, 0), top = mid > Math.PI;
+    let a = mid + (top ? -1 : 1) * total / 2 / r;
+    chars.forEach((ch, i) => {
+      const am = a + (top ? 1 : -1) * ws[i] / 2 / r;
+      if (ch.trim()) out.push(`<text x="0" y="0" transform="translate(${f(cx + r * Math.cos(am))},${f(cy + r * Math.sin(am))}) rotate(${f((am - mid) * 180 / Math.PI)})" text-anchor="middle" dominant-baseline="central" font-size="${f(size)}">${esc(ch)}</text>`);
+      a += (top ? 1 : -1) * ws[i] / r;
+    });
+  };
+  // the project name and the part's name together at the bottom; a long text
+  // gets smaller before it is shortened
+  const proj = (p.project || '').trim(), text = proj ? `${proj} · ${label}` : label;
+  let size = fs;
+  while (size > 1.3 && [...text].reduce((a, ch) => a + textWidth(ch, size), 0) > 0.9 * Math.PI * rc) size -= 0.1;
+  arcText(text, rc, size, Math.PI / 2);
+  // seam tick alone at the top (angle 1.5π)
+  const hw = 0.2, len = Math.min(wb - 0.4, 3);
+  out.push(`<path d="M${f(cx - hw)},${f(cy - rc - len / 2)} H${f(cx + hw)} V${f(cy - rc + len / 2)} H${f(cx - hw)} Z"/>`);
+  return out;
+}
 function diffuserPlan(p, parts, H) {
   const th = p.thick, band = q => q.fix === 'tabs' ? (q.pos === 'top' ? [-th, 0] : [H, H + th])
     : q.pos === 'top' ? [q.offset, q.offset + th] : [H - q.offset - th, H - q.offset];
@@ -2060,6 +2201,12 @@ function buildMountDoc(p) {
   const W = doc.shell.bw ?? doc.shell.w;
   doc.mount = { g, parts: [], notches: {} };
   const parts = (p.mountParts || []).map((part, i) => ({ ...part, i, fix: partFix(p, part) }));
+  // edge interlock: the part slides down the wall pieces between the open edge
+  // slots until the first horizontal bridge stops it – it sits right in front of it
+  for (const part of parts) if (part.fix === 'edge' && !(part.offset > 0)) {
+    part.stopDepth = firstBridgeDepth(doc.shell, part.from, p.thick);
+    part.offset = Math.max(0, +(part.stopDepth - p.thick).toFixed(2));
+  }
   for (const pos of ['top', 'bottom']) if (parts.some(q => q.fix === 'edge' && q.from === pos)) doc.mount.notches[pos] = edgeNotches(p, doc.shell, pos);
   // the complete cut set: the flat shade on top (its outline is always cut here) …
   const sh = doc.shell, pad = sh.padY || 0, move = `translate(0,${f(pad)})`;
@@ -2085,12 +2232,12 @@ function buildMountDoc(p) {
     doc.cuts.push(...els.holes);
     doc.borders.push(...els.outer);
     doc.boards.push({ path: els.outer[0] });   // the real outline, so tabs and fingers show
-    // engraved label in the solid ring band (or between hole and edge on a disc)
-    const ly = kind === 'closed' ? cy + gp.ro / 2 : kind === 'disc' ? cy + (gp.rh + gp.ro) / 2 : cy + gp.ro - p.ringW / 2;
-    const fs = clamp((kind === 'closed' ? gp.ro : kind === 'disc' ? gp.ro - gp.rh : p.ringW) * 0.45, 1.5, 4);
+    // engraved name along a free ring of material, plus a short tick where the shade's seam goes
     const label = `${part.i + 1} ${t('lbl.' + part.from)}${part.offset > 0 ? ' ' + fmt(part.offset) : ''}`;
-    doc.notes.push(`<text x="${f(cx)}" y="${f(ly)}" text-anchor="middle" dominant-baseline="central" font-size="${f(fs)}">${esc(label)}</text>`);   // information only, not engraved
-    doc.mount.parts.push({ pos: part.from, offset: part.offset || 0, fix: part.fix, n: part.i + 1, kind, cx, cy, ro: gp.ro, els, fingers });
+    const marks = partMarks(p, part.fix, kind, gp, cx, cy, label);
+    if (marks) doc.labels.push(...marks);
+    else doc.notes.push(`<text x="${f(cx)}" y="${f(cy)}" text-anchor="middle" dominant-baseline="central" font-size="3">${esc(label)}</text>`);   // no room: information only
+    doc.mount.parts.push({ pos: part.from, offset: part.offset || 0, fix: part.fix, n: part.i + 1, kind, cx, cy, ro: gp.ro, els, fingers, stopDepth: part.stopDepth, engrave: marks ? [...marks] : [] });
     x += 2 * rx + gap; rowH = Math.max(rowH, 2 * rx); wMax = Math.max(wMax, x - gap);
   }
   // diffuser: ring groove on the faces towards a diffuser section, and the sheets to cut
@@ -2105,7 +2252,7 @@ function buildMountDoc(p) {
       if (!n || !q.diffOk || !plan.ok) continue;
       q.groove = plan.sides.get(q);   // for the 3D view
       doc.labels.push(ringPath(q.cx, q.cy, plan.r1, plan.r2));
-      q.engrave = [ringPath(q.cx, q.cy, plan.r1, plan.r2)];
+      q.engrave.push(ringPath(q.cx, q.cy, plan.r1, plan.r2));
       if (n === 2) { doc.back.push(ringPath(q.cx, q.cy, plan.r1, plan.r2)); q.back = true; }
     }
     if (p.diffCut && plan.ok) {
@@ -2183,8 +2330,10 @@ function buildDoc(p) {
   // finger notches cut into the left edge: keep the pattern clear of them
   // a pattern join needs the pattern to repeat exactly around: no side margins
   const pj = p.joint === 'pattern' && p.seamless;
-  const left = p.joint === 'fingers' ? Math.max(p.marginX, (p.jointSize || 0) + p.gapX) : pj ? 0 : p.marginX;
-  const gen = generate(p, w, h, left, pj ? w : w - p.marginX, slotFn);
+  const left = p.joint === 'fingers' || p.joint === 'dovetail' ? Math.max(p.marginX, (p.jointSize || 0) + p.gapX) : pj ? 0 : p.marginX;
+  // finger joint: keep a full bar at the right edge, where the fingers sit
+  const right = pj ? w : w - p.marginX - (p.joint === 'fingers' || p.joint === 'dovetail' ? p.gapX / 2 : 0);
+  const gen = generate(p, w, h, left, right, slotFn);
   doc.gen = gen;
   doc.outline = boardOutline(p, w, h);
   doc.boards.push({ x: 0, y: 0, w, h, outline: doc.outline });
@@ -2210,7 +2359,7 @@ function buildDoc(p) {
   }
   doc.count = doc.cuts.length;
   // with a seam joint the outline is part of the joint, so it is always cut
-  if (p.border || p.joint === 'tab' || p.joint === 'fingers' || p.joint === 'pattern') doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
+  if (p.border || (p.joint && p.joint !== 'none')) doc.borders.push(outlinePath(offsetOutline(doc.outline, (p.kerf || 0) / 2)));
   doc.bw = w;   // circumference; doc.w also covers a tab or fingers past it
   doc.padY = tabHeight(p);   // mount tabs stick out above and below the board
   doc.w = Math.max(...doc.outline.map(q => q[0])); doc.h = h; doc.rotate = p.rotate;
@@ -3384,7 +3533,25 @@ function fitSummary(q) {
   try { return flexSummary(s, buildDoc(s), mount ? 100 : view3d.bend); } finally { creative = saved; }
 }
 function adjustPattern() {
-  const p = readParams(), ok = matOf(p).ok;
+  const p0 = readParams(), ok = matOf(p0).ok;
+  let p = p0;
+  // 1. parts held by tabs through the wall: move each within half a row to where
+  //    its wall slots cost the least bending – before touching the slots
+  const moved = [];
+  if (Array.isArray(p.mountParts) && lampOnShade(p)) {
+    const stepY = p.slotH + p.gapY, with_ = (q, i, o) => ({ ...q, mountParts: q.mountParts.map((x, j) => j === i ? { ...x, offset: o } : x) });
+    p.mountParts.forEach((part, i) => {
+      if (!(part.offset > 0) || part.fix !== 'through') return;
+      let bestO = part.offset, bestE = fitSummary(p).eps ?? Infinity;
+      for (let d = -stepY / 2; d <= stepY / 2 + 1e-9; d += 1) {
+        const o = +(part.offset + d).toFixed(1);
+        if (o < p.thick || o > p.boardH - 2 * p.thick || o === part.offset) continue;
+        const e = fitSummary(with_(p, i, o)).eps;
+        if (e != null && e < bestE - 1e-6) { bestE = e; bestO = o; }
+      }
+      if (bestO !== part.offset) { moved.push([i, part.offset, bestO]); p = with_(p, i, bestO); }
+    });
+  }
   // remembers the softest valid variant, for the message when "good" is out of reach
   let soft = null;
   const fits = q => {
@@ -3394,11 +3561,11 @@ function adjustPattern() {
     return fs.eps <= ok;
   };
   const hMax = Math.max(p.slotH, p.boardH / 2), gMin = Math.min(p.gapY, 1.5);
-  let best = null;
+  let best = moved.length && fits(p) ? p : null;   // moving the parts may already be enough
   // longer slots: coarse steps, then 0.5 mm steps inside the first step that fits
   const step = Math.max(0.5, Math.ceil((hMax - p.slotH) / 40 * 2) / 2);
   let lo = p.slotH;
-  for (let h = p.slotH + step; ; h += step) {
+  if (!best) for (let h = p.slotH + step; ; h += step) {
     h = Math.min(h, hMax);
     if (fits(withSlots(p, h, p.gapY))) {
       best = withSlots(p, h, p.gapY);
@@ -3419,13 +3586,14 @@ function adjustPattern() {
     render();
     return;
   }
-  const changes = [];
+  const changes = moved.map(([i, a, b]) => `${t('fix.part', i + 1)} ${fmt(a)} → ${fmt(b)} mm`);
   if (best.slotH !== p.slotH) changes.push(`${t('fix.slotH')} ${fmt(p.slotH)} → ${fmt(best.slotH)} mm`);
   if (best.gapY !== p.gapY) changes.push(`${t('fix.gapY')} ${fmt(p.gapY)} → ${fmt(best.gapY)} mm`);
+  for (const [i, , b] of moved) lampParts[i].offset = b;
   $('slotH').value = best.slotH; $('gapY').value = best.gapY;
   creative = best.creative;
   renderCreativeUI();
-  fixNote = { html: `<p class="ok">${esc(t('fix.done', changes.join(', ')))} <a href="#" id="fixUndo">${esc(t('fix.undo'))}</a></p>`, prev: p };
+  fixNote = { html: `<p class="ok">${esc(t('fix.done', changes.join(', ')))} <a href="#" id="fixUndo">${esc(t('fix.undo'))}</a></p>`, prev: p0 };
   render();
   fixNote.after = JSON.stringify(readParams());
 }
@@ -3991,7 +4159,7 @@ function ensureGeoLibs() {
 function slotPolygons(doc) {
   const H = doc.h, S = STL_SCALE, polys = [], opens = [];
   for (const rec of doc.recs) {
-    sampler.innerHTML = rec.els.join('');
+    sampler.innerHTML = (rec.solidEls || rec.els).join('');
     for (const el of sampler.children) {
       const len = el.getTotalLength();
       if (!(len > 0)) continue;
@@ -4001,7 +4169,9 @@ function slotPolygons(doc) {
       if (notch) {
         // paths cut open at the board edge start and end on that edge; extend both ends
         // 1 mm past the edge so the notch cuts through cleanly instead of leaving a sliver
-        const out = q => ({ X: q.X, Y: q.Y <= H * S / 2 ? -S : Math.round(H * S) + S });
+        const WS = Math.round((doc.bw ?? doc.w) * S), HS = Math.round(H * S), tol = 30;
+        const out = q => q.Y <= tol ? { X: q.X, Y: -S } : q.Y >= HS - tol ? { X: q.X, Y: HS + S }
+          : q.X <= tol ? { X: -S, Y: q.Y } : q.X >= WS - tol ? { X: WS + S, Y: q.Y } : { X: q.X, Y: q.Y <= HS / 2 ? -S : HS + S };
         pts.push(out(pts[pts.length - 1]));
         pts.unshift(out(pts[0]));
       }
