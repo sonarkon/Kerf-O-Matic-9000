@@ -413,7 +413,14 @@
     <div class="seg viewseg" role="radiogroup" data-i18n-aria="view.aria">
       <label><input type="radio" name="view" value="2d" checked> <span data-i18n="view.2d"></span></label>
       <label><input type="radio" name="view" value="3d"> <span data-i18n="view.3d"></span></label>
+      <label data-modes="mount"><input type="radio" name="view" value="draw"> <span data-i18n="view.draw"></span></label>
     </div>
+  </div>
+  <div class="toggles" id="drawCtl" hidden>
+    <label class="pill"><span data-i18n="dr.paperSel"></span> <select id="drawPaper"><option>A4</option><option selected>A3</option><option>A2</option><option>A1</option></select></label>
+    <label class="pill"><input type="checkbox" id="drawTransparent"> <span data-i18n="dr.transparent"></span></label>
+    <button class="primary" id="drawPdf" data-i18n="dr.pdf"></button>
+    <button class="primary" id="drawPng" data-i18n="dr.png"></button>
   </div>
   <div class="toggles" id="overlayCtl">
     <label class="pill" id="explodeCtl" hidden><span data-i18n="explode"></span><input type="range" id="explode" min="0" max="100" value="0"><output id="explodeVal">0 %</output></label>
@@ -504,7 +511,7 @@
 
 <script>
 // date of the last update; shown in the footer and stored in every saved file
-const VERSION = '2026.10.16';
+const VERSION = '2026.10.20';
 const $ = id => document.getElementById(id);
 const f = v => +v.toFixed(4);              // compact number for SVG output
 const fmt = v => String(+(+v).toFixed(3)); // for filenames / labels
@@ -592,7 +599,10 @@ const STR = {
     'testCount': 'Count', 'testSize': 'Strip W × H (mm)',
     'testDesc': 'All other values come from the fields above. Each strip gets an engraved label on the left.',
     'hint': 'Drag = pan · Wheel = zoom', 'hint3d': 'Drag = rotate · Right-drag = pan · Wheel = zoom', 'zoomOut': 'Zoom out', 'zoomIn': 'Zoom in', 'fit': 'Fit',
-    'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex heatmap', 'heatMap': 'Heat during the cut preview',
+    'view.aria': 'Preview', 'view.2d': '2D', 'view.3d': '3D', 'view.draw': 'Drawing', 'flexOverlay': 'Flex heatmap',
+    'dr.transparent': 'Transparent', 'dr.png': 'Save PNG', 'dr.busy': 'Rendering the drawing…',
+    'dr.side': 'SIDE VIEW', 'dr.top': 'TOP VIEW', 'dr.iso': '3D VIEW', 'dr.exploded': 'EXPLODED VIEW', 'dr.detail': 'PATTERN DETAIL', 'dr.cut': 'CUT PARTS', 'dr.pitch': 'pitch', 'dr.bend': 'Bend (closed)', 'dr.strain': 'Strain', 'dr.limit': 'Material limit', 'dr.minD': 'Min. inner Ø', 'dr.rigid': 'Rigid slots', 'dr.slotW': 'slot width', 'dr.bar': 'bar', 'dr.sheet': 'Material (this layout):',
+    'dr.title': 'Pendant lamp', 'dr.material': 'Material', 'dr.shade': 'Shade', 'dr.flat': 'Flat board', 'dr.pattern': 'Pattern', 'dr.parts': 'Parts', 'dr.units': 'All dimensions in mm', 'dr.qr': 'Open in Kerf-O-Matic', 'dr.paper': (f, w, h) => `Sheet ${f} · ${w} × ${h} mm`, 'dr.print': 'Print at 100 % (actual size)', 'dr.more': n => `… and ${n} more parts`, 'dr.pdf': 'Save PDF', 'dr.pdfFail': 'The PDF could not be made (the PDF library needs an internet connection).', 'dr.paperSel': 'Paper', 'dr.inner': 'inner', 'dr.hidden': 'dashed = parts inside the shade', 'heatMap': 'Heat during the cut preview',
     'bend': 'Bend', 'explode': 'Explode', 'lamp': 'Lamp on', 'three.loading': 'Loading 3D…', 'three.fail': 'Could not load the 3D library (offline?).',
     'sec.output': 'Output', 'marginX': 'Side margin (mm)', 'order': 'Cut order',
     'png.title': 'PNG texture', 'png.hint': 'White = material, black = hole. The preview shows how it repeats.',
@@ -780,7 +790,10 @@ const STR = {
     'testCount': 'Anzahl', 'testSize': 'Streifen B × H (mm)',
     'testDesc': 'Alle anderen Werte kommen aus den Feldern oben. Jeder Streifen bekommt links eine gravierte Beschriftung.',
     'hint': 'Ziehen = verschieben · Mausrad = zoomen', 'hint3d': 'Ziehen = drehen · Rechts ziehen = verschieben · Mausrad = zoomen', 'zoomOut': 'Verkleinern', 'zoomIn': 'Vergrößern', 'fit': 'Einpassen',
-    'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'flexOverlay': 'Flex-Heatmap', 'heatMap': 'Wärme in der Schnitt-Vorschau',
+    'view.aria': 'Vorschau', 'view.2d': '2D', 'view.3d': '3D', 'view.draw': 'Zeichnung', 'flexOverlay': 'Flex-Heatmap',
+    'dr.transparent': 'Transparent', 'dr.png': 'PNG speichern', 'dr.busy': 'Zeichnung wird erstellt…',
+    'dr.side': 'SEITENANSICHT', 'dr.top': 'DRAUFSICHT', 'dr.iso': '3D-ANSICHT', 'dr.exploded': 'EXPLOSIONSZEICHNUNG', 'dr.detail': 'MUSTER-DETAIL', 'dr.cut': 'SCHNITTTEILE', 'dr.pitch': 'Raster', 'dr.bend': 'Biegung (geschlossen)', 'dr.strain': 'Dehnung', 'dr.limit': 'Materialgrenze', 'dr.minD': 'Min-Ø innen', 'dr.rigid': 'Starre Schlitze', 'dr.slotW': 'Schlitzbreite', 'dr.bar': 'Steg', 'dr.sheet': 'Material (diese Anordnung):',
+    'dr.title': 'Pendelleuchte', 'dr.material': 'Material', 'dr.shade': 'Schirm', 'dr.flat': 'Platte flach', 'dr.pattern': 'Muster', 'dr.parts': 'Teile', 'dr.units': 'Alle Maße in mm', 'dr.qr': 'In Kerf-O-Matic öffnen', 'dr.paper': (f, w, h) => `Blatt ${f} · ${w} × ${h} mm`, 'dr.print': 'In 100 % drucken (Originalgröße)', 'dr.more': n => `… und ${n} weitere Teile`, 'dr.pdf': 'PDF speichern', 'dr.pdfFail': 'Das PDF konnte nicht erstellt werden (die PDF-Bibliothek braucht eine Internetverbindung).', 'dr.paperSel': 'Papier', 'dr.inner': 'innen', 'dr.hidden': 'gestrichelt = Teile im Schirm', 'heatMap': 'Wärme in der Schnitt-Vorschau',
     'bend': 'Biegung', 'explode': 'Explode', 'lamp': 'Lampe an', 'three.loading': '3D wird geladen…', 'three.fail': '3D-Bibliothek konnte nicht geladen werden (offline?).',
     'sec.output': 'Ausgabe', 'marginX': 'Seitenrand (mm)', 'order': 'Schnittreihenfolge',
     'png.title': 'PNG-Textur', 'png.hint': 'Weiß = Material, schwarz = Loch. Die Vorschau zeigt die Wiederholung.',
@@ -2508,7 +2521,7 @@ function fileName(p, doc) {
 // The parameter record stored in every export that can be loaded again (SVG, OBJ, PNG).
 function paramsJSON(p) {
   const { paramVisible, ...meta } = p;
-  if (meta.mode !== 'creative') delete meta.creative;
+  if (meta.mode !== 'creative' && !(meta.mode === 'mount' && meta.shellMode === 'creative')) delete meta.creative;
   return JSON.stringify({ generator: 'kerf-generator', version: VERSION, unit: 'mm', ...meta });
 }
 
@@ -2939,7 +2952,7 @@ const view = $('view'), stage = $('stage');
 let zoom = 1, panX = 0, panY = 0, last = null;
 let viewMode = '2d', legacyView = null;
 try { viewMode = localStorage.getItem('kerf-view') || '2d'; } catch (e) {}
-if (viewMode !== '3d') { legacyView = viewMode; viewMode = '2d'; }   // cut / light / flex from older versions
+if (viewMode !== '3d' && viewMode !== 'draw') { legacyView = viewMode; viewMode = '2d'; }   // cut / light / flex from older versions
 document.querySelector(`input[name=view][value="${viewMode}"]`).checked = true;
 
 function previewInner(p, doc, vm) {
@@ -2964,7 +2977,19 @@ function previewInner(p, doc, vm) {
     (doc.diff?.length ? `<g fill="none" stroke="#00a651" stroke-width="1" color="#00a651" style="vector-effect:non-scaling-stroke" font-family="Arial, Helvetica, sans-serif">${doc.diff.join('')}</g>` : '');
 }
 
+// While the drawing is shown, every change would rebuild the whole cut set and the
+// sheet: wait until nothing has changed for a moment (the sheet is dimmed meanwhile).
+let renderTimer = 0, renderNow = false;
+// before anything uses the current state (saving): run a waiting render now
+function flushRender() { if (renderTimer) { clearTimeout(renderTimer); renderTimer = 0; renderNow = true; try { render(); } finally { renderNow = false; } } }
 function render() {
+  if (!renderNow && viewMode === 'draw' && document.querySelector('input[name=mode]:checked')?.value === 'mount' && stage.firstChild?.dataset?.sheet) {
+    stage.firstChild.style.opacity = '0.55';
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(() => { renderTimer = 0; renderNow = true; try { render(); } finally { renderNow = false; } }, 400);
+    return;
+  }
+  clearTimeout(renderTimer); renderTimer = 0;
   const p = readParams();
   if (p.mode === 'creative' && p.creative.mods.some(m => m.source === 'image')) requestAnimationFrame(drawAllImageWidgets);   // board size → placement preview
   document.querySelectorAll('[data-modes]').forEach(el => { el.hidden = !el.dataset.modes.split(' ').includes(p.mode); });
@@ -3008,8 +3033,19 @@ function render() {
   // 2D/3D plus an overlay: lamp light or flex heatmap
   const test = p.mode === 'test', mount = p.mode === 'mount';
   const ov = test ? null : mount && view3d.overlay === 'flex' ? null : view3d.overlay;
-  const is3d = !test && viewMode === '3d';
+  const is3d = !test && viewMode === '3d', draw = mount && viewMode === 'draw';
   const vm = is3d ? '3d' : ov === 'light' ? 'light' : ov === 'flex' ? 'flex' : 'cut';
+  $('drawCtl').hidden = !draw;
+  if (draw) {
+    view.classList.remove('dark', 'is3d');
+    $('three').hidden = true; stage.hidden = false; $('overlayCtl').hidden = true;
+    $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = false;
+    $('hint').textContent = t('hint');
+    renderInfo(p, doc);
+    renderDrawing(p, doc);
+    updatePngInfo();
+    return;
+  }
   view.classList.toggle('dark', ov === 'light');
   view.classList.toggle('is3d', is3d);
   $('three').hidden = !is3d;
@@ -3031,6 +3067,502 @@ function render() {
   updateOrderStats();
   updatePngInfo();
 }
+
+// ---------------------------------------------------------------- technical drawing (Lamp)
+// One sheet with a dimensioned side view and top view (parallel projections of
+// the 3D model), a 3D view and an exploded view, and a title block. The views
+// are rendered offscreen with three.js on a transparent background; dimensions
+// and text are SVG on top. Saved as PNG on white or transparent.
+const SHEET = { w: 1600, h: 1130 };
+// paper formats (landscape, mm); the sheet fills the page, so each view gets a true scale
+const PAPER = { A4: [297, 210], A3: [420, 297], A2: [594, 420], A1: [841, 594] };
+const paperOf = () => PAPER[$('drawPaper').value] ? $('drawPaper').value : 'A3';
+// The largest standard scale (1:1, 1:1.5, 1:2, 1:2.5, 1:3, 1:4, 1:5, 1:7.5, 1:10 …, or
+// enlargements 1.5:1 … 50:1) that is not larger than the one that fits: returns sheet
+// units per mm of the object and the ratio text.
+function stdScale(sc, paper) {
+  const k = PAPER[paper][0] / SHEET.w, r = sc * k, M = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5], c = [];
+  for (let e = 0; e <= 4; e++) for (const m of M) c.push([1 / (m * 10 ** e), `1:${fmt(m * 10 ** e)}`]);
+  for (let e = 0; e <= 1; e++) for (const m of M) if (m * 10 ** e > 1) c.push([m * 10 ** e, `${fmt(m * 10 ** e)}:1`]);
+  c.sort((a, b) => b[0] - a[0]);
+  const [rr, label] = c.find(q => q[0] <= r * 1.0001) || c[c.length - 1];
+  return { sc: rr / k, label };
+}
+let drawToken = 0, drawRenderer = null;
+function drawSnap(camera, w, h) {
+  if (!drawRenderer) drawRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  drawRenderer.setPixelRatio(1);
+  drawRenderer.setSize(Math.round(w), Math.round(h), false);
+  drawRenderer.setClearColor(0xffffff, 0);
+  drawRenderer.render(three.scene, camera);
+  return drawRenderer.domElement.toDataURL('image/png');
+}
+// ---- share link: the parameters, deflated and base64url-encoded in the URL hash,
+// so a QR code on the drawing opens the lamp in the web app
+const APP_URL = 'https://sonarkon.github.io/Kerf-O-Matic-9000/';
+const QR_LIB = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function shareUrl(p) {
+  const meta = JSON.parse(paramsJSON(p));
+  // what the lamp does not need (and images, which never fit into a QR code)
+  for (const k of ['generator', 'unit', 'version', 'testFrom', 'testTo', 'testCount', 'testW', 'testH', 'testParam']) delete meta[k];
+  if (meta.creative && meta.creative.mods?.some(m => m.img)) return null;
+  // only what differs from the page's defaults (the link fills in the rest)
+  const def = formDefaults();
+  for (const k in def) if (meta[k] === def[k]) delete meta[k];
+  if (!meta.project) delete meta.project;
+  for (const q of meta.mountParts || []) for (const [k, v] of Object.entries(newPart(q.from === 'bottom' ? 'bottom' : 'top'))) if (k !== 'from' && JSON.stringify(q[k]) === JSON.stringify(v)) delete q[k];
+  const data = new TextEncoder().encode(JSON.stringify(meta));
+  const packed = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+  return APP_URL + '#p=' + b64url(packed);
+}
+async function readShareHash() {
+  const m = location.hash.match(/^#p=([\w-]+)$/);
+  if (!m) return false;
+  const bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  const json = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+  writeParams({ ...formDefaults(), ...JSON.parse(json) });
+  history.replaceState(null, '', location.pathname + location.search);   // from here on the normal saved state
+  render();
+  return true;
+}
+// the values the page starts with (as written in the HTML)
+function formDefaults() {
+  const d = {};
+  for (const k of NUM) d[k] = parseFloat($(k).defaultValue) || 0;
+  for (const k of SEL) d[k] = ([...$(k).options].find(o => o.defaultSelected) || $(k).options[0]).value;
+  for (const k of CHK) d[k] = $(k).defaultChecked;
+  return d;
+}
+let qrLoading = null;
+const ensureQr = () => qrLoading || (qrLoading = loadScript(QR_LIB).catch(() => { qrLoading = null; }));
+// the QR code as one SVG path (a module = 1 unit), or null
+function qrPath(text) {
+  if (typeof qrcode !== 'function') return null;
+  const qr = qrcode(0, 'L');
+  qr.addData(text, 'Byte'); qr.make();
+  const n = qr.getModuleCount();
+  let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c},${r}h1v1h-1z`;
+  return { d, n };
+}
+// The sheet takes a moment (offscreen 3D renders): it is built after the current
+// event (render() already waits while settings change); the old sheet stays, dimmed.
+let drawTimer = 0, drawPending = false;
+// the finished, current sheet (waits for a pending render and drawing), or null
+async function currentSheet() {
+  flushRender();
+  for (let i = 0; i < 300 && drawPending; i++) await new Promise(r => setTimeout(r, 50));
+  return drawPending ? null : stage.querySelector('svg[data-sheet]');
+}
+function renderDrawing(p, doc) {
+  const token = ++drawToken, had = !!stage.firstChild?.dataset?.sheet;
+  drawPending = true;
+  clearTimeout(drawTimer);
+  if (had) stage.firstChild.style.opacity = '0.55';
+  else {
+    stage.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" data-sheet="1" viewBox="0 0 ${SHEET.w} ${SHEET.h}"><rect width="${SHEET.w}" height="${SHEET.h}" fill="#fff"/>` +
+      `<text x="${SHEET.w / 2}" y="${SHEET.h / 2}" text-anchor="middle" font-family="Arial" font-size="24" fill="#888">${esc(t('dr.busy'))}</text></svg>`;
+    layout();
+  }
+  drawTimer = setTimeout(() => Promise.all([ensureThree(), ensureGeoLibs(), ensureQr(), shareUrl(p).catch(() => null)]).then(([, , , url]) => {
+    if (token !== drawToken) return;
+    stage.innerHTML = drawingSvg(p, doc, url);
+    drawPending = false;
+    layout();
+  }).catch(() => { stage.innerHTML = ''; drawPending = false; }), 0);
+}
+function drawingSvg(p, doc, url) {
+  // the model: closed shade with its parts, plain light, no glow
+  buildParts(p, doc.shell);
+  buildMountParts(p, doc);
+  apply3dScene(p, doc, true);
+  const sd = doc.shell, W = sd.bw ?? sd.w, H = sd.h, th = p.thick, R = W / (2 * Math.PI);
+  three.scene.background = null;
+  three.hemi.intensity = 1.05; three.dir.intensity = 0.8; three.lamp.intensity = 0;
+  if (three.glow) three.glow.mesh.visible = false;
+  // drawing style: an opaque light material with dark edge lines (like a CAD view)
+  if (!three.drawMat) {
+    three.drawMat = new THREE.MeshStandardMaterial({ color: 0xece6dc, roughness: 0.8, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    three.edgeMat = new THREE.LineBasicMaterial({ color: 0x2a2622 });
+  }
+  const meshes = [...three.parts.map(q => q.mesh), ...three.mountGroup.children.filter(m => m.geometry.type !== 'CylinderGeometry')];
+  const saved = meshes.map(m => m.material), edges = [];
+  for (const m of meshes) {
+    m.material = three.drawMat;
+    const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 35), three.edgeMat);
+    m.add(e); edges.push(e);
+  }
+  const diffs = three.mountGroup.children.filter(m => m.geometry.type === 'CylinderGeometry');
+  for (const d of diffs) d.visible = false;
+  const parts = doc.mount.parts, rOut = R + th / 2, rIn = R - th / 2;
+  const rMax = Math.max(rOut, ...parts.map(q => q.fix === 'through' || (q.fingers && q.fingers.length) ? rOut : q.ro));
+  // exploded: every part moves out past its end of the shade, one step apart (outermost
+  // first), so parts deep inside a tall lamp come out too and nothing is far away
+  const stepE = Math.max(4 * th, rMax, 0.08 * H), moved = three.mountGroup.children.filter(m => m.userData.dir);
+  let spread = 0;
+  for (const dir of [1, -1]) {
+    const end = dir * H / 2, own = moved.filter(m => m.userData.dir === dir).sort((a, b) => dir * (b.userData.y0 - a.userData.y0));
+    own.forEach((m, k) => { m.userData.shift = end + dir * stepE * (k + 1) + (dir < 0 ? -th : 0) - m.userData.y0; });
+    spread = Math.max(spread, stepE * own.length + th);
+  }
+  const setExplode = e => { for (const m of three.mountGroup.children) m.position.y = (m.userData.base || 0) + (m.userData.dir ? e * m.userData.shift : 0); };
+  setExplode(0);
+  const tabsUp = parts.some(q => q.fix === 'tabs' && q.pos === 'top') ? th : 0, tabsDown = parts.some(q => q.fix === 'tabs' && q.pos === 'bottom') ? th : 0;
+  const yTop = H / 2 + tabsUp, yBot = -H / 2 - tabsDown, ycS = (yTop + yBot) / 2;
+  // ---- sheet layout: views on top, 3D / exploded / cut parts / title below
+  const M = 20, r1h = 600, r2y = M + r1h, r2h = SHEET.h - M - r2y;
+  const P = {
+    side: { x: M, y: M, w: 600, h: r1h }, top: { x: M + 600, y: M, w: 400, h: r1h }, det: { x: M + 1000, y: M, w: SHEET.w - 2 * M - 1000, h: r1h },
+    iso: { x: M, y: r2y, w: 360, h: r2h }, exp: { x: M + 360, y: r2y, w: 360, h: r2h }, cut: { x: M + 720, y: r2y, w: 500, h: r2h },
+    title: { x: M + 1220, y: r2y, w: SHEET.w - 2 * M - 1220, h: r2h }
+  };
+  const RES = 2, out = [];
+  const ortho = (hw, hh) => new THREE.OrthographicCamera(-hw, hw, hh, -hh, 0.1, 100000);
+  // ---- side view
+  // A tall, slim lamp is drawn broken (as in CAD): only the ends and the parts are
+  // shown, each with a little of the shade around it; the plain stretches between
+  // are left out (one break each). Dimensions keep the real lengths.
+  const hwS = rMax * 1.04, padS = Math.min((yTop - yBot) * 0.02, 0.1 * rMax), availH = P.side.h - 160, BRK = 20, around = 0.3 * rMax;
+  const faceY = q => { const o = q.offset || 0; return q.pos === 'top' ? H / 2 - o - th / 2 : -H / 2 + o + th / 2; };
+  let ivs = [[yTop + padS, yTop - 0.8 * rMax], [yBot + 0.8 * rMax, yBot - padS],
+    ...parts.map(q => [Math.min(yTop + padS, faceY(q) + th / 2 + around), Math.max(yBot - padS, faceY(q) - th / 2 - around)])];
+  // merge, also across stretches too short to be worth a break
+  ivs.sort((u, v) => v[0] - u[0]);
+  const merged = [];
+  for (const iv of ivs) { const m = merged[merged.length - 1]; if (m && iv[0] >= m[1] - 1.2 * rMax) m[1] = Math.min(m[1], iv[1]); else merged.push([...iv]); }
+  const kept = merged.reduce((sum, [y0, y1]) => sum + y0 - y1, 0), nBrk = merged.length - 1;
+  const scFull = Math.min((P.side.w - 190) / (2 * hwS), availH / (yTop - yBot + 2 * padS));
+  const scBrk = nBrk ? Math.min((P.side.w - 190) / (2 * hwS), (availH - nBrk * BRK) / kept) : scFull;
+  const broken = nBrk > 0 && (yTop - yBot) > 2.5 * 2 * rMax && kept < 0.7 * (yTop - yBot + 2 * padS) && scBrk > 1.6 * scFull;
+  const paper = paperOf(), stS = stdScale(broken ? scBrk : scFull, paper), scS = stS.sc;
+  const segs = broken ? merged : [[yTop + padS, yBot - padS]];
+  const sx0 = P.side.x + (P.side.w - 2 * hwS * scS) / 2 - 10, sy0 = P.side.y + 50;
+  const segY = [];
+  segs.reduce((y, [y0, y1]) => { segY.push(y); return y + (y0 - y1) * scS + BRK; }, sy0);
+  const imgS = segs.map(([y0, y1]) => {
+    const hh = (y0 - y1) / 2, yc = (y0 + y1) / 2, cam = ortho(hwS, hh);
+    cam.position.set(0, yc, -R + 10 * (rMax + H)); cam.lookAt(0, yc, -R);
+    return drawSnap(cam, 2 * hwS * scS * RES, 2 * hh * scS * RES);
+  });
+  const SX = x => sx0 + (x + hwS) * scS;
+  // a height on the sheet: in its segment, or (inside a break) at the nearer end of one
+  const SY = y => {
+    let i = segs.findIndex(([y0, y1]) => y <= y0 + 1e-6 && y >= y1 - 1e-6);
+    if (i < 0) { i = segs.findIndex(([y0]) => y > y0); i = i <= 0 ? 0 : (segs[i - 1][1] - y < y - segs[i][0] ? i - 1 : i); y = Math.min(segs[i][0], Math.max(segs[i][1], y)); }
+    return segY[i] + (segs[i][0] - y) * scS;
+  };
+  // ---- top view (looking down, the front at the bottom)
+  const stT = stdScale(Math.min((P.top.w - 80) / (2 * rMax), (P.top.h - 200) / (2 * rMax)), paper), scT = stT.sc;
+  const hwT = rMax * 1.04, camT = ortho(hwT, hwT); camT.position.set(0, yTop + 10 * (rMax + H), -R); camT.up.set(0, 0, -1); camT.lookAt(0, 0, -R);
+  const imgT = drawSnap(camT, 2 * hwT * scT * RES, 2 * hwT * scT * RES);
+  const tx0 = P.top.x + (P.top.w - 2 * hwT * scT) / 2, ty0 = P.top.y + 60;
+  const TX = x => tx0 + (x + hwT) * scT, TY = z => ty0 + (hwT - z) * scT;
+  // ---- 3D and exploded (perspective, same direction)
+  const persp = (box, lift) => {
+    const cam = new THREE.PerspectiveCamera(30, box.w / box.h, 1, 100000), rb = Math.hypot(rMax, (yTop - yBot) / 2 + lift);
+    const dirv = new THREE.Vector3(0.75, 0.55, 1).normalize(), dist = rb / Math.sin(15 * Math.PI / 180) * 1.02;
+    cam.position.set(dirv.x * dist, ycS + dirv.y * dist, -R + dirv.z * dist); cam.lookAt(0, ycS, -R);
+    cam.near = dist / 50; cam.far = dist * 5; cam.updateProjectionMatrix();
+    return cam;
+  };
+  const isoBox = { w: P.iso.w - 20, h: P.iso.h - 50 }, imgI = drawSnap(persp(isoBox, 0), isoBox.w * RES, isoBox.h * RES);
+  setExplode(1);
+  const imgE = drawSnap(persp(isoBox, spread), isoBox.w * RES, isoBox.h * RES);
+  setExplode(0);
+  // back to the normal 3D look
+  meshes.forEach((m, i) => { m.material = saved[i]; });
+  for (const e of edges) { e.parent.remove(e); e.geometry.dispose(); }
+  for (const d of diffs) d.visible = true;
+  // ---- SVG helpers
+  const ink = '#1d1b18', thin = 0.9, fsz = 14, num = v => fmt(+v.toFixed(1));
+  const arrow = (x, y, ang) => { const a = 9, b = 3, c = Math.cos(ang), s2 = Math.sin(ang);
+    return `<path d="M${f(x)},${f(y)} L${f(x - a * c + b * s2)},${f(y - a * s2 - b * c)} L${f(x - a * c - b * s2)},${f(y - a * s2 + b * c)} Z" fill="${ink}"/>`; };
+  // a dimension between two points, its line offset by `off` (sheet units), with extension lines;
+  // dimension text on a white ground (estimated width), so it stays readable over the pattern
+  const dimText = (x, y, anchor, size, text, rot) => {
+    const w = text.length * size * 0.55 + 6, x0 = anchor === 'middle' ? -w / 2 : anchor === 'end' ? -w : -3;
+    return `<g transform="translate(${f(x)},${f(y)})${rot ? ` rotate(${rot})` : ''}"><rect x="${f(x0)}" y="${f(-size * 0.95)}" width="${f(w)}" height="${f(size * 1.25)}" fill="#fff" opacity="0.85"/>` +
+      `<text text-anchor="${anchor}" font-size="${size}">${esc(text)}</text></g>`;
+  };
+  // short dimensions get their arrows from outside
+  const dim = (x1, y1, x2, y2, off, text, horiz, size = fsz) => {
+    let r = '';
+    const sg = Math.sign(off) || 1, len = horiz ? Math.abs(x2 - x1) : Math.abs(y2 - y1), outside = len < 26;
+    if (horiz) {
+      const y = y1 + off, a = Math.min(x1, x2), b = Math.max(x1, x2);
+      if (off) r += `<path d="M${f(x1)},${f(y1 + sg * 3)} V${f(y + sg * 6)} M${f(x2)},${f(y2 + sg * 3)} V${f(y + sg * 6)}" stroke="${ink}" stroke-width="${thin * 0.7}"/>`;
+      r += outside ? `<path d="M${f(a - 16)},${f(y)} H${f(b + 16)}" stroke="${ink}" stroke-width="${thin}"/>` + arrow(a, y, 0) + arrow(b, y, Math.PI)
+        : `<path d="M${f(a)},${f(y)} H${f(b)}" stroke="${ink}" stroke-width="${thin}"/>` + arrow(a, y, Math.PI) + arrow(b, y, 0);
+      r += dimText(outside ? b + 20 : (a + b) / 2, y - 5, outside ? 'start' : 'middle', size, text, 0);
+    } else {
+      const x = x1 + off, a = Math.min(y1, y2), b = Math.max(y1, y2);
+      if (off) r += `<path d="M${f(x1 + sg * 3)},${f(y1)} H${f(x + sg * 6)} M${f(x2 + sg * 3)},${f(y2)} H${f(x + sg * 6)}" stroke="${ink}" stroke-width="${thin * 0.7}"/>`;
+      r += outside ? `<path d="M${f(x)},${f(a - 16)} V${f(b + 16)}" stroke="${ink}" stroke-width="${thin}"/>` + arrow(x, a, Math.PI / 2) + arrow(x, b, -Math.PI / 2)
+        : `<path d="M${f(x)},${f(a)} V${f(b)}" stroke="${ink}" stroke-width="${thin}"/>` + arrow(x, a, -Math.PI / 2) + arrow(x, b, Math.PI / 2);
+      r += outside ? dimText(x + 6, b + 30, 'start', size, text, 0) : dimText(x - 6, (a + b) / 2, 'middle', size, text, -90);
+    }
+    return r;
+  };
+  // graphic scale bar: four alternating segments, a round length of 60–170 sheet units
+  const scaleBar = (x, y, sc, ratio) => {
+    const L = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find(v => v * sc >= 60) || 1000, w = L * sc, seg = w / 4;
+    let r = `<g stroke="${ink}" stroke-width="0.8">`;
+    for (let i = 0; i < 4; i++) r += `<rect x="${f(x + i * seg)}" y="${f(y)}" width="${f(seg)}" height="5" fill="${i % 2 ? '#fff' : ink}"/>`;
+    return r + `</g><text x="${f(x)}" y="${f(y + 18)}" font-size="11">0</text><text x="${f(x + w)}" y="${f(y + 18)}" font-size="11" text-anchor="middle">${L} mm</text>` +
+      `<text x="${f(x + w + 34)}" y="${f(y + 7)}" font-size="13" font-weight="700">${ratio}</text>`;
+  };
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" data-sheet="1" viewBox="0 0 ${SHEET.w} ${SHEET.h}" font-family="Arial, Helvetica, sans-serif" fill="${ink}">`);
+  out.push(`<rect class="sheetbg" width="${SHEET.w}" height="${SHEET.h}" fill="#fff"/>`);
+  out.push(`<g fill="none" stroke="${ink}" stroke-width="1.2"><rect x="${M}" y="${M}" width="${SHEET.w - 2 * M}" height="${SHEET.h - 2 * M}"/>` +
+    `<path d="M${P.top.x},${M} V${r2y} M${P.det.x},${M} V${r2y} M${M},${r2y} H${SHEET.w - M} M${P.exp.x},${r2y} V${SHEET.h - M} M${P.cut.x},${r2y} V${SHEET.h - M} M${P.title.x},${r2y} V${SHEET.h - M}"/></g>`);
+  const label = (b, txt) => `<text x="${b.x + 14}" y="${b.y + 26}" font-size="15" font-weight="700" letter-spacing="1.5">${esc(txt)}</text>`;
+  out.push(label(P.side, `${t('dr.side')}  ${stS.label}`), label(P.top, `${t('dr.top')}  ${stT.label}`), label(P.iso, t('dr.iso')), label(P.exp, t('dr.exploded')));
+  segs.forEach(([y0, y1], i) => out.push(`<image href="${imgS[i]}" x="${f(sx0)}" y="${f(segY[i])}" width="${f(2 * hwS * scS)}" height="${f((y0 - y1) * scS)}"/>`));
+  if (broken) {
+    // break lines: a wavy line across the shade at each cut end
+    const wave = y => { let d = `M${f(SX(-rOut) - 8)},${f(y)}`; const n = 8, w = (2 * rOut * scS + 16) / n;
+      for (let i = 0; i < n; i++) d += ` q${f(w / 2)},${i % 2 ? 5 : -5} ${f(w)},0`; return d; };
+    let d = '';
+    for (let i = 0; i < segs.length - 1; i++) d += wave(segY[i] + (segs[i][0] - segs[i][1]) * scS) + ' ' + wave(segY[i + 1]) + ' ';
+    out.push(`<path d="${d}" stroke="${ink}" stroke-width="1" fill="none"/>`);
+  }
+  out.push(`<image href="${imgT}" x="${f(tx0)}" y="${f(ty0)}" width="${f(2 * hwT * scT)}" height="${f(2 * hwT * scT)}"/>`);
+  out.push(`<image href="${imgI}" x="${f(P.iso.x + 10)}" y="${f(P.iso.y + 40)}" width="${isoBox.w}" height="${isoBox.h}"/>`);
+  out.push(`<image href="${imgE}" x="${f(P.exp.x + 10)}" y="${f(P.exp.y + 40)}" width="${isoBox.w}" height="${isoBox.h}"/>`);
+  // ---- side view: hidden parts (dashed), outer Ø, height, part positions, scale
+  const sideFace = q => { const o = q.offset || 0;
+    if (q.fix === 'tabs') return q.pos === 'top' ? [H / 2 + th, H / 2] : [-H / 2, -H / 2 - th];
+    return q.pos === 'top' ? [H / 2 - o, H / 2 - o - th] : [-H / 2 + o + th, -H / 2 + o]; };
+  let hid = '';
+  for (const q of parts) { const r = q.fix === 'through' ? rOut : Math.min(q.ro, rMax); for (const y of sideFace(q)) hid += `M${f(SX(-r))},${f(SY(y))} H${f(SX(r))} `; }
+  if (hid) out.push(`<path d="${hid}" stroke="${ink}" stroke-width="0.9" stroke-dasharray="6 4" fill="none"/>`);
+  out.push(dim(SX(-rOut), SY(yBot), SX(rOut), SY(yBot), 40, `Ø ${num(2 * rOut)} mm`, true));
+  out.push(dim(SX(rMax), SY(H / 2), SX(rMax), SY(-H / 2), 44, `${num(H)} mm`, false));
+  let lane = 0;
+  for (const q of parts) {
+    const o = q.offset || 0;
+    if (!(o > 0)) continue;
+    const yEdge = q.pos === 'top' ? H / 2 : -H / 2, yFace = q.pos === 'top' ? H / 2 - o : -H / 2 + o;
+    out.push(dim(SX(-rMax), SY(yEdge), SX(-rMax), SY(yFace), -34 - 30 * lane++, `${num(o)} mm`, false));
+  }
+  out.push(scaleBar(P.side.x + 16, P.side.y + P.side.h - 46, scS, stS.label));
+  out.push(`<text x="${P.side.x + P.side.w - 16}" y="${P.side.y + P.side.h - 16}" text-anchor="end" font-size="11" fill="#666">${esc(t('dr.hidden'))}</text>`);
+  // ---- top view: outer and inner Ø, socket hole, scale
+  out.push(dim(TX(-rOut), TY(-rMax), TX(rOut), TY(-rMax), 36, `Ø ${num(2 * rOut)} mm`, true, 13));
+  out.push(dim(TX(-rIn), TY(-rMax), TX(rIn), TY(-rMax), 68, `Ø ${num(2 * rIn)} mm ${t('dr.inner')}`, true, 13));
+  const topPart = [...parts].filter(q => q.pos === 'top').sort((a, b) => (a.offset || 0) - (b.offset || 0))[0];
+  if (topPart && (topPart.kind === 'spider' || topPart.kind === 'disc')) out.push(dim(TX(-p.socketHole / 2), TY(0), TX(p.socketHole / 2), TY(0), 0, `Ø ${num(p.socketHole)} mm`, true, 13));
+  out.push(scaleBar(P.top.x + 16, P.top.y + P.top.h - 46, scT, stT.label));
+  // ---- pattern detail: a window of the flat board around a slot near the middle, dimensioned
+  const recs = sd.recs.filter(r => r.status === 'cut' && r.els && r.els.length && !r.wall && r.hh > 0 && r.k != null);
+  const cols = [...new Set(recs.map(r => r.k))].sort((a, b) => a - b).map(k => ({ k, x: recs.find(r => r.k === k).x }));
+  let detLabel = t('dr.detail');
+  if (cols.length > 3) {
+    const k = Math.floor(cols.length / 2), inCol = c => recs.filter(r => r.k === cols[c].k);
+    const col = inCol(k).filter(r => r.y - r.hh > 0 && r.y + r.hh < H).sort((a, b) => Math.abs(a.y - H / 2) - Math.abs(b.y - H / 2));
+    const a = col[0];
+    if (a) {
+      const below = inCol(k).filter(r => r.y > a.y + 1e-6).sort((u, v) => u.y - v.y)[0];
+      const nb = inCol(k + 1).filter(r => Math.abs(r.y - a.y) < a.hh + r.hh).sort((u, v) => Math.abs(u.y - a.y) - Math.abs(v.y - a.y))[0];
+      const pitch = cols[k + 1].x - cols[k].x;
+      // window: the slot, the gap below it and a bit of the next one, as wide as the panel allows
+      const box = { x: P.det.x + 60, y: P.det.y + 60, w: P.det.w - 130, h: P.det.h - 150 };
+      const gapB = below ? below.y - below.hh - (a.y + a.hh) : 0;
+      let wy0 = a.y - a.hh - Math.max(2, 0.7 * gapB), wy1 = a.y + a.hh + gapB + Math.max(2, 0.25 * 2 * a.hh);
+      const cxw = a.x + pitch / 2, hwW = Math.max(1.6 * pitch, (wy1 - wy0) * box.w / box.h / 2);
+      let wx0 = cxw - hwW, wx1 = cxw + hwW;
+      // a standard scale; the window then grows to fill the box again
+      const stD = stdScale(Math.min(box.w / (wx1 - wx0), box.h / (wy1 - wy0)), paper), scD = stD.sc;
+      const cyw = (wy0 + wy1) / 2;
+      detLabel += `  ${stD.label}`;
+      wx0 = cxw - box.w / scD / 2; wx1 = cxw + box.w / scD / 2; wy0 = cyw - box.h / scD / 2; wy1 = cyw + box.h / scD / 2;
+      const dw = box.w, dh = box.h, ox = box.x, oy = box.y;
+      const DX = x => ox + (x - wx0) * scD, DY = y => oy + (y - wy0) * scD;
+      out.push(`<defs><clipPath id="detclip"><rect x="${f(ox)}" y="${f(oy)}" width="${f(dw)}" height="${f(dh)}"/></clipPath></defs>`);
+      out.push(`<rect x="${f(ox)}" y="${f(oy)}" width="${f(dw)}" height="${f(dh)}" fill="#f4efe6" stroke="#bbb" stroke-width="0.8"/>`);
+      out.push(`<g clip-path="url(#detclip)"><g transform="translate(${f(ox - wx0 * scD)},${f(oy - wy0 * scD)}) scale(${f(scD)})" fill="#fff" stroke="#c40000" stroke-width="${f(1.2 / scD)}">${sd.cuts.join('')}</g></g>`);
+      // slot length and width, vertical gap, bar between columns
+      out.push(dim(DX(a.x + a.hw), DY(a.y - a.hh), DX(a.x + a.hw), DY(a.y + a.hh), 26, `${t('fix.slotH')} ${num(2 * a.hh)} mm`, false, 13));
+      out.push(dim(DX(a.x - a.hw), DY(a.y - a.hh), DX(a.x + a.hw), DY(a.y - a.hh), -22, `${t('dr.slotW')} ${num(2 * a.hw)} mm`, true, 13));
+      if (below) out.push(dim(DX(a.x - a.hw), DY(a.y + a.hh), DX(a.x - a.hw), DY(below.y - below.hh), -30, `${t('fix.gapY')} ${num(below.y - below.hh - (a.y + a.hh))} mm`, false, 13));
+      if (nb) { const yy = Math.max(a.y - a.hh, nb.y - nb.hh) + 0.5 * (Math.min(a.y + a.hh, nb.y + nb.hh) - Math.max(a.y - a.hh, nb.y - nb.hh));
+        out.push(dim(DX(a.x + a.hw), DY(yy), DX(nb.x - nb.hw), DY(yy), 0, `${t('dr.bar')} ${num(nb.x - nb.hw - (a.x + a.hw))} mm`, true, 13)); }
+      out.push(`<text x="${P.det.x + 16}" y="${P.det.y + P.det.h - 66}" font-size="12">${esc(`${shapeName(p.shape)} · ${t('dr.pitch')} ${num(pitch)} × ${num(p.slotH + p.gapY)}`)}</text>`);
+      out.push(scaleBar(P.det.x + 16, P.det.y + P.det.h - 46, scD, stD.label));
+    }
+  }
+  out.push(label(P.det, detLabel));
+  // ---- cut parts: the shade board (turned lengthwise when tall), the parts in rows
+  // below it and the diffuser sheets, each dimensioned, inside a dimensioned
+  // rectangle: the material needed for this layout
+  {
+    const k2 = Math.max(0, p.kerf || 0) / 2, gapC = 6, ol = doc.boards[0].outline;
+    const bx0 = Math.min(...ol.map(q => q[0])), bx1 = Math.max(...ol.map(q => q[0])), by0 = Math.min(...ol.map(q => q[1])), by1 = Math.max(...ol.map(q => q[1]));
+    const shTurn = by1 - by0 > 1.3 * (bx1 - bx0);
+    const pieces = [{ kind: 'shade', x0: bx0 - k2, y0: by0 - k2, w: bx1 - bx0 + 2 * k2, h: by1 - by0 + 2 * k2, turn: shTurn,
+      fill: outlinePath(ol), els: [...doc.mount.shade.cuts, ...doc.mount.shade.border] }];
+    for (const q of parts) {
+      const r = (q.fix === 'through' || (q.fingers && q.fingers.length) ? rOut : q.ro) + k2;
+      pieces.push({ kind: 'part', n: q.n, d: 2 * q.ro, x0: q.cx - r, y0: q.cy - r, w: 2 * r, h: 2 * r, fill: q.els.outer[0], els: [...q.els.outer, ...q.els.holes] });
+    }
+    for (const e of (doc.diff || []).filter(e => e.startsWith('<rect'))) {
+      const at = k => +(e.match(new RegExp(`\\s${k}="([-\\d.e]+)"`)) || [])[1];
+      pieces.push({ kind: 'diff', x0: at('x'), y0: at('y'), w: at('width'), h: at('height'), els: [e], diff: true });
+    }
+    // placement in mm: the board first, then rows as wide as the board
+    const W0 = shTurn ? pieces[0].h : pieces[0].w, H0 = shTurn ? pieces[0].w : pieces[0].h;
+    // (the label under each part needs room between the rows: a fixed size on the sheet)
+    const box = { x: P.cut.x + 60, y: P.cut.y + 70, w: P.cut.w - 120, h: P.cut.h - 70 - 105 };
+    let matW, matH;
+    const place = labelMm => {
+      pieces[0].px = 0; pieces[0].py = 0;
+      let x = 0, y = H0 + gapC, rowH = 0;
+      matW = W0;
+      for (const pc of pieces.slice(1)) {
+        if (x > 0 && x + pc.w > W0) { x = 0; y += rowH + gapC + labelMm; rowH = 0; }
+        pc.px = x; pc.py = y; x += pc.w + gapC; rowH = Math.max(rowH, pc.h); matW = Math.max(matW, x - gapC);
+      }
+      matH = pieces.length > 1 ? y + rowH : H0;
+      return Math.min(box.w / matW, (box.h - 14) / matH);
+    };
+    const stC = stdScale(place(16 / place(0)), paper), scC = stC.sc;
+    const ox = box.x + (box.w - matW * scC) / 2, oy = box.y + (box.h - matH * scC) / 2;
+    const CX = v => ox + v * scC, CY = v => oy + v * scC;
+    out.push(label(P.cut, `${t('dr.cut')}  ${stC.label}`));
+    const sw = Math.max(0.25, Math.min(0.8, (p.slotW + p.gapX) * scC * 0.15));   // dense patterns: thinner lines
+    // the material rectangle
+    out.push(`<rect x="${f(CX(0))}" y="${f(CY(0))}" width="${f(matW * scC)}" height="${f(matH * scC)}" fill="none" stroke="#888" stroke-width="0.9" stroke-dasharray="8 4"/>`);
+    const legend = [];
+    for (const pc of pieces) {
+      const tr = pc.turn ? `translate(${f(CX(pc.px) + pc.h * scC)},${f(CY(pc.py))}) rotate(90) scale(${f(scC)}) translate(${f(-pc.x0)},${f(-pc.y0)})`
+        : `translate(${f(CX(pc.px))},${f(CY(pc.py))}) scale(${f(scC)}) translate(${f(-pc.x0)},${f(-pc.y0)})`;
+      out.push(`<g transform="${tr}">` + (pc.fill ? `<g fill="#f4efe6" stroke="none">${pc.fill}</g>` : '') +
+        `<g fill="none" stroke="${pc.diff ? '#00a651' : '#c40000'}" stroke-width="${f((pc.kind === 'shade' ? sw : 0.8) / scC)}">${pc.els.join('')}</g></g>`);
+      const vw = (pc.turn ? pc.h : pc.w) * scC, vh = (pc.turn ? pc.w : pc.h) * scC, x0 = CX(pc.px), y0 = CY(pc.py);
+      if (pc.kind === 'shade') {
+        // board length, when the material is wider than the board
+        if (matW - W0 > 0.5) out.push(dim(x0, y0, x0 + vw, y0, -44, `${num(W0)} mm`, true, 11));
+      } else {
+        const full = pc.kind === 'part' ? `${pc.n} · Ø ${num(pc.d)} mm` : `${num(pc.w)} × ${num(pc.h)} mm`, fits = full.length * 10.5 * 0.55 < vw + gapC * scC - 4;
+        if (!fits) legend.push(pc.kind === 'part' ? `${pc.n}: Ø ${num(pc.d)}` : `D: ${num(pc.w)} × ${num(pc.h)}`);
+        out.push(`<text x="${f(x0 + vw / 2)}" y="${f(y0 + vh + 12)}" text-anchor="middle" font-size="10.5">${esc(fits ? full : pc.kind === 'part' ? String(pc.n) : 'D')}</text>`);
+      }
+    }
+    // board height on the left, material size outside the rectangle
+    out.push(dim(CX(0), CY(0), CX(0), CY(H0), -14, `${num(H0)} mm`, false, 11));
+    out.push(dim(CX(0), CY(0), CX(matW), CY(0), -22, `${num(matW)} mm`, true, 12));
+    out.push(dim(CX(matW), CY(0), CX(matW), CY(matH), 22, `${num(matH)} mm`, false, 12));
+    if (legend.length) out.push(`<text x="${P.cut.x + 16}" y="${P.cut.y + P.cut.h - 84}" font-size="11">${esc(legend.join(' · ') + ' mm')}</text>`);
+    out.push(`<text x="${P.cut.x + 16}" y="${P.cut.y + P.cut.h - 66}" font-size="12"><tspan font-weight="700">${esc(t('dr.sheet'))}</tspan> ${esc(`${num(matW)} × ${num(matH)} mm`)}</text>`);
+    out.push(scaleBar(P.cut.x + 16, P.cut.y + P.cut.h - 46, scC, stC.label));
+  }
+  // ---- title block
+  const tb = P.title, rows = [], mat = matOf(p), dm = midDiameter(p);
+  rows.push([t('dr.material'), `${mat.name}, ${fmt(th)} mm`]);
+  rows.push([t('dr.shade'), `Ø ${num(dm - th)} / ${num(dm + th)} × ${num(H)}`]);
+  rows.push([t('dr.flat'), `${num(W)} × ${num(H)}${p.joint && p.joint !== 'none' ? ` (${t('joint.' + p.joint)})` : ''}`]);
+  rows.push([t('dr.pattern'), `${shapeName(p.shape)} ${fmt(p.slotW)} × ${fmt(p.slotH)}`]);
+  // the title, wrapped at word boundaries (estimated widths); a long one gets smaller
+  const wrap = (txt, size, maxLines) => {
+    const max = Math.floor((tb.w - 32) / (size * 0.6)), lines = [];
+    for (const word of txt.split(/\s+/)) {
+      const last = lines[lines.length - 1];
+      if (last != null && (last + ' ' + word).length <= max) lines[lines.length - 1] = last + ' ' + word;
+      else for (let w = word; w.length; w = w.slice(max)) lines.push(w.slice(0, max));
+    }
+    return lines.length > maxLines ? null : lines;
+  };
+  const title = p.project || t('dr.title');
+  let tSize = 20, tLines = wrap(title, 20, 2);
+  if (!tLines) { tSize = 16; tLines = wrap(title, 16, 3); }
+  if (!tLines) { tLines = wrap(title, 16, 99).slice(0, 3); tLines[2] = tLines[2].slice(0, -1) + '…'; }
+  const tLead = tSize * 1.2, tOff = (tLines.length - 1) * tLead;
+  out.push(`<text x="${tb.x + 16}" y="${tb.y + 36}" font-size="${tSize}" font-weight="700">${tLines.map((l, i) => `<tspan x="${tb.x + 16}" dy="${i ? f(tLead) : 0}">${esc(l)}</tspan>`).join('')}</text>`);
+  rows.forEach(([kk, v], i) => out.push(`<text x="${tb.x + 16}" y="${f(tb.y + 66 + tOff + i * 21)}" font-size="12.5"><tspan font-weight="700">${esc(kk)}:</tspan> ${esc(v)}</text>`));
+  const py = tb.y + 66 + tOff + rows.length * 21 + 8;
+  out.push(`<text x="${tb.x + 16}" y="${py}" font-size="12.5" font-weight="700">${esc(t('dr.parts'))}:</text>`);
+  // up to four parts (the rest as a count: the bend values and the QR code need the room)
+  const shownParts = parts.length > 4 ? 3 : parts.length, partLines = parts.length > 4 ? 4 : parts.length;
+  parts.slice(0, shownParts).forEach((q, i) => out.push(`<text x="${tb.x + 24}" y="${py + 19 + i * 18}" font-size="11.5">${esc(`${q.n} ${t('mt.from.' + q.pos)}${q.offset ? ' +' + num(q.offset) : ''} · ${t('mt.' + q.kind)} · ${t('mt.pf.' + q.fix)}`)}</text>`));
+  if (parts.length > 4) out.push(`<text x="${tb.x + 24}" y="${py + 19 + 3 * 18}" font-size="11.5">${esc(t('dr.more', parts.length - 3))}</text>`);
+  // bend: the shade closed (bend 100 %), as in the side panel
+  const fs = flexSummary(p, sd, 100);
+  if (fs.eps != null) {
+    const by = py + 19 + partLines * 18 + 14, col = HEAT[fs.status[0]];
+    const bl = [[t('dr.strain'), `ε ≈ ${fs.eps.toFixed(2)} % · ${fs.status[1]}`],
+      [t('dr.limit'), `${mat.ok} % ok · ${mat.max} % max`],
+      [t('dr.minD'), `≈ ${Math.round(fs.dMinInner)} mm`]];
+    if (fs.rigid) bl.push([t('dr.rigid'), String(fs.rigid)]);
+    out.push(`<text x="${tb.x + 16}" y="${by}" font-size="12.5" font-weight="700">${esc(t('dr.bend'))}:</text>`);
+    bl.forEach(([kk, v], i) => out.push(`<text x="${tb.x + 24}" y="${by + 19 + i * 18}" font-size="11.5">${esc(kk)}: ${esc(v)}</text>`));
+    out.push(`<circle cx="${tb.x + tb.w - 24}" cy="${by + 14}" r="6" fill="${col}"/>`);
+  }
+  const qr = url && qrPath(url);
+  if (qr) {
+    const qs = 96, m = qs / (qr.n + 2), qx = tb.x + tb.w - qs - 12, qy = tb.y + tb.h - qs - 12;
+    out.push(`<rect x="${f(qx)}" y="${f(qy)}" width="${qs}" height="${qs}" fill="#fff"/><path transform="translate(${f(qx + m)},${f(qy + m)}) scale(${f(m)})" d="${qr.d}" fill="${ink}"/>`);
+    out.push(`<text x="${f(qx + qs / 2)}" y="${f(qy - 6)}" text-anchor="middle" font-size="10" fill="#444">${esc(t('dr.qr'))}</text>`);
+  }
+  // footer in short lines, left of the QR code
+  [[t('dr.paper', paper, PAPER[paper][0], PAPER[paper][1]), '#444'], [t('dr.print'), '#444'], [t('dr.units'), '#444'],
+   [new Date().toISOString().slice(0, 10), '#666'], [`Kerf-O-Matic 9000 v${VERSION}`, '#666'], ['github.com/sonarkon/Kerf-O-Matic-9000', '#666', 10]]
+    .forEach(([txt, c, fs = 11], i, a) => out.push(`<text x="${tb.x + 16}" y="${tb.y + tb.h - 14 - (a.length - 1 - i) * 15}" font-size="${fs}" fill="${c}">${esc(txt)}</text>`));
+  out.push('</svg>');
+  return out.join('');
+}
+// PNG of the drawing at twice the sheet size, on white or transparent
+$('drawPng').onclick = async () => {
+  const svgEl = await currentSheet();
+  if (!svgEl || !last) return;
+  const clone = svgEl.cloneNode(true);
+  clone.removeAttribute('width'); clone.removeAttribute('height'); clone.style.opacity = '';
+  if ($('drawTransparent').checked) clone.querySelector('.sheetbg')?.remove();
+  const k = 2, src = new XMLSerializer().serializeToString(clone).replace('<svg ', `<svg width="${SHEET.w * k}" height="${SHEET.h * k}" `);
+  const url = URL.createObjectURL(new Blob([src], { type: 'image/svg+xml' }));
+  const im = new Image();
+  im.onload = () => {
+    URL.revokeObjectURL(url);
+    const cv = document.createElement('canvas');
+    cv.width = SHEET.w * k; cv.height = SHEET.h * k;
+    cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+    cv.toBlob(b => b && download(b, fileName(last.p, last.doc).replace(/\.svg$/, '') + '_drawing.png'), 'image/png');
+  };
+  im.src = url;
+};
+try { const pp = localStorage.getItem('kerf-paper'); if (PAPER[pp]) $('drawPaper').value = pp; } catch (e) {}
+$('drawPaper').onchange = () => { try { localStorage.setItem('kerf-paper', $('drawPaper').value); } catch (e) {} render(); };
+// PDF of the drawing in the chosen paper format, as vectors (jsPDF + svg2pdf, loaded
+// on first use). The sheet fills the page, so the scales hold when printed at 100 %.
+const PDF_LIBS = ['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js'];
+let pdfLoading = null;
+$('drawPdf').onclick = async () => {
+  const svgEl = await currentSheet();
+  if (!svgEl || !last) return;
+  const btn = $('drawPdf'); btn.disabled = true;
+  try {
+    if (!pdfLoading) pdfLoading = (async () => { for (const u of PDF_LIBS) await loadScript(u); })();
+    await pdfLoading;
+    const paper = paperOf(), [pw, ph] = PAPER[paper];
+    const clone = svgEl.cloneNode(true);
+    clone.style.opacity = '';
+    clone.setAttribute('width', SHEET.w); clone.setAttribute('height', SHEET.h);
+    clone.setAttribute('font-family', 'helvetica');
+    // the standard PDF fonts have no ≈ or ε
+    for (const el of clone.querySelectorAll('text, tspan')) for (const n of el.childNodes) if (n.nodeType === 3) n.data = n.data.replace(/≈/g, '~').replace(/ε/g, 'e');
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-99999px;top:0';
+    box.append(clone); document.body.append(box);
+    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: [pw, ph], compress: true });
+    await pdf.svg(clone, { x: 0, y: 0, width: pw, height: ph });
+    box.remove();
+    download(pdf.output('blob'), fileName(last.p, last.doc).replace(/\.svg$/, '') + `_drawing_${paper}.pdf`);
+  } catch (err) {
+    console.error(err);
+    alert(t('dr.pdfFail'));
+  } finally { btn.disabled = false; }
+};
 
 // ---------------------------------------------------------------- cut preview
 // Step through the cuts in the order they are written to the SVG: done in the
@@ -3304,7 +3836,7 @@ function buildMountParts(p, doc) {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.computeVertexNormals();
     const mesh = new THREE.Mesh(geo, three.solidMat);
-    mesh.userData.dir = prt.pos === 'top' ? 1 : -1;
+    mesh.userData.dir = prt.pos === 'top' ? 1 : -1; mesh.userData.y0 = y0;
     three.mountGroup.add(mesh);
   }
   // the diffuser sections: thin translucent cylinders (they stay in place when exploding)
@@ -3721,7 +4253,7 @@ function renderInfo(p, doc) {
 
 function layout() {
   if (!last || !stage.firstChild) return;
-  const [W, H] = outerSize(last.doc);
+  const [W, H] = stage.firstChild.dataset?.sheet ? [SHEET.w, SHEET.h] : outerSize(last.doc);
   const r = view.getBoundingClientRect(), m = 30;
   const base = Math.max(0.01, Math.min((r.width - 2 * m) / W, (r.height - 2 * m - 30) / H));
   const s = base * zoom;
@@ -4011,6 +4543,7 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 async function exportAs(fmt) {
+  flushRender();
   if (!last || !last.doc.count) { alert(t('alert.none')); return; }
   const { p, doc } = last;
   if (fmt === 'svg') { download(new Blob([buildSVG(p, doc)], { type: 'image/svg+xml' }), fileName(p, doc)); return; }
@@ -4475,7 +5008,7 @@ $('lang').addEventListener('change', () => {
   render();
 });
 
-const STORE_KEYS = ['kerf-params', 'kerf-view', 'kerf-3d'];
+const STORE_KEYS = ['kerf-params', 'kerf-view', 'kerf-3d', 'kerf-paper'];
 function clearStore() { for (const k of STORE_KEYS) try { localStorage.removeItem(k); } catch (e) {} }
 $('resetLink').onclick = e => {
   e.preventDefault();
@@ -4494,6 +5027,7 @@ try {
   if (saved) writeParams(saved);
   syncDiameter();
   render();
+  if (location.hash.startsWith('#p=')) readShareHash().catch(e => console.warn('Share link could not be read.', e));
   try { sessionStorage.removeItem('kerf-reset'); } catch (err) {}
 } catch (e) {
   console.warn('Saved settings could not be restored, using defaults.', e);
