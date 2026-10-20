@@ -2537,11 +2537,13 @@ const outerSize = doc => { const H = doc.h + 2 * (doc.padY || 0); return doc.rot
 
 // Export document: separate Inkscape-compatible layers for cuts, border,
 // engraving and parameters. The parameter block sits below the work area.
-function buildSVG(p, doc) {
+function buildSVG(p, doc, url) {
   const [W, H] = outerSize(doc);
   const lines = paramLines(p, doc);
   const fs = 3.5, lh = fs * 1.4, pad = 5;
-  const totalH = H + pad + lines.length * lh + 2;
+  // below the parameters: a QR code that opens this design in the web app
+  const qr = url && qrPath(url), qs = 25, qy = H + pad + lines.length * lh + 4;
+  const totalH = qr ? qy + qs + fs + 2 : H + pad + lines.length * lh + 2;
 
   const tr = rotTransform(doc), paramVisible = p.paramVisible;
   const out = [];
@@ -2594,6 +2596,12 @@ function buildSVG(p, doc) {
   }
   out.push(`  <g id="parameter" inkscape:groupmode="layer" inkscape:label="${t('layer.params')}" fill="#0000ff" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="${fs}"${paramVisible ? '' : ' style="display:none"'}>`);
   lines.forEach((txt, i) => out.push(`    <text x="0" y="${f(H + pad + fs + i * lh)}">${esc(txt)}</text>`));
+  if (qr) {
+    const m = qs / (qr.n + 2);
+    out.push(`    <rect x="0" y="${f(qy)}" width="${qs}" height="${qs}" fill="#ffffff"/>`);
+    out.push(`    <path transform="translate(${f(m)},${f(qy + m)}) scale(${f(m)})" d="${qr.d}"/>`);
+    out.push(`    <text x="0" y="${f(qy + qs + fs)}">${esc(t('dr.qr'))}</text>`);
+  }
   if (doc.notes?.length) out.push(`    <g${tr}>${doc.notes.join('')}</g>`);   // part names etc. – information only
   out.push('  </g>');
   out.push('</svg>');
@@ -4546,7 +4554,11 @@ async function exportAs(fmt) {
   flushRender();
   if (!last || !last.doc.count) { alert(t('alert.none')); return; }
   const { p, doc } = last;
-  if (fmt === 'svg') { download(new Blob([buildSVG(p, doc)], { type: 'image/svg+xml' }), fileName(p, doc)); return; }
+  if (fmt === 'svg') {
+    const url = await Promise.all([ensureQr(), shareUrl(p)]).then(([, u]) => u).catch(() => null);   // offline: no QR code
+    download(new Blob([buildSVG(p, doc, url)], { type: 'image/svg+xml' }), fileName(p, doc));
+    return;
+  }
   if (p.mode === 'test') { alert(t('alert.stlTest')); return; }
   if (p.mode === 'mount' && fmt === 'png') { alert(t('alert.pngMount')); return; }
   const btn = $('saveBtn'), base = fileName(p, doc).replace(/\.svg$/, '');
