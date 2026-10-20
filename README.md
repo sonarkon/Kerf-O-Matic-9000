@@ -114,7 +114,7 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
   - **Heat** (thermometer) – the heat of the cut order during the cut preview.
 - **3D** shows the extruded part with its real thickness – the same closed solid as the STL/OBJ export. Acrylic is semi-transparent, wood is opaque. Drag to orbit, right-drag to pan, wheel to zoom. three.js is loaded only when 3D is opened.
 
-![3D preview: plywood board with hexagon slots, bent half way, in its real thickness](kerf-o-matic-3d.jpg)
+![3D preview: a board bent half way with the Flex heatmap – three bands (pill, diamond, dogbone) and a wave modulator on the slot length make good, borderline, too high and rigid zones](kerf-o-matic-3d.jpg)
 
 ## Bendability estimate
 
