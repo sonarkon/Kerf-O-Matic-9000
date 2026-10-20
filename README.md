@@ -94,6 +94,7 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
 ## Board and cylinder
 
 - **Cylinder sizing:** enter the inner, mid-plane or outer diameter; the width (circumference) is calculated on the material's mid-plane.
+- **Target arc** (Simple/Creative): for a kerf that is not a closed cylinder, enter the angle and the inner radius – *Set width and Bend for this arc* makes the board width the arc length (on the mid-plane) and sets **Bend** to the angle, so the bendability values and **Optimize** refer to that arc (e.g. 90° around an inner radius of 40 mm → 65.2 mm wide at 3 mm).
 - **Seamless:** adjusts the horizontal gap so an even number of columns fills the circumference – the pattern continues across the glue seam. Without side margins and with no seam joint, a glue tab or the pattern join, the seam runs through the middle of a slot column: both edges end in half slots that become whole slots when glued, so no thin half-bar strip is left at the edge to break.
 - **Seam joint:** a glue tab past the circumference, finger joints (fingers on one edge, matching notches on the other; a full bar stays at the edge they hang on), a **dovetail** joint (trapezoid tails on one edge, wider outside, snap into matching sockets on the other, with 0.1 mm play – the seam holds without glue; about 3× the material thickness deep), or a **pattern join**: the seam runs through the pattern – along the middle of the first two slot columns, switching once per row, so no thin half bars are left – so both ends get fingers one column wide and one row high that interlock and the pattern continues across the seam (glue the fingers; needs *Seamless*, side margins are ignored).
 - **Open edges:** slots run out through the top and bottom edges, so no continuous solid strip is left.
@@ -107,7 +108,7 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
 
 - **2D / 3D** switch at the top left.
 - At the top right:
-  - **Bend** (Simple/Creative) – from flat to a closed cylinder; also used for the bendability estimate and the STL/OBJ export.
+  - **Bend** (Simple/Creative) – the angle the board's width is bent to, from 0° (flat) to 360° (a closed cylinder); also used for the bendability estimate and the STL/OBJ export.
   - **Explode** (Lamp, 3D) – lifts the lamp parts off the shade.
   - **Lamp** – glowing slots on a dark background, in 2D and 3D.
   - **Flex** (bent-strip icon) – strain heatmap per slot: good / borderline / too high / rigid.
@@ -118,7 +119,7 @@ Parts for a **pendant lamp with an E27 socket** around the shade from Simple or 
 
 ## Bendability estimate
 
-Strain in the twisting bridges between the slot columns, computed for every slot-to-slot link and scaled with **Bend** (100 % = closed cylinder, 50 % = half the curvature). The panel shows the maximum strain and the smallest inner diameter that stays “good” for the chosen material.
+Strain in the twisting bridges between the slot columns, computed for every slot-to-slot link and scaled with **Bend** (360° = closed cylinder, 180° = half the curvature). The panel shows the maximum strain and the smallest inner diameter that stays “good” for the chosen material. **Max. bend (good)** turns that into an angle: how far this board can be bent and stay good (its width as an arc of the smallest good radius) – handy when the kerf is for something other than a closed cylinder.
 
 It is a rough guide based on Saint-Venant torsion and does not replace a test cut.
 

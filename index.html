@@ -294,6 +294,12 @@
       </select></label>
     </div>
     <div class="desc" id="diaSummary" data-modes="pattern creative mount"></div>
+    <div class="grid2" data-modes="pattern creative" style="margin-top:8px">
+      <label><span data-i18n="arc.angle"></span><input type="number" id="arcAngle" min="1" max="360" step="1" value="90" data-nomain></label>
+      <label><span data-i18n="arc.radius"></span><input type="number" id="arcRadius" min="0.5" step="1" value="60" data-nomain></label>
+      <button type="button" class="fixbtn span2" id="arcApply" data-i18n="arc.apply"></button>
+    </div>
+    <div class="desc" data-modes="pattern creative" data-i18n="arc.desc"></div>
     <div class="grid2" style="margin-top:8px">
       <label class="span2" id="matNameRow"><span data-i18n="mat.name"></span><input type="text" id="matName" maxlength="40" data-nomain></label>
       <label><span data-i18n="mat.ok"></span><input type="number" id="matOk" min="0.05" step="0.05" data-nomain></label>
@@ -424,7 +430,7 @@
   </div>
   <div class="toggles" id="overlayCtl">
     <label class="pill" id="explodeCtl" hidden><span data-i18n="explode"></span><input type="range" id="explode" min="0" max="100" value="0"><output id="explodeVal">0 %</output></label>
-    <label class="pill" id="bendCtl"><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="100" value="100"><output id="bendVal">100 %</output></label>
+    <label class="pill" id="bendCtl"><span data-i18n="bend"></span><input type="range" id="bend" min="0" max="360" value="360"><output id="bendVal">360°</output></label>
     <label class="iconbtn lamp" data-i18n-title="lamp">
       <input type="checkbox" id="lampOn" data-i18n-aria="lamp">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -574,13 +580,13 @@ const STR = {
     'pl.mountDims': (hole, rw, n, sw, hw, cl) => `Socket hole Ø ${hole} mm · ring ${rw} mm · ${n} spokes × ${sw} mm · hub ${hw} mm · clearance ${cl} mm`,
     'alert.pngMount': 'PNG export is available in Simple and Creative mode.', 'save': 'Save SVG', 'save.stl': 'Save STL', 'save.more': 'More export formats',
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Cut file for the laser cutter',
-    'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 100 % in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0 % in the 3D view)' : `3D model bent ${b} % (Bend in the 3D view)`,
+    'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D model as a closed cylinder (Bend 360° in the 3D view)' : b <= 0 ? '3D model, flat (Bend 0° in the 3D view)' : `3D model bent to ${bendDeg(b)}° (Bend in the 3D view)`,
     'save.obj': 'Save OBJ', 'save.png': 'Save PNG',
     'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Mask texture, e.g. for Blender',
     'stl.busy': 'Exporting…', 'stl.fail': 'Export failed (the geometry libraries could not be loaded – offline?).',
     'alert.stlTest': '3D and PNG export are available in Simple and Creative mode.',
     'sec.board': 'Board & cylinder', 'boardW': 'Width = circ. (mm)', 'boardH': 'Height (mm)',
-    'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference',
+    'thick': 'Thickness (mm)', 'material': 'Material', 'diameter': 'Diameter (mm)', 'diaRef': 'Reference', 'arc.angle': 'Target arc (°)', 'arc.radius': 'Inner radius (mm)', 'arc.apply': 'Set width and Bend for this arc', 'arc.desc': 'For a kerf that is not a closed cylinder: the board width becomes the arc length, Bend the angle – the bendability values and Optimize then refer to this arc.',
     'ref.inner': 'Inner', 'ref.mid': 'Mid-plane', 'ref.outer': 'Outer',
     'seamless': 'Seamless: fit column count to circumference',
     'joint': 'Seam joint', 'joint.none': 'None', 'joint.tab': 'Glue tab', 'joint.fingers': 'Finger joint', 'joint.dovetail': 'Dovetail (snaps, no glue)', 'joint.pattern': 'Pattern join', 'jointSize': 'Size (mm)',
@@ -673,7 +679,7 @@ const STR = {
 
     'diaSummary': (i, m, o) => `Ø inner ${i} · mid ${m} · outer ${o} mm`,
     'fi.perStrip': (mat, th, ok) => `<b>Smallest inner Ø per strip</b> that stays “good” (${mat}, ${th} mm, ε ≤ ${ok} %)`,
-    'fi.minD': 'Min inner Ø', 'fi.strainAt': (d, b) => b >= 100 ? `Max. strain at Ø ${d}` : `Max. strain at Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flat, no bending strain', 'fi.minGood': 'Min inner Ø (good)',
+    'fi.minD': 'Min inner Ø', 'fi.strainAt': (d, b) => b >= 100 ? `Max. strain at Ø ${d}` : `Max. strain at ${bendDeg(b)}° (Ø ${d})`, 'fi.flat': 'Bend 0° – flat, no bending strain', 'fi.maxBend': 'Max. bend (good)', 'fi.closes': 'closes (360°)', 'fi.atR': r => `inner R ≥ ${r} mm`, 'fi.minGood': 'Min inner Ø (good)',
     'fi.softer': 'Softer with longer slots, a smaller vertical gap, a narrower horizontal gap, narrower slots or thinner material.',
     'fi.solid': 'In places the slots don’t overlap or are removed – it will barely bend there.',
     'fi.tabSolid': s => `Around the Lamp tabs the wall stays solid (rigid in the Flex view): it does not bend there and forms flat facets of about ${s} mm.`,
@@ -709,7 +715,7 @@ const STR = {
     'pl.joint': (j, sz) => `Seam joint: ${j}${sz}`, 'pl.kerf': k => `Kerf compensation: ${k} mm (slots drawn ${k} mm smaller, outline ${k / 2} mm larger per side)`,
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, height ${h}, W ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
-    'pl.flex': (e, st, d, b) => `Flex (guide value) at Bend ${b} %: ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
+    'pl.flex': (e, st, d, b) => `Flex (guide value) at ${bendDeg(b)}°: ε ≈ ${e} % (${st}) · Min inner Ø ≈ ${d} mm`,
     'pl.footer': (n, d) => `Cuts: ${n} · Created: ${d} · Kerf-O-Matic 9000 v${VERSION}`
   },
   de: {
@@ -765,13 +771,13 @@ const STR = {
     'pl.mountDims': (hole, rw, n, sw, hw, cl) => `Fassungsloch Ø ${hole} mm · Ring ${rw} mm · ${n} Speichen × ${sw} mm · Nabe ${hw} mm · Spiel ${cl} mm`,
     'alert.pngMount': 'PNG-Export gibt es im Simple- und Creative-Modus.', 'save': 'SVG speichern', 'save.stl': 'STL speichern', 'save.more': 'Weitere Exportformate',
     'fmt.svg': 'SVG', 'fmt.svg.d': 'Schnittdatei für den Laser',
-    'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Bend 100 % in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Bend 0 % in der 3D-Ansicht)' : `3D-Modell, ${b} % gebogen (Bend in der 3D-Ansicht)`,
+    'fmt.stl': 'STL', 'fmt.stl.d': b => b >= 100 ? '3D-Modell als geschlossener Zylinder (Biegung 360° in der 3D-Ansicht)' : b <= 0 ? '3D-Modell, flach (Biegung 0° in der 3D-Ansicht)' : `3D-Modell, auf ${bendDeg(b)}° gebogen (Biegung in der 3D-Ansicht)`,
     'save.obj': 'OBJ speichern', 'save.png': 'PNG speichern',
     'fmt.obj': 'OBJ', 'fmt.png': 'PNG', 'fmt.png.d': 'Masken-Textur, z. B. für Blender',
     'stl.busy': 'Exportiere…', 'stl.fail': 'Export fehlgeschlagen (Geometrie-Bibliotheken nicht ladbar – offline?).',
     'alert.stlTest': '3D- und PNG-Export gibt es im Simple- und Creative-Modus.',
     'sec.board': 'Platte & Zylinder', 'boardW': 'Breite = Umfang (mm)', 'boardH': 'Höhe (mm)',
-    'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug',
+    'thick': 'Materialstärke (mm)', 'material': 'Material', 'diameter': 'Durchmesser (mm)', 'diaRef': 'Bezug', 'arc.angle': 'Ziel-Bogen (°)', 'arc.radius': 'Innenradius (mm)', 'arc.apply': 'Breite und Biegung für diesen Bogen setzen', 'arc.desc': 'Für einen Kerf, der kein geschlossener Zylinder wird: Die Plattenbreite wird zur Bogenlänge, die Biegung zum Winkel – Biegewerte und Optimize beziehen sich dann auf diesen Bogen.',
     'ref.inner': 'Innen', 'ref.mid': 'Mitte', 'ref.outer': 'Außen',
     'seamless': 'Nahtlos: Spaltenzahl an Umfang anpassen',
     'joint': 'Naht-Verbindung', 'joint.none': 'Keine', 'joint.tab': 'Klebelasche', 'joint.fingers': 'Fingerzinken', 'joint.dovetail': 'Schwalbenschwanz (rastet, ohne Kleber)', 'joint.pattern': 'Muster-Verzahnung', 'jointSize': 'Größe (mm)',
@@ -864,7 +870,7 @@ const STR = {
 
     'diaSummary': (i, m, o) => `Ø innen ${i} · Mitte ${m} · außen ${o} mm`,
     'fi.perStrip': (mat, th, ok) => `<b>Kleinster Innen-Ø je Streifen</b>, der „gut“ bleibt (${mat}, ${th} mm, ε ≤ ${ok} %)`,
-    'fi.minD': 'Min-Ø innen', 'fi.strainAt': (d, b) => b >= 100 ? `Max. Dehnung bei Ø ${d}` : `Max. Dehnung bei Bend ${b} % (Ø ${d})`, 'fi.flat': 'Bend 0 % – flach, keine Biegedehnung', 'fi.minGood': 'Min-Ø innen (gut)',
+    'fi.minD': 'Min-Ø innen', 'fi.strainAt': (d, b) => b >= 100 ? `Max. Dehnung bei Ø ${d}` : `Max. Dehnung bei ${bendDeg(b)}° (Ø ${d})`, 'fi.flat': 'Biegung 0° – flach, keine Biegedehnung', 'fi.maxBend': 'Max. Biegung (gut)', 'fi.closes': 'schließt sich (360°)', 'fi.atR': r => `Innen-R ≥ ${r} mm`, 'fi.minGood': 'Min-Ø innen (gut)',
     'fi.softer': 'Weicher wird es mit längeren Schlitzen, kürzerem Steg vertikal, schmalerem Steg horizontal, schmaleren Schlitzen oder dünnerem Material.',
     'fi.solid': 'Stellenweise überlappen die Schlitze nicht oder fehlen – dort biegt es sich kaum.',
     'fi.tabSolid': s => `Rund um die Lampen-Zapfen bleibt die Wand massiv (starr in der Flex-Ansicht): Dort biegt sie sich nicht und bildet flache Facetten von etwa ${s} mm.`,
@@ -900,7 +906,7 @@ const STR = {
     'pl.joint': (j, sz) => `Naht-Verbindung: ${j}${sz}`, 'pl.kerf': k => `Fugen-Ausgleich: ${k} mm (Schlitze ${k} mm kleiner, Kontur je Seite ${k / 2} mm größer gezeichnet)`,
     'pl.band': (i, s, h, w, l) => `Band ${i}: ${s}, Höhe ${h}, B ${w} / L ${l} mm`,
     'pl.mod': (i, txt) => `Modulator ${i}: ${txt}`,
-    'pl.flex': (e, st, d, b) => `Flex (Richtwert) bei Bend ${b} %: ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
+    'pl.flex': (e, st, d, b) => `Flex (Richtwert) bei ${bendDeg(b)}°: ε ≈ ${e} % (${st}) · Min-Ø innen ≈ ${d} mm`,
     'pl.footer': (n, d) => `Schnitte: ${n} · Erstellt: ${d} · Kerf-O-Matic 9000 v${VERSION}`
   }
 };
@@ -1148,6 +1154,8 @@ const midDiameter = p => p.boardW / Math.PI;
 // The Bend slider sets how far the board is bent: 100 % = closed cylinder,
 // 50 % = half the curvature (twice the radius), 0 % = flat. Strain scales with
 // the curvature, so the analysis uses this effective mid-plane diameter.
+// Bend as an angle: the board's width forms an arc of bend % × 360° (100 % = closed)
+const bendDeg = b => Math.round(b * 3.6);
 const bendFactor = () => (typeof view3d === 'object' ? view3d.bend : 100) / 100;
 const bendDiameter = p => { const b = bendFactor(); return b > 0 ? midDiameter(p) / b : Infinity; };
 function syncDiameter() {
@@ -3061,7 +3069,7 @@ function render() {
   $('explodeCtl').hidden = !(mount && is3d);
   $('flexCtl').hidden = mount;
   $('heatCtl').hidden = is3d;
-  $('bendVal').textContent = view3d.bend + ' %';
+  $('bendVal').textContent = bendDeg(view3d.bend) + '°';
   $('overlayCtl').hidden = test;
   stage.hidden = is3d;
   $('zLabel').hidden = $('zIn').hidden = $('zOut').hidden = is3d;
@@ -3730,7 +3738,7 @@ try {
   delete saved.lamp;
   Object.assign(view3d, saved);
 } catch (e) {}
-$('bend').value = view3d.bend;
+$('bend').value = bendDeg(view3d.bend);
 $('explode').value = view3d.explode; $('explodeVal').textContent = view3d.explode + ' %';
 $('lampOn').checked = view3d.overlay === 'light';
 $('flexOn').checked = view3d.overlay === 'flex';
@@ -3911,7 +3919,7 @@ function apply3dScene(p, doc, refit) {
   if (!three.parts.length) return;
   const mount = !!doc.shell, sd = doc.shell || doc, bend = mount ? 100 : view3d.bend;
   const W = sd.bw ?? sd.w, H = sd.h, lampOn = view3d.overlay === 'light', flexOn = !mount && view3d.overlay === 'flex';
-  $('bendVal').textContent = view3d.bend + ' %';
+  $('bendVal').textContent = bendDeg(view3d.bend) + '°';
   const axis = bendParts(W, bend / 100);
   const axisZ = axis == null ? -H : Math.max(axis, -Math.max(W, H));
   three.scene.background = new THREE.Color(lampOn ? 0x0f0d0c : 0x1a181b);
@@ -4032,8 +4040,8 @@ function show3d(p, doc) {
 function save3d() { try { localStorage.setItem('kerf-3d', JSON.stringify(view3d)); } catch (e) {} }
 let bendFrame = 0, heatTimer = null;
 $('bend').addEventListener('input', () => {
-  view3d.bend = +$('bend').value; save3d(); updateSaveLabel();
-  $('bendVal').textContent = view3d.bend + ' %';
+  view3d.bend = +$('bend').value / 3.6; save3d(); updateSaveLabel();
+  $('bendVal').textContent = $('bend').value + '°';
   if (!last) return;
   if (view.classList.contains('is3d')) {
     if (three) apply3dScene(last.p, last.doc, false);
@@ -4236,6 +4244,9 @@ function renderInfo(p, doc) {
         `<div><span>${esc(bendFactor() > 0 ? t('fi.strainAt', (bendDiameter(p) - p.thick).toFixed(1), view3d.bend) : t('fi.flat'))}</span><strong class="${fs.status[0]}">${fs.eps.toFixed(2)} %</strong><em class="${fs.status[0]}">${esc(fs.status[1])}</em></div>` +
         `<div><span>${esc(t('fi.minGood'))}</span><strong>${Math.round(fs.dMinInner)} mm</strong><em>${esc(matName)} ≤ ${mat.ok} %</em></div>` +
         `</div>`;
+      // the largest angle the board can be bent to and stay "good": its width as an arc of the smallest radius
+      const maxDeg = 360 * midDiameter(p) / fs.dMin;
+      html += `<p class="maxbend"><span>${esc(t('fi.maxBend'))}:</span> <strong class="${maxDeg >= 360 ? 'ok' : ''}">${esc(maxDeg >= 360 ? t('fi.closes') : Math.floor(maxDeg) + '°')}</strong> · ${esc(t('fi.atR', Math.round(fs.dMinInner / 2)))}</p>`;
       html += fixHtml(p, fs);
       if (p.mode === 'creative' && (fs.over || fs.rigid)) {
         html += `<p class="${fs.over ? 'bad' : 'warn'}">${esc(t('fi.counts', fs.over, fs.rigid))}</p>`;
@@ -4314,6 +4325,16 @@ window.addEventListener('resize', layout);
 
 // ---------------------------------------------------------------- wiring
 $('boardW').addEventListener('input', syncDiameter);
+// target arc: the width is the arc length on the mid-plane, Bend the angle
+$('arcApply').onclick = () => {
+  const deg = clamp(Math.round(+$('arcAngle').value || 0), 1, 360), ri = Math.max(0.5, +$('arcRadius').value || 0);
+  $('arcAngle').value = deg;
+  $('boardW').value = +(deg * Math.PI / 180 * (ri + (+$('thick').value || 0) / 2)).toFixed(2);
+  syncDiameter();
+  view3d.bend = deg / 3.6; save3d(); updateSaveLabel();
+  $('bend').value = deg; $('bendVal').textContent = deg + '°';
+  render();
+};
 $('thick').addEventListener('input', syncDiameter);
 $('diaRef').addEventListener('input', syncDiameter);
 $('diameter').addEventListener('input', diameterChanged);
@@ -4571,7 +4592,7 @@ async function exportAs(fmt) {
     } else {
       await ensureGeoLibs();
       const mount = p.mode === 'mount', bend = mount ? 100 : view3d.bend;
-      const tris = mount ? buildAssembly(p, doc) : buildMesh(p, doc, bend / 100), suffix = mount ? '_assembly' : `_bend${bend}`;
+      const tris = mount ? buildAssembly(p, doc) : buildMesh(p, doc, bend / 100), suffix = mount ? '_assembly' : `_bend${bendDeg(bend)}deg`;
       if (fmt === 'stl') download(new Blob([stlBytes(tris)], { type: 'model/stl' }), `${base}${suffix}.stl`);
       else download(new Blob([objText(tris, base, paramsJSON(p))], { type: 'model/obj' }), `${base}${suffix}.obj`);
     }
